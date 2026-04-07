@@ -6,6 +6,7 @@ import {
   uploadCSV,
   getStagingRows,
   correctCategory,
+  skipStagingRow,
   confirmBatch,
   discardBatch,
 } from "../controllers/upload.controller";
@@ -18,6 +19,7 @@ router.use(authenticate);
 router.post("/csv", uploadLimiter, upload.single("file"), uploadCSV);
 router.get("/:batchId/staging", getStagingRows);
 router.patch("/:batchId/staging/:id", correctCategory);
+router.delete("/:batchId/staging/:id", skipStagingRow);
 router.post("/:batchId/confirm", confirmBatch);
 router.delete("/:batchId", discardBatch);
 

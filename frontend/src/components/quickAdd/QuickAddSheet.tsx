@@ -8,7 +8,8 @@ import {
   Box,
   TextField,
   Button,
-  MenuItem,
+  FormControl,
+  InputLabel,
   Typography,
   useTheme,
   useMediaQuery,
@@ -16,7 +17,7 @@ import {
   Chip,
 } from "@mui/material";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
-import { EXPENSE_CATEGORIES } from "@/types/expense.types";
+import { CategorySelect } from "@/components/shared/CategorySelect";
 import { expensesApi } from "@/api/expenses.api";
 import { queryApi } from "@/api/query.api";
 import { tokens } from "@/styles/theme/tokens";
@@ -36,7 +37,7 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(today());
-  const [category, setCategory] = useState("Food & Dining");
+  const [category, setCategory] = useState("Groceries");
   const [suggestedCategory, setSuggestedCategory] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -48,7 +49,7 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
       setAmount("");
       setDescription("");
       setDate(today());
-      setCategory("Food & Dining");
+      setCategory("Groceries");
       setSuggestedCategory(null);
     }
   }, [open]);
@@ -132,17 +133,14 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
           />
         </Box>
       )}
-      <TextField
-        select
-        label="Category"
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
-        fullWidth
-      >
-        {EXPENSE_CATEGORIES.map((c) => (
-          <MenuItem key={c} value={c}>{c}</MenuItem>
-        ))}
-      </TextField>
+      <FormControl fullWidth>
+        <InputLabel>Category</InputLabel>
+        <CategorySelect
+          label="Category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value as string)}
+        />
+      </FormControl>
       <TextField
         label="Date"
         type="date"

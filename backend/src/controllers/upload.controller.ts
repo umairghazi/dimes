@@ -27,9 +27,11 @@ export const upload = multer({
 });
 
 const mappingSchema = z.object({
-  dateColumn: z.string(),
-  amountColumn: z.string(),
-  descriptionColumn: z.string(),
+  dateIndex: z.coerce.number().int().min(0),
+  debitIndex: z.coerce.number().int().min(0),
+  creditIndex: z.coerce.number().int().min(-1),
+  descriptionIndex: z.coerce.number().int().min(0),
+  hasHeader: z.string().transform((v) => v === "true"),
 });
 
 const correctSchema = z.object({
@@ -45,11 +47,13 @@ export async function uploadCSV(req: Request, res: Response, next: NextFunction)
   try {
     const user = requireUser(req);
     if (!req.file) throw new AppError("No file uploaded", 400, "NO_FILE");
-    const { dateColumn, amountColumn, descriptionColumn } = mappingSchema.parse(req.body);
+    const { dateIndex, debitIndex, creditIndex, descriptionIndex, hasHeader } = mappingSchema.parse(req.body);
     const result = await uploadService.processCSV(user.id, req.file.buffer, {
-      date: dateColumn,
-      amount: amountColumn,
-      description: descriptionColumn,
+      dateIndex,
+      debitIndex,
+      creditIndex,
+      descriptionIndex,
+      hasHeader,
     });
     res.status(201).json(result);
   } catch (err) {
@@ -88,6 +92,16 @@ export async function confirmBatch(req: Request, res: Response, next: NextFuncti
     const user = requireUser(req);
     const result = await uploadService.confirmBatch(user.id, req.params.batchId);
     res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function skipStagingRow(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = requireUser(req);
+    await uploadService.skipStagingRow(user.id, req.params.batchId, req.params.id);
+    res.status(204).send();
   } catch (err) {
     next(err);
   }

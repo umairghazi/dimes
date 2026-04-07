@@ -14,14 +14,16 @@ export function useUpload() {
 
   const uploadCSV = async (
     file: File,
-    dateColumn: string,
-    amountColumn: string,
-    descriptionColumn: string,
+    dateIndex: number,
+    debitIndex: number,
+    creditIndex: number,
+    descriptionIndex: number,
+    hasHeader: boolean,
   ) => {
     setLoading(true);
     setError(null);
     try {
-      const { batchId: id, aiAvailable: hasAI } = await uploadApi.uploadCSV(file, dateColumn, amountColumn, descriptionColumn);
+      const { batchId: id, aiAvailable: hasAI } = await uploadApi.uploadCSV(file, dateIndex, debitIndex, creditIndex, descriptionIndex, hasHeader);
       setBatchId(id);
       setAiAvailable(hasAI);
       const rows = await uploadApi.getStagingRows(id);
@@ -32,6 +34,12 @@ export function useUpload() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const skipRow = async (rowId: string) => {
+    if (!batchId) return;
+    await uploadApi.skipStagingRow(batchId, rowId);
+    setStagingRows((rows) => rows.filter((r) => r.id !== rowId));
   };
 
   const correctCategory = async (rowId: string, category: string) => {
@@ -67,5 +75,5 @@ export function useUpload() {
     setAiAvailable(true);
   };
 
-  return { step, batchId, stagingRows, loading, error, aiAvailable, uploadCSV, correctCategory, confirm, discard, reset };
+  return { step, batchId, stagingRows, loading, error, aiAvailable, uploadCSV, correctCategory, skipRow, confirm, discard, reset };
 }

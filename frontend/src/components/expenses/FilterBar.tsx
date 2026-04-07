@@ -1,6 +1,6 @@
-import { Box, TextField, MenuItem, Button } from "@mui/material";
+import { Box, TextField, FormControl, InputLabel, Button } from "@mui/material";
 import { useFilterStore } from "@/store/filterStore";
-import { EXPENSE_CATEGORIES } from "@/types/expense.types";
+import { CategorySelect } from "@/components/shared/CategorySelect";
 
 export function FilterBar() {
   const { filters, setFilter, clearFilters } = useFilterStore();
@@ -15,19 +15,15 @@ export function FilterBar() {
         alignItems: "center",
       }}
     >
-      <TextField
-        select
-        label="Category"
-        value={filters.category ?? ""}
-        onChange={(e) => setFilter("category", e.target.value || undefined)}
-        size="small"
-        sx={{ minWidth: 160 }}
-      >
-        <MenuItem value="">All</MenuItem>
-        {EXPENSE_CATEGORIES.map((c) => (
-          <MenuItem key={c} value={c}>{c}</MenuItem>
-        ))}
-      </TextField>
+      <FormControl size="small" sx={{ minWidth: 180 }}>
+        <InputLabel>Category</InputLabel>
+        <CategorySelect
+          label="Category"
+          value={filters.category ?? ""}
+          onChange={(e) => setFilter("category", (e.target.value as string) || undefined)}
+          includeAll
+        />
+      </FormControl>
 
       <TextField
         label="From"

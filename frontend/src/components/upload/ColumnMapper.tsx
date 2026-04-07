@@ -1,34 +1,158 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   Box,
   Button,
-  TextField,
-  Typography,
   Paper,
+  Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  FormControlLabel,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Alert,
+  Chip,
 } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import Papa from "papaparse";
+
+type ColumnRole = "date" | "debit" | "credit" | "description" | "ignore";
+
+const ROLE_LABELS: Record<ColumnRole, string> = {
+  date: "Date",
+  debit: "Debit",
+  credit: "Credit",
+  description: "Description",
+  ignore: "Ignore",
+};
+
+const ROLE_COLORS: Partial<Record<ColumnRole, "primary" | "success" | "error" | "warning">> = {
+  date: "primary",
+  debit: "error",
+  credit: "success",
+  description: "warning",
+};
+
+// Required roles — credit is optional
+const REQUIRED_ROLES: ColumnRole[] = ["date", "debit", "description"];
 
 interface ColumnMapperProps {
-  onSubmit: (file: File, dateColumn: string, amountColumn: string, descriptionColumn: string) => void;
+  onSubmit: (
+    file: File,
+    dateIndex: number,
+    debitIndex: number,
+    creditIndex: number,
+    descriptionIndex: number,
+    hasHeader: boolean,
+  ) => void;
   loading: boolean;
 }
 
+function detectRole(values: string[]): ColumnRole {
+  const nonEmpty = values.filter(Boolean);
+  if (nonEmpty.length === 0) return "ignore";
+
+  const datePattern = /^\d{1,4}[-\/\.]\d{1,2}[-\/\.]\d{1,4}$|^\w+ \d{1,2},? \d{4}/i;
+  const amountPattern = /^-?[\$£€]?\s*\d[\d,]*\.?\d*$/;
+
+  const ratio = (n: number) => n / nonEmpty.length;
+  const dateLike = nonEmpty.filter((v) => datePattern.test(v.trim())).length;
+  const amountLike = nonEmpty.filter((v) => amountPattern.test(v.trim())).length;
+
+  if (ratio(dateLike) > 0.5) return "date";
+  if (ratio(amountLike) > 0.5) return "debit";
+  return "description";
+}
+
+function autoAssign(columns: string[][]): ColumnRole[] {
+  const detected = columns.map(detectRole);
+  const roles: ColumnRole[] = detected.map(() => "ignore");
+  const taken = new Set<ColumnRole>();
+
+  detected.forEach((role, i) => {
+    if (role !== "ignore" && !taken.has(role)) {
+      roles[i] = role;
+      taken.add(role);
+    }
+  });
+
+  if (!taken.has("description")) {
+    const idx = roles.findIndex((r) => r === "ignore");
+    if (idx !== -1) {
+      roles[idx] = "description";
+      taken.add("description");
+    }
+  }
+
+  return roles;
+}
+
+const PREVIEW_ROWS = 5;
+
 export function ColumnMapper({ onSubmit, loading }: ColumnMapperProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [dateColumn, setDateColumn] = useState("Date");
-  const [amountColumn, setAmountColumn] = useState("Amount");
-  const [descriptionColumn, setDescriptionColumn] = useState("Description");
+  const [rawRows, setRawRows] = useState<string[][]>([]);
+  const [columnRoles, setColumnRoles] = useState<ColumnRole[]>([]);
+  const [hasHeader, setHasHeader] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = () => {
-    if (!file) return;
-    onSubmit(file, dateColumn, amountColumn, descriptionColumn);
+  const parseFile = useCallback((f: File) => {
+    Papa.parse<string[]>(f, {
+      header: false,
+      skipEmptyLines: true,
+      preview: PREVIEW_ROWS + 1,
+      complete: ({ data }) => {
+        setRawRows(data as string[][]);
+        const colCount = Math.max(...(data as string[][]).map((r) => r.length));
+        const cols: string[][] = Array.from({ length: colCount }, (_, ci) =>
+          (data as string[][]).map((row) => row[ci] ?? ""),
+        );
+        setColumnRoles(autoAssign(cols));
+        if (data.length > 0) {
+          const firstRow = data[0] as string[];
+          const looksLikeHeader = firstRow.every((cell) =>
+            isNaN(Number(cell.replace(/[,$%]/g, "")))
+          );
+          setHasHeader(looksLikeHeader);
+        }
+      },
+    });
+  }, []);
+
+  const handleFile = (f: File) => {
+    setFile(f);
+    parseFile(f);
   };
 
+  const setRole = (colIndex: number, role: ColumnRole) => {
+    setColumnRoles((prev) => {
+      const next = [...prev];
+      if (role !== "ignore") {
+        next.forEach((r, i) => { if (r === role) next[i] = "ignore"; });
+      }
+      next[colIndex] = role;
+      return next;
+    });
+  };
+
+  const dateIndex = columnRoles.indexOf("date");
+  const debitIndex = columnRoles.indexOf("debit");
+  const creditIndex = columnRoles.indexOf("credit"); // -1 if not assigned (optional)
+  const descriptionIndex = columnRoles.indexOf("description");
+  const ready = file && dateIndex !== -1 && debitIndex !== -1 && descriptionIndex !== -1;
+
+  const missingRoles = REQUIRED_ROLES.filter((r) => !columnRoles.includes(r));
+
+  const displayRows = hasHeader ? rawRows.slice(1) : rawRows;
+  const colCount = rawRows.length > 0 ? Math.max(...rawRows.map((r) => r.length)) : 0;
+
   return (
-    <Box sx={{ maxWidth: 500 }}>
-      {/* File drop zone */}
+    <Box sx={{ maxWidth: 700 }}>
       <Paper
         variant="outlined"
         sx={{
@@ -54,46 +178,130 @@ export function ColumnMapper({ onSubmit, loading }: ColumnMapperProps) {
           type="file"
           accept=".csv"
           hidden
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleFile(f);
+          }}
         />
       </Paper>
 
-      <Alert severity="info" sx={{ mb: 3 }}>
-        Enter the exact column header names from your CSV file below. Different banks use different column names.
-      </Alert>
+      {rawRows.length > 0 && (
+        <>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+            <Typography variant="subtitle1" fontWeight={600}>
+              Map your columns
+            </Typography>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={hasHeader}
+                  onChange={(e) => setHasHeader(e.target.checked)}
+                  size="small"
+                />
+              }
+              label={
+                <Typography variant="body2" color="text.secondary">
+                  First row is a header
+                </Typography>
+              }
+              labelPlacement="start"
+            />
+          </Box>
 
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        <TextField
-          label="Date Column Header"
-          value={dateColumn}
-          onChange={(e) => setDateColumn(e.target.value)}
-          placeholder="e.g. Date, Transaction Date, Posted Date"
-          fullWidth
-        />
-        <TextField
-          label="Amount Column Header"
-          value={amountColumn}
-          onChange={(e) => setAmountColumn(e.target.value)}
-          placeholder="e.g. Amount, Debit, Transaction Amount"
-          fullWidth
-        />
-        <TextField
-          label="Description Column Header"
-          value={descriptionColumn}
-          onChange={(e) => setDescriptionColumn(e.target.value)}
-          placeholder="e.g. Description, Merchant, Memo"
-          fullWidth
-        />
-        <Button
-          variant="contained"
-          size="large"
-          disabled={!file || loading}
-          onClick={handleSubmit}
-          fullWidth
-        >
-          {loading ? "Processing..." : "Upload & Review"}
-        </Button>
-      </Box>
+          {missingRoles.length > 0 && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Assign each column below. Still missing:{" "}
+              {missingRoles.map((r) => (
+                <strong key={r}> {ROLE_LABELS[r]}</strong>
+              ))}
+            </Alert>
+          )}
+
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, mb: 3 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: "action.hover" }}>
+                  {Array.from({ length: colCount }, (_, ci) => (
+                    <TableCell key={ci} sx={{ py: 1, minWidth: 130 }}>
+                      <FormControl size="small" fullWidth>
+                        <Select
+                          value={columnRoles[ci] ?? "ignore"}
+                          onChange={(e) => setRole(ci, e.target.value as ColumnRole)}
+                          renderValue={(val) => {
+                            const color = ROLE_COLORS[val as ColumnRole];
+                            return color ? (
+                              <Chip label={ROLE_LABELS[val as ColumnRole]} color={color} size="small" />
+                            ) : (
+                              <Typography variant="caption" color="text.disabled">Ignore</Typography>
+                            );
+                          }}
+                          sx={{ "& .MuiSelect-select": { py: 0.5 } }}
+                        >
+                          <MenuItem value="date">Date</MenuItem>
+                          <MenuItem value="debit">Debit (expenses)</MenuItem>
+                          <MenuItem value="credit">Credit (income / refunds)</MenuItem>
+                          <MenuItem value="description">Description</MenuItem>
+                          <MenuItem value="ignore">Ignore</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </TableCell>
+                  ))}
+                </TableRow>
+
+                {hasHeader && rawRows.length > 0 && (
+                  <TableRow>
+                    {rawRows[0].map((cell, ci) => (
+                      <TableCell
+                        key={ci}
+                        sx={{ fontWeight: 700, color: "text.secondary", fontSize: "0.75rem", py: 0.75 }}
+                      >
+                        {cell}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                )}
+              </TableHead>
+
+              <TableBody>
+                {displayRows.slice(0, PREVIEW_ROWS).map((row, ri) => (
+                  <TableRow key={ri} hover>
+                    {Array.from({ length: colCount }, (_, ci) => {
+                      const role = columnRoles[ci] ?? "ignore";
+                      const highlight = role !== "ignore";
+                      return (
+                        <TableCell
+                          key={ci}
+                          sx={{
+                            fontSize: "0.8rem",
+                            py: 0.75,
+                            color: highlight ? "text.primary" : "text.disabled",
+                            fontStyle: highlight ? "normal" : "italic",
+                          }}
+                        >
+                          {row[ci] ?? ""}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </>
+      )}
+
+      <Button
+        variant="contained"
+        size="large"
+        disabled={!ready || loading}
+        onClick={() => {
+          if (!file || !ready) return;
+          onSubmit(file, dateIndex, debitIndex, creditIndex, descriptionIndex, hasHeader);
+        }}
+        fullWidth
+      >
+        {loading ? "Processing..." : "Upload & Review"}
+      </Button>
     </Box>
   );
 }

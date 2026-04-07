@@ -11,16 +11,20 @@ import {
   Select,
   Chip,
   Button,
+  IconButton,
+  Tooltip,
   Typography,
   Alert,
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { StagingExpense } from "@/types/upload.types";
-import { EXPENSE_CATEGORIES } from "@/types/expense.types";
+import { CategorySelect } from "@/components/shared/CategorySelect";
 
 interface StagingReviewTableProps {
   rows: StagingExpense[];
   onCorrect: (rowId: string, category: string) => void;
+  onSkip: (rowId: string) => void;
   onConfirm: () => void;
   onDiscard: () => void;
   loading: boolean;
@@ -30,6 +34,7 @@ interface StagingReviewTableProps {
 export function StagingReviewTable({
   rows,
   onCorrect,
+  onSkip,
   onConfirm,
   onDiscard,
   loading,
@@ -93,6 +98,7 @@ export function StagingReviewTable({
                 {aiAvailable && <TableCell>AI Category</TableCell>}
                 {aiAvailable && <TableCell>Confidence</TableCell>}
                 <TableCell>Category</TableCell>
+                <TableCell />
               </TableRow>
             </TableHead>
             <TableBody>
@@ -136,20 +142,20 @@ export function StagingReviewTable({
                       </TableCell>
                     )}
                     <TableCell>
-                      <Select
+                      <CategorySelect
                         value={effectiveCategory}
                         size="small"
-                        onChange={(e) => onCorrect(row.id, e.target.value)}
-                        sx={{ minWidth: 160 }}
+                        onChange={(e) => onCorrect(row.id, e.target.value as string)}
+                        sx={{ minWidth: 180 }}
                         displayEmpty
-                      >
-                        <MenuItem value="Uncategorized" disabled>
-                          <em>Select a category…</em>
-                        </MenuItem>
-                        {EXPENSE_CATEGORIES.map((c) => (
-                          <MenuItem key={c} value={c}>{c}</MenuItem>
-                        ))}
-                      </Select>
+                      />
+                    </TableCell>
+                    <TableCell padding="none">
+                      <Tooltip title="Skip this row">
+                        <IconButton size="small" onClick={() => onSkip(row.id)} color="default">
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 );

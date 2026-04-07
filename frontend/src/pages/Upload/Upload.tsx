@@ -3,7 +3,7 @@ import { useUpload } from "@/hooks/useUpload";
 import { ColumnMapper } from "@/components/upload/ColumnMapper";
 import { StagingReviewTable } from "@/components/upload/StagingReviewTable";
 
-const STEPS = ["Map Columns", "Review & Correct", "Confirmed"];
+const STEPS = ["Pick Columns", "Review & Correct", "Confirmed"];
 
 export function Upload() {
   const upload = useUpload();
@@ -32,6 +32,7 @@ export function Upload() {
         <StagingReviewTable
           rows={upload.stagingRows}
           onCorrect={upload.correctCategory}
+          onSkip={upload.skipRow}
           onConfirm={() => void upload.confirm()}
           onDiscard={() => void upload.discard()}
           loading={upload.loading}

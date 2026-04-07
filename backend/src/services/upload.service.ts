@@ -8,9 +8,11 @@ import { AppError } from "../errors/AppError";
 import { isAIAvailable } from "../ai/AIProviderFactory";
 
 export interface ColumnMapping {
-  date: string;
-  amount: string;
-  description: string;
+  dateIndex: number;
+  debitIndex: number;
+  creditIndex: number; // -1 if not mapped
+  descriptionIndex: number;
+  hasHeader: boolean;
 }
 
 export class UploadService {
@@ -26,17 +28,26 @@ export class UploadService {
     columnMapping: ColumnMapping,
   ): Promise<{ batchId: string; count: number; aiAvailable: boolean }> {
     const csv = fileBuffer.toString("utf-8");
-    const { data, errors } = Papa.parse<Record<string, string>>(csv, { header: true, skipEmptyLines: true });
+    const { data, errors } = Papa.parse<string[]>(csv, { header: false, skipEmptyLines: true });
 
     if (errors.length > 0) {
       throw new AppError("CSV parsing failed: " + errors[0].message, 400, "CSV_PARSE_ERROR");
     }
 
-    const rawTransactions = data.map((row) => ({
-      date: row[columnMapping.date] ?? "",
-      amount: parseFloat(row[columnMapping.amount] ?? "0"),
-      description: row[columnMapping.description] ?? "",
-    }));
+    const rows = columnMapping.hasHeader ? (data as string[][]).slice(1) : (data as string[][]);
+
+    const rawTransactions = rows
+      .map((row) => {
+        const debitRaw = (row[columnMapping.debitIndex] ?? "").replace(/[^0-9.]/g, "");
+        const amount = parseFloat(debitRaw);
+        return {
+          date: row[columnMapping.dateIndex] ?? "",
+          amount,
+          description: row[columnMapping.descriptionIndex] ?? "",
+        };
+      })
+      // Skip rows where debit is empty/zero — these are income/credit rows
+      .filter((t) => t.date && !isNaN(t.amount) && t.amount > 0);
 
     const classified = await this.classificationRepo.classify(rawTransactions);
     const uploadBatchId = uuidv4();
@@ -65,6 +76,15 @@ export class UploadService {
       throw new AppError("Forbidden", 403, "FORBIDDEN");
     }
     return rows;
+  }
+
+  async skipStagingRow(userId: string, batchId: string, rowId: string): Promise<void> {
+    const row = await this.stagingRepo.getById(rowId);
+    if (!row) throw new AppError("Row not found", 404, "NOT_FOUND");
+    if (row.userId !== userId || row.uploadBatchId !== batchId) {
+      throw new AppError("Forbidden", 403, "FORBIDDEN");
+    }
+    await this.stagingRepo.deleteById(rowId);
   }
 
   async correctCategory(userId: string, batchId: string, rowId: string, category: string): Promise<StagingExpense> {

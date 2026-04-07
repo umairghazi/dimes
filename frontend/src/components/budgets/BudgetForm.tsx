@@ -4,12 +4,14 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  MenuItem,
+  FormControl,
+  InputLabel,
   Button,
   Box,
+  MenuItem,
 } from "@mui/material";
 import { useState } from "react";
-import { EXPENSE_CATEGORIES } from "@/types/expense.types";
+import { CategorySelect } from "@/components/shared/CategorySelect";
 import { CreateBudgetDto } from "@/types/budget.types";
 
 interface BudgetFormProps {
@@ -19,7 +21,7 @@ interface BudgetFormProps {
 }
 
 export function BudgetForm({ open, onClose, onSave }: BudgetFormProps) {
-  const [category, setCategory] = useState("Food & Dining");
+  const [category, setCategory] = useState("Groceries");
   const [limitAmount, setLimitAmount] = useState("");
   const [currency, setCurrency] = useState("USD");
 
@@ -35,17 +37,14 @@ export function BudgetForm({ open, onClose, onSave }: BudgetFormProps) {
       <DialogTitle>New Budget</DialogTitle>
       <DialogContent>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-          <TextField
-            select
-            label="Category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            fullWidth
-          >
-            {EXPENSE_CATEGORIES.filter((c) => c !== "Income").map((c) => (
-              <MenuItem key={c} value={c}>{c}</MenuItem>
-            ))}
-          </TextField>
+          <FormControl fullWidth>
+            <InputLabel>Category</InputLabel>
+            <CategorySelect
+              label="Category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value as string)}
+            />
+          </FormControl>
           <TextField
             label="Monthly Limit"
             type="number"
