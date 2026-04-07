@@ -13,6 +13,7 @@ import { useThemeStore } from "@/store/themeStore";
 import { useAuthStore } from "@/store/authStore";
 import { authApi } from "@/api/auth.api";
 import { useNavigate } from "react-router-dom";
+import { CategoryManager } from "@/components/settings/CategoryManager";
 
 export function Settings() {
   const { mode, toggleTheme } = useThemeStore();
@@ -48,6 +49,12 @@ export function Settings() {
               <ListItemText primary="Dark Mode" />
             </ListItem>
           </List>
+        </CardContent>
+      </Card>
+
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <CategoryManager />
         </CardContent>
       </Card>
 

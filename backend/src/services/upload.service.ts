@@ -4,6 +4,7 @@ import { StagingExpense } from "../types/prisma.types";
 import { StagingRepository } from "../repositories/staging.repository";
 import { ExpenseRepository } from "../repositories/expense.repository";
 import { ClassificationRepository } from "../repositories/classification.repository";
+import { CategoryService } from "./category.service";
 import { AppError } from "../errors/AppError";
 import { isAIAvailable } from "../ai/AIProviderFactory";
 
@@ -20,6 +21,7 @@ export class UploadService {
     private readonly stagingRepo: StagingRepository,
     private readonly expenseRepo: ExpenseRepository,
     private readonly classificationRepo: ClassificationRepository,
+    private readonly categoryService: CategoryService,
   ) {}
 
   async processCSV(
@@ -49,7 +51,8 @@ export class UploadService {
       // Skip rows where debit is empty/zero — these are income/credit rows
       .filter((t) => t.date && !isNaN(t.amount) && t.amount > 0);
 
-    const classified = await this.classificationRepo.classify(rawTransactions);
+    const userCategories = await this.categoryService.getCategoryNames(userId);
+    const classified = await this.classificationRepo.classify(rawTransactions, userCategories);
     const uploadBatchId = uuidv4();
 
     await Promise.all(

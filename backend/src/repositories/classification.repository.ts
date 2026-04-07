@@ -9,30 +9,27 @@ export class ClassificationRepository extends BaseHttpRepository {
     super(""); // BaseHttpRepository required — not used for local AI calls
   }
 
-  async classify(transactions: RawTransaction[]): Promise<ClassifiedTransaction[]> {
+  async classify(transactions: RawTransaction[], categories?: string[]): Promise<ClassifiedTransaction[]> {
     const unclassified = (t: RawTransaction): ClassifiedTransaction => ({
       ...t,
-      category: "Other",
+      category: "Miscellaneous",
       isRecurring: false,
       confidence: 0,
     });
 
     if (!isAIAvailable()) {
-      // No AI configured — return unclassified so user can categorize manually
       return transactions.map(unclassified);
     }
 
     const provider = getAIProvider();
-    // Process in batches of 50
     const batchSize = 50;
     const results: ClassifiedTransaction[] = [];
     for (let i = 0; i < transactions.length; i += batchSize) {
       const batch = transactions.slice(i, i + batchSize);
       try {
-        const classified = await provider.classify(batch);
+        const classified = await provider.classify(batch, categories);
         results.push(...classified);
       } catch {
-        // AI failed mid-batch — fall back for this batch
         results.push(...batch.map(unclassified));
       }
     }

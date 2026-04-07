@@ -44,6 +44,16 @@ export interface StagingExpense {
   createdAt: Date;
 }
 
+export interface UserCategory {
+  id: string;
+  userId: string;
+  name: string;
+  group: string | null;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Budget {
   id: string;
   userId: string;

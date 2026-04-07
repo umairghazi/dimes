@@ -1,5 +1,5 @@
 ---
-name: budget-me-app project context
+name: dimes-app project context
 description: Full-stack expense/budget tracker — tech stack, build status, and setup instructions
 type: project
 ---

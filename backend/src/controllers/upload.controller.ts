@@ -5,13 +5,15 @@ import { UploadService } from "../services/upload.service";
 import { StagingRepository } from "../repositories/staging.repository";
 import { ExpenseRepository } from "../repositories/expense.repository";
 import { ClassificationRepository } from "../repositories/classification.repository";
+import { CategoryService } from "../services/category.service";
+import { CategoryRepository } from "../repositories/category.repository";
 import { AppError } from "../errors/AppError";
-import { EXPENSE_CATEGORIES } from "../types/common.types";
 
 const uploadService = new UploadService(
   new StagingRepository(),
   new ExpenseRepository(),
   new ClassificationRepository(),
+  new CategoryService(new CategoryRepository()),
 );
 
 export const upload = multer({
@@ -35,7 +37,7 @@ const mappingSchema = z.object({
 });
 
 const correctSchema = z.object({
-  category: z.enum(EXPENSE_CATEGORIES as [string, ...string[]]),
+  category: z.string().min(1),
 });
 
 function requireUser(req: Request) {

@@ -45,8 +45,8 @@ export class AWSBedrockProvider implements IAIProvider {
     return parsed.content[0]?.text ?? "";
   }
 
-  async classify(transactions: RawTransaction[]): Promise<ClassifiedTransaction[]> {
-    const prompt = buildClassificationPrompt(transactions);
+  async classify(transactions: RawTransaction[], categories?: string[]): Promise<ClassifiedTransaction[]> {
+    const prompt = buildClassificationPrompt(transactions, categories);
     const raw = await this.complete(prompt);
     const results = JSON.parse(raw) as Array<Omit<ClassifiedTransaction, keyof RawTransaction>>;
     return transactions.map((t, i) => ({ ...t, ...results[i] }));

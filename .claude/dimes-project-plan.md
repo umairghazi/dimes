@@ -1,10 +1,10 @@
-# Expense & Budget Tracker — Full Project Plan
+# Dimes App — Full Project Plan
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18, TypeScript, Vite |
+| Frontend | React 19, TypeScript, Vite |
 | Component Library | MUI (Material UI) v6 + Emotion |
 | Custom Styling | SCSS Modules + Emotion `styled()` |
 | State Management | Zustand |
