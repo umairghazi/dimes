@@ -16,7 +16,7 @@ interface BottomNavProps {
   onAddClick: () => void;
 }
 
-const TAB_PATHS = ["/", "/expenses", null, "/budgets", "/analytics"];
+const TAB_PATHS = ["/", "/expenses", null, "/categories", "/analytics"];
 
 export function BottomNav({ onAddClick }: BottomNavProps) {
   const navigate = useNavigate();
@@ -48,12 +48,12 @@ export function BottomNav({ onAddClick }: BottomNavProps) {
       <BottomNavigation value={tabValue === -1 ? false : tabValue} onChange={handleChange}>
         <BottomNavigationAction label="Dashboard" icon={<DashboardIcon />} />
         <BottomNavigationAction label="Expenses" icon={<ReceiptLongIcon />} />
-        {/* Center slot — empty, FAB overlaps it */}
+        {/* Center slot - empty, FAB overlaps it */}
         <BottomNavigationAction
           icon={<span />}
           sx={{ pointerEvents: "none", opacity: 0 }}
         />
-        <BottomNavigationAction label="Budgets" icon={<AccountBalanceWalletIcon />} />
+        <BottomNavigationAction label="Categories" icon={<AccountBalanceWalletIcon />} />
         <BottomNavigationAction label="Analytics" icon={<BarChartIcon />} />
       </BottomNavigation>
 

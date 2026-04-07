@@ -7,8 +7,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  MenuItem,
-  Select,
   Chip,
   Button,
   IconButton,
@@ -40,9 +38,9 @@ export function StagingReviewTable({
   loading,
   aiAvailable = true,
 }: StagingReviewTableProps) {
-  // A row "needs category" if: no AI (confidence=0) and user hasn't manually picked one
+  // A row needs attention only when it has no category at all
   const uncategorizedCount = rows.filter(
-    (r) => r.aiConfidence === 0 && !r.userCorrectedCategory,
+    (r) => !(r.userCorrectedCategory ?? r.aiSuggestedCategory),
   ).length;
 
   const canConfirm = !loading && uncategorizedCount === 0;
@@ -55,9 +53,8 @@ export function StagingReviewTable({
           icon={<InfoOutlinedIcon fontSize="inherit" />}
           sx={{ mb: 2 }}
         >
-          <strong>AI categorization is not configured.</strong> All transactions are marked as
-          "Uncategorized" — please assign a category to each row using the dropdown before
-          importing.
+          Transactions have been marked as <strong>Miscellaneous</strong>. You can reassign
+          categories here or update them later from the Expenses tab.
         </Alert>
       )}
 
@@ -104,9 +101,9 @@ export function StagingReviewTable({
             <TableBody>
               {rows.map((row) => {
                 const effectiveCategory = row.userCorrectedCategory ?? row.aiSuggestedCategory;
-                const needsCategory = row.aiConfidence === 0 && !row.userCorrectedCategory;
+                const needsCategory = !effectiveCategory;
                 const confidence = row.aiConfidence;
-                const isLowConfidence = aiAvailable && confidence < 0.85;
+                const isLowConfidence = aiAvailable && confidence > 0 && confidence < 0.85;
 
                 return (
                   <TableRow

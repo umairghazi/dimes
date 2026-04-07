@@ -1,16 +1,11 @@
 import { UserCategory } from "../types/prisma.types";
 import { CategoryRepository } from "../repositories/category.repository";
-import { DEFAULT_CATEGORIES } from "../types/defaultCategories";
 import { AppError } from "../errors/AppError";
 
 export class CategoryService {
   constructor(private readonly categoryRepo: CategoryRepository) {}
 
   async getCategories(userId: string): Promise<UserCategory[]> {
-    const count = await this.categoryRepo.countByUserId(userId);
-    if (count === 0) {
-      await this.seedDefaults(userId);
-    }
     return this.categoryRepo.findByUserId(userId);
   }
 
@@ -60,20 +55,7 @@ export class CategoryService {
   }
 
   async getCategoryNames(userId: string): Promise<string[]> {
-    const categories = await this.getCategories(userId);
+    const categories = await this.categoryRepo.findByUserId(userId);
     return categories.map((c) => c.name);
-  }
-
-  private async seedDefaults(userId: string): Promise<void> {
-    await Promise.all(
-      DEFAULT_CATEGORIES.map((cat) =>
-        this.categoryRepo.create({
-          userId,
-          name: cat.name,
-          group: cat.group,
-          sortOrder: cat.sortOrder,
-        }),
-      ),
-    );
   }
 }

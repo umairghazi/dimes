@@ -1,7 +1,11 @@
-import { Box, Card, CardContent, Typography, Chip, IconButton, Skeleton } from "@mui/material";
+import { useState } from "react";
+import { Box, Card, CardContent, Typography, IconButton, Skeleton } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import { Expense } from "@/types/expense.types";
 import { expensesApi } from "@/api/expenses.api";
+import { CategoryEditCell } from "./CategoryEditCell";
+import { ExpenseEditDialog } from "./ExpenseEditDialog";
 
 interface ExpenseCardListProps {
   expenses: Expense[];
@@ -10,6 +14,8 @@ interface ExpenseCardListProps {
 }
 
 export function ExpenseCardList({ expenses, loading, onUpdate }: ExpenseCardListProps) {
+  const [editTarget, setEditTarget] = useState<Expense | null>(null);
+
   const handleDelete = async (id: string) => {
     await expensesApi.delete(id);
     onUpdate();
@@ -44,7 +50,11 @@ export function ExpenseCardList({ expenses, loading, onUpdate }: ExpenseCardList
                   {expense.description}
                 </Typography>
                 <Box sx={{ display: "flex", gap: 1, mt: 0.5, alignItems: "center" }}>
-                  <Chip label={expense.category} size="small" variant="outlined" />
+                  <CategoryEditCell
+                    expenseId={expense.id}
+                    category={expense.category}
+                    onUpdated={onUpdate}
+                  />
                   <Typography variant="caption" color="text.secondary">
                     {new Date(expense.date).toLocaleDateString()}
                   </Typography>
@@ -57,6 +67,9 @@ export function ExpenseCardList({ expenses, loading, onUpdate }: ExpenseCardList
                 >
                   ${expense.amount.toFixed(2)}
                 </Typography>
+                <IconButton size="small" onClick={() => setEditTarget(expense)}>
+                  <EditIcon fontSize="small" />
+                </IconButton>
                 <IconButton size="small" color="error" onClick={() => void handleDelete(expense.id)}>
                   <DeleteIcon fontSize="small" />
                 </IconButton>
@@ -65,6 +78,11 @@ export function ExpenseCardList({ expenses, loading, onUpdate }: ExpenseCardList
           </CardContent>
         </Card>
       ))}
+      <ExpenseEditDialog
+        expense={editTarget}
+        onClose={() => setEditTarget(null)}
+        onSaved={() => { setEditTarget(null); onUpdate(); }}
+      />
     </Box>
   );
 }

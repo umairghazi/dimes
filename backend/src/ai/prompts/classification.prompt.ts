@@ -1,8 +1,7 @@
 import { RawTransaction } from "../interfaces/AITypes";
-import { EXPENSE_CATEGORIES } from "../../types/common.types";
 
 export function buildClassificationPrompt(transactions: RawTransaction[], categories?: string[]): string {
-  const categoryList = categories ?? EXPENSE_CATEGORIES;
+  const categoryList = categories ?? ["Miscellaneous"];
   return `You are a financial transaction classifier. Classify each transaction into exactly one of the following categories:
 
 ${categoryList.map((c) => `- ${c}`).join("\n")}

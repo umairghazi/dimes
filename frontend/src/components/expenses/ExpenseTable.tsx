@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -17,6 +18,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { Expense } from "@/types/expense.types";
 import { expensesApi } from "@/api/expenses.api";
+import { CategoryEditCell } from "./CategoryEditCell";
+import { ExpenseEditDialog } from "./ExpenseEditDialog";
 
 interface ExpenseTableProps {
   expenses: Expense[];
@@ -35,6 +38,8 @@ export function ExpenseTable({
   onPageChange,
   onUpdate,
 }: ExpenseTableProps) {
+  const [editTarget, setEditTarget] = useState<Expense | null>(null);
+
   const handleDelete = async (id: string) => {
     await expensesApi.delete(id);
     onUpdate();
@@ -86,7 +91,11 @@ export function ExpenseTable({
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Chip label={expense.category} size="small" variant="outlined" />
+                      <CategoryEditCell
+                        expenseId={expense.id}
+                        category={expense.category}
+                        onUpdated={onUpdate}
+                      />
                     </TableCell>
                     <TableCell>
                       <Typography
@@ -105,7 +114,7 @@ export function ExpenseTable({
                       />
                     </TableCell>
                     <TableCell align="right">
-                      <IconButton size="small" sx={{ mr: 0.5 }}>
+                      <IconButton size="small" sx={{ mr: 0.5 }} onClick={() => setEditTarget(expense)}>
                         <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton size="small" color="error" onClick={() => void handleDelete(expense.id)}>
@@ -124,6 +133,11 @@ export function ExpenseTable({
         rowsPerPage={20}
         onPageChange={(_, newPage) => onPageChange(newPage + 1)}
         rowsPerPageOptions={[20]}
+      />
+      <ExpenseEditDialog
+        expense={editTarget}
+        onClose={() => setEditTarget(null)}
+        onSaved={() => { setEditTarget(null); onUpdate(); }}
       />
     </Paper>
   );

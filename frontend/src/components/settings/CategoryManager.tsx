@@ -79,7 +79,7 @@ interface AddDialogProps {
   open: boolean;
   defaultGroup?: string;
   onClose: () => void;
-  onAdd: (name: string, group?: string) => Promise<void>;
+  onAdd: (name: string, group?: string) => Promise<unknown>;
 }
 
 function AddDialog({ open, defaultGroup, onClose, onAdd }: AddDialogProps) {

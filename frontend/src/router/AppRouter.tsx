@@ -4,9 +4,9 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Dashboard } from "@/pages/Dashboard/Dashboard";
 import { Expenses } from "@/pages/Expenses/Expenses";
 import { Upload } from "@/pages/Upload/Upload";
-import { Budgets } from "@/pages/Budgets/Budgets";
 import { Analytics } from "@/pages/Analytics/Analytics";
 import { Settings } from "@/pages/Settings/Settings";
+import { Categories } from "@/pages/Categories/Categories";
 import { Login } from "@/pages/Auth/Login";
 import { Register } from "@/pages/Auth/Register";
 
@@ -26,8 +26,9 @@ export function AppRouter() {
           <Route index element={<Dashboard />} />
           <Route path="expenses" element={<Expenses />} />
           <Route path="upload" element={<Upload />} />
-          <Route path="budgets" element={<Budgets />} />
+          <Route path="budgets" element={<Navigate to="/categories" replace />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="categories" element={<Categories />} />
           <Route path="settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

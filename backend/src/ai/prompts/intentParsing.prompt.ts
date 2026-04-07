@@ -1,13 +1,12 @@
 import { UserContext } from "../interfaces/AITypes";
-import { EXPENSE_CATEGORIES } from "../../types/common.types";
 
 export function buildIntentParsingPrompt(query: string, context: UserContext): string {
   const today = new Date().toISOString().split("T")[0];
+  const categories = context.availableCategories ?? context.recentCategories ?? ["Miscellaneous"];
   return `You are a financial query parser. Parse the user's natural language query into a structured JSON object.
 
           Today's date: ${today}
-          User's recent categories: ${context.recentCategories?.join(", ") ?? "none"}
-          Available categories: ${EXPENSE_CATEGORIES.join(", ")}
+          Available categories: ${categories.join(", ")}
 
           Return a JSON object with:
           - metric: "total_spend" | "average_spend" | "count" | "list"
@@ -24,10 +23,11 @@ export function buildIntentParsingPrompt(query: string, context: UserContext): s
 
 export function buildNLTransactionPrompt(input: string, context: UserContext): string {
   const today = new Date().toISOString().split("T")[0];
+  const categories = context.availableCategories ?? context.recentCategories ?? ["Miscellaneous"];
   return `You are a financial transaction parser. Parse the user's natural language input into a structured transaction.
 
           Today's date: ${today}
-          Available categories: ${EXPENSE_CATEGORIES.join(", ")}
+          Available categories: ${categories.join(", ")}
 
           Return a JSON object with:
           - amount: number (positive for expenses, negative for income)

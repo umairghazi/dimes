@@ -1,7 +1,9 @@
 import { NLQueryRepository } from "../repositories/nlQuery.repository";
 import { AnalyticsService } from "./analytics.service";
+import { CategoryService } from "./category.service";
 import { ExpenseRepository } from "../repositories/expense.repository";
 import { BudgetRepository } from "../repositories/budget.repository";
+import { CategoryRepository } from "../repositories/category.repository";
 import { UserContext } from "../ai/interfaces/AITypes";
 import { ParsedNLTransaction } from "../ai/interfaces/AITypes";
 
@@ -13,12 +15,16 @@ export interface QueryResult {
 
 export class NLQueryService {
   private readonly analyticsService: AnalyticsService;
+  private readonly categoryService: CategoryService;
 
   constructor(private readonly nlQueryRepo: NLQueryRepository) {
     this.analyticsService = new AnalyticsService(new ExpenseRepository(), new BudgetRepository());
+    this.categoryService = new CategoryService(new CategoryRepository());
   }
 
   async query(input: string, context: UserContext, mode: "ask" | "add"): Promise<QueryResult> {
+    const availableCategories = await this.categoryService.getCategoryNames(context.userId);
+    context = { ...context, availableCategories };
     if (mode === "add") {
       const parsed = await this.nlQueryRepo.parseNLTransaction(input, context);
       return { answer: "Transaction parsed", parsedTransaction: parsed };

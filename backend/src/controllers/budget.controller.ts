@@ -3,12 +3,10 @@ import { z } from "zod";
 import { BudgetService } from "../services/budget.service";
 import { BudgetRepository } from "../repositories/budget.repository";
 import { AppError } from "../errors/AppError";
-import { EXPENSE_CATEGORIES } from "../types/common.types";
-
 const budgetService = new BudgetService(new BudgetRepository());
 
 const createSchema = z.object({
-  category: z.enum(EXPENSE_CATEGORIES as [string, ...string[]]),
+  category: z.string().min(1),
   monthYear: z.string().regex(/^\d{4}-\d{2}$/, "monthYear must be YYYY-MM"),
   limitAmount: z.number().positive(),
   currency: z.string().default("USD"),

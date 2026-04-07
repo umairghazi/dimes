@@ -8,9 +8,12 @@ import {
   ListItemText,
   Switch,
   Button,
+  ToggleButtonGroup,
+  ToggleButton,
 } from "@mui/material";
 import { useThemeStore } from "@/store/themeStore";
 import { useAuthStore } from "@/store/authStore";
+import { usePreferencesStore, CURRENCIES } from "@/store/preferencesStore";
 import { authApi } from "@/api/auth.api";
 import { useNavigate } from "react-router-dom";
 import { CategoryManager } from "@/components/settings/CategoryManager";
@@ -18,6 +21,7 @@ import { CategoryManager } from "@/components/settings/CategoryManager";
 export function Settings() {
   const { mode, toggleTheme } = useThemeStore();
   const { user, clearAuth } = useAuthStore();
+  const { currency, setCurrency } = usePreferencesStore();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -49,6 +53,22 @@ export function Settings() {
               <ListItemText primary="Dark Mode" />
             </ListItem>
           </List>
+        </CardContent>
+      </Card>
+
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <Typography variant="h6" fontWeight={600} mb={2}>Currency</Typography>
+          <ToggleButtonGroup
+            value={currency}
+            exclusive
+            onChange={(_, val) => { if (val) setCurrency(val); }}
+            size="small"
+          >
+            {CURRENCIES.map((c) => (
+              <ToggleButton key={c} value={c} sx={{ px: 2 }}>{c}</ToggleButton>
+            ))}
+          </ToggleButtonGroup>
         </CardContent>
       </Card>
 

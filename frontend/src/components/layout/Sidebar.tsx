@@ -25,7 +25,7 @@ const NAV_ITEMS = [
   { label: "Dashboard", icon: <DashboardIcon fontSize="small" />, path: "/" },
   { label: "Expenses", icon: <ReceiptLongIcon fontSize="small" />, path: "/expenses" },
   { label: "Upload", icon: <UploadFileIcon fontSize="small" />, path: "/upload" },
-  { label: "Budgets", icon: <AccountBalanceWalletIcon fontSize="small" />, path: "/budgets" },
+  { label: "Categories", icon: <AccountBalanceWalletIcon fontSize="small" />, path: "/categories" },
   { label: "Analytics", icon: <BarChartIcon fontSize="small" />, path: "/analytics" },
 ];
 

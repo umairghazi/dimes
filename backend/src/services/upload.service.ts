@@ -7,6 +7,7 @@ import { ClassificationRepository } from "../repositories/classification.reposit
 import { CategoryService } from "./category.service";
 import { AppError } from "../errors/AppError";
 import { isAIAvailable } from "../ai/AIProviderFactory";
+import { ClassifiedTransaction } from "../ai/interfaces/AITypes";
 
 export interface ColumnMapping {
   dateIndex: number;
@@ -52,8 +53,23 @@ export class UploadService {
       .filter((t) => t.date && !isNaN(t.amount) && t.amount > 0);
 
     const userCategories = await this.categoryService.getCategoryNames(userId);
-    const classified = await this.classificationRepo.classify(rawTransactions, userCategories);
     const uploadBatchId = uuidv4();
+
+    // No categories yet — skip AI and mark everything Miscellaneous
+    let classified: ClassifiedTransaction[];
+    let aiUsed: boolean;
+    if (userCategories.length === 0) {
+      classified = rawTransactions.map((t) => ({
+        ...t,
+        category: "Miscellaneous",
+        isRecurring: false,
+        confidence: 0,
+      }));
+      aiUsed = false;
+    } else {
+      classified = await this.classificationRepo.classify(rawTransactions, userCategories);
+      aiUsed = isAIAvailable();
+    }
 
     await Promise.all(
       classified.map((t) =>
@@ -70,7 +86,7 @@ export class UploadService {
       ),
     );
 
-    return { batchId: uploadBatchId, count: classified.length, aiAvailable: isAIAvailable() };
+    return { batchId: uploadBatchId, count: classified.length, aiAvailable: aiUsed };
   }
 
   async getStagingRows(userId: string, batchId: string): Promise<StagingExpense[]> {

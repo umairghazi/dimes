@@ -19,6 +19,7 @@ import {
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import { CategorySelect } from "@/components/shared/CategorySelect";
 import { expensesApi } from "@/api/expenses.api";
+import { usePreferencesStore } from "@/store/preferencesStore";
 import { queryApi } from "@/api/query.api";
 import { tokens } from "@/styles/theme/tokens";
 
@@ -34,6 +35,7 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+  const { currency } = usePreferencesStore();
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(today());
@@ -82,7 +84,7 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
         description,
         date,
         category: category as import("@/types/expense.types").ExpenseCategory,
-        currency: "USD",
+        currency,
         source: "manual",
         isRecurring: false,
         tags: [],

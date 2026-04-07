@@ -51,7 +51,7 @@ export function QueryResultCard({ result, mode, onDismiss }: QueryResultCardProp
                 ["Amount", `$${result.parsedTransaction.amount.toFixed(2)}`],
                 ["Category", result.parsedTransaction.category],
                 ["Date", new Date(result.parsedTransaction.date).toLocaleDateString()],
-                ["Merchant", result.parsedTransaction.merchantName ?? "—"],
+                ["Merchant", result.parsedTransaction.merchantName ?? "-"],
               ].map(([label, value]) => (
                 <Box key={label}>
                   <Typography variant="caption" color="text.secondary">{label}</Typography>

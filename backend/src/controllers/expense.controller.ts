@@ -3,8 +3,6 @@ import { z } from "zod";
 import { ExpenseService } from "../services/expense.service";
 import { ExpenseRepository } from "../repositories/expense.repository";
 import { AppError } from "../errors/AppError";
-import { EXPENSE_CATEGORIES } from "../types/common.types";
-
 const expenseService = new ExpenseService(new ExpenseRepository());
 
 const createSchema = z.object({
@@ -12,7 +10,7 @@ const createSchema = z.object({
   description: z.string().min(1),
   amount: z.number().positive(),
   currency: z.string().default("USD"),
-  category: z.enum(EXPENSE_CATEGORIES as [string, ...string[]]),
+  category: z.string().min(1),
   subCategory: z.string().optional(),
   merchantName: z.string().optional(),
   source: z.enum(["manual", "csv-upload"]).default("manual"),

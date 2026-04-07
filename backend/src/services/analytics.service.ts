@@ -2,7 +2,6 @@ import { ExpenseRepository } from "../repositories/expense.repository";
 import { BudgetRepository } from "../repositories/budget.repository";
 import { getAIProvider } from "../ai/AIProviderFactory";
 import { AnalyticsData } from "../ai/interfaces/AITypes";
-import { ExpenseCategory } from "../types/common.types";
 
 export interface MonthlySummary {
   period: string;
@@ -117,7 +116,7 @@ export class AnalyticsService {
       period: summary.period,
       totalSpend: summary.totalSpend,
       byCategory: summary.byCategory.map((c) => ({
-        category: c.category as ExpenseCategory,
+        category: c.category,
         amount: c.amount,
         count: c.count,
       })),
