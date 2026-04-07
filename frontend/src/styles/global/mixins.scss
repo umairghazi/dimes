@@ -1,0 +1,59 @@
+// Breakpoint mixins
+@mixin mobile {
+  @media (max-width: 599px) { @content; }
+}
+
+@mixin mobile-up {
+  @media (min-width: 600px) { @content; }
+}
+
+@mixin tablet {
+  @media (min-width: 600px) and (max-width: 899px) { @content; }
+}
+
+@mixin tablet-up {
+  @media (min-width: 900px) { @content; }
+}
+
+@mixin desktop {
+  @media (min-width: 1200px) { @content; }
+}
+
+// Flexbox helpers
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+// Grid helpers
+@mixin grid($cols, $gap: $spacing-md) {
+  display: grid;
+  grid-template-columns: repeat($cols, 1fr);
+  gap: $gap;
+}
+
+// Truncate text
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Scrollbar hide
+@mixin hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}

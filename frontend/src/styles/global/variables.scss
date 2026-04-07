@@ -1,0 +1,64 @@
+// Design tokens — mirror of tokens.ts. Update both when changing a token.
+
+// Accent
+$accent: #7c3aed;
+$accent-dark: #6d28d9;
+$accent-light: #8b5cf6;
+$accent-bg: rgba(124, 58, 237, 0.08);
+$accent-border: rgba(124, 58, 237, 0.3);
+
+// Semantic
+$success: #16a34a;
+$warning: #d97706;
+$error: #dc2626;
+$info: #0284c7;
+
+// Budget progress
+$budget-green: #16a34a;
+$budget-amber: #d97706;
+$budget-red: #dc2626;
+
+// Light mode surfaces
+$bg-light: #f9f8fc;
+$surface-light: #ffffff;
+$border-light: #e5e4e7;
+$text-primary-light: #08060d;
+$text-secondary-light: #6b6375;
+
+// Dark mode surfaces
+$bg-dark: #0c0a10;
+$surface-dark: #17141f;
+$border-dark: #2a2533;
+$text-primary-dark: #f5f3ff;
+$text-secondary-dark: #8b84a0;
+
+// Border radii
+$radius-sm: 6px;
+$radius-md: 10px;
+$radius-lg: 14px;
+$radius-xl: 20px;
+$radius-pill: 999px;
+
+// Spacing scale
+$spacing-1: 4px;
+$spacing-2: 8px;
+$spacing-3: 12px;
+$spacing-4: 16px;
+$spacing-5: 20px;
+$spacing-6: 24px;
+$spacing-8: 32px;
+$spacing-10: 40px;
+$spacing-12: 48px;
+
+// Layout
+$sidebar-width: 240px;
+$sidebar-rail-width: 68px;
+$bottom-nav-height: 60px;
+$top-bar-height: 60px;
+
+// Breakpoints (MUI defaults)
+$bp-xs: 0px;
+$bp-sm: 600px;
+$bp-md: 900px;
+$bp-lg: 1200px;
+$bp-xl: 1536px;

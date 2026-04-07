@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGO_URI")
+}
+
+model User {
+  id                  String    @id @default(auto()) @map("_id") @db.ObjectId
+  email               String    @unique
+  passwordHash        String
+  dataEncryptionKeyId String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  preferences         Json
+  expenses            Expense[]
+  budgets             Budget[]
+}
+
+model Expense {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String   @db.ObjectId
+  user                User     @relation(fields: [userId], references: [id])
+  date                DateTime
+  description         String
+  amount              Float
+  currency            String
+  category            String
+  subCategory         String?
+  merchantName        String?
+  source              String   // "manual" | "csv-upload"
+  isRecurring         Boolean  @default(false)
+  tags                String[]
+  originalDescription String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model StagingExpense {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId                String   @db.ObjectId
+  uploadBatchId         String
+  date                  DateTime
+  description           String
+  amount                Float
+  aiSuggestedCategory   String
+  aiConfidence          Float
+  userCorrectedCategory String?
+  status                String   @default("pending") // pending | confirmed | rejected
+  createdAt             DateTime @default(now())
+}
+
+model Budget {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String   @db.ObjectId
+  user           User     @relation(fields: [userId], references: [id])
+  category       String
+  monthYear      String   // e.g. "2025-03"
+  limitAmount    Float
+  currency       String
+  alertThreshold Float    @default(0.8)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
