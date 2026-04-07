@@ -19,7 +19,7 @@ export class ExpenseRepository extends BaseMongoRepository<Expense> {
     super(prisma.expense as any);
   }
 
-  // Always scoped by userId — enforced at repo layer, not just service layer
+  // Always scoped by userId - enforced at repo layer, not just service layer
   async findByUserId(
     userId: string,
     skip?: number,

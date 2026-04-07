@@ -22,7 +22,7 @@ function buildTree(categories: UserCategory[]): CategoryGroup[] {
   }
   groups.sort((a, b) => (a.group ?? "").localeCompare(b.group ?? ""));
 
-  // Standalones — each is its own "group" entry with group=null
+  // Standalones - each is its own "group" entry with group=null
   const standalones = groupMap.get(null) ?? [];
   for (const item of standalones) {
     groups.push({ group: null, items: [item] });

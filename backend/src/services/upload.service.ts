@@ -48,7 +48,7 @@ export class UploadService {
           description: row[columnMapping.descriptionIndex] ?? "",
         };
       })
-      // Skip rows where debit is empty/zero — these are income/credit rows
+      // Skip rows where debit is empty/zero - these are income/credit rows
       .filter((t) => t.date && !isNaN(t.amount) && t.amount > 0);
 
     const userCategories = await this.categoryService.getCategoryNames(userId);

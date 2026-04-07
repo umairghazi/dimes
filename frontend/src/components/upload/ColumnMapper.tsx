@@ -38,7 +38,7 @@ const ROLE_COLORS: Partial<Record<ColumnRole, "primary" | "success" | "error" | 
   description: "warning",
 };
 
-// Required roles — credit is optional
+// Required roles - credit is optional
 const REQUIRED_ROLES: ColumnRole[] = ["date", "debit", "description"];
 
 interface ColumnMapperProps {

@@ -1,4 +1,4 @@
-# Dimes App — Full Project Plan
+# Dimes App - Full Project Plan
 
 ## Tech Stack
 
@@ -21,15 +21,15 @@
 
 ## Additional Features (Beyond Requirements)
 
-- Recurring transaction detection — auto-flag subscriptions and bills
-- Anomaly alerts — notify when spending spikes unusually in a category
-- Net worth snapshot — track savings vs. spending over time
-- Export reports — PDF/CSV of monthly summaries
-- Split transactions — one transaction mapped to multiple categories
-- Onboarding CSV column mapper — user maps their bank's CSV columns (date, amount, description) on first upload since every bank exports differently
-- Goals — save $X by Y date, tracked alongside budgets
-- One-off daily transaction entry — FAB quick-add + natural language entry (see Feature Flows)
-- PWA support — add to homescreen on mobile for app-like experience
+- Recurring transaction detection - auto-flag subscriptions and bills
+- Anomaly alerts - notify when spending spikes unusually in a category
+- Net worth snapshot - track savings vs. spending over time
+- Export reports - PDF/CSV of monthly summaries
+- Split transactions - one transaction mapped to multiple categories
+- Onboarding CSV column mapper - user maps their bank's CSV columns (date, amount, description) on first upload since every bank exports differently
+- Goals - save $X by Y date, tracked alongside budgets
+- One-off daily transaction entry - FAB quick-add + natural language entry (see Feature Flows)
+- PWA support - add to homescreen on mobile for app-like experience
 
 ---
 
@@ -62,7 +62,7 @@ API Gateway (Node/Express)
 
 ### Design
 
-All AI functionality routes through a single interface. The concrete provider is resolved at startup from environment variables — no code changes needed to switch models or providers, including local ones.
+All AI functionality routes through a single interface. The concrete provider is resolved at startup from environment variables - no code changes needed to switch models or providers, including local ones.
 
 ```
 IAIProvider (interface)
@@ -84,9 +84,9 @@ IAIProvider (interface)
                                 or any OpenAI-compatible local server
 ```
 
-`LocalProvider` is a thin extension of `OpenAIProvider` — Ollama and LM Studio both expose OpenAI-compatible APIs, so only `baseURL` and `apiKey` are swapped from env. Zero extra logic needed.
+`LocalProvider` is a thin extension of `OpenAIProvider` - Ollama and LM Studio both expose OpenAI-compatible APIs, so only `baseURL` and `apiKey` are swapped from env. Zero extra logic needed.
 
-All prompt templates live in `src/ai/prompts/` — completely decoupled from provider implementations. The same prompts run regardless of which provider is active. Each provider normalizes its response back to the shared TypeScript types defined in `AITypes.ts`.
+All prompt templates live in `src/ai/prompts/` - completely decoupled from provider implementations. The same prompts run regardless of which provider is active. Each provider normalizes its response back to the shared TypeScript types defined in `AITypes.ts`.
 
 ### Env-Driven Provider Selection
 
@@ -141,7 +141,7 @@ src/
 
 ---
 
-## Backend — Repository Pattern Architecture
+## Backend - Repository Pattern Architecture
 
 ### Layer Responsibilities
 
@@ -154,7 +154,7 @@ repositories/   → data fetching layer (MongoDB via Prisma, or external HTTP AP
 
 ### Prisma as ODM
 
-Prisma replaces Mongoose. All models defined once in `schema.prisma` — no duplicate schema + TypeScript interface files. `PrismaClient` is fully typed and auto-generated from the schema.
+Prisma replaces Mongoose. All models defined once in `schema.prisma` - no duplicate schema + TypeScript interface files. `PrismaClient` is fully typed and auto-generated from the schema.
 
 `BaseMongoRepository<T>` wraps the relevant Prisma delegate:
 
@@ -177,7 +177,7 @@ count       → prisma.expense.count({ where })
 #### `BaseMongoRepository<T>` (abstract)
 - Generic typed to the Prisma model delegate
 - Constructor receives the Prisma delegate via `super(prisma.expense)`
-- Throws normalized `RepositoryError` — services never handle raw Prisma errors
+- Throws normalized `RepositoryError` - services never handle raw Prisma errors
 
 #### `BaseHttpRepository` (abstract)
 - Wraps an axios instance
@@ -204,13 +204,13 @@ BaseHttpRepository
 ```
 
 ### Key Design Notes
-- `ExpenseRepository.getAll` always scopes by `userId` — enforced at the repo layer, not just the service layer, preventing cross-user data leaks regardless of how services call it
-- Services receive repositories via constructor injection — trivially swappable in tests
+- `ExpenseRepository.getAll` always scopes by `userId` - enforced at the repo layer, not just the service layer, preventing cross-user data leaks regardless of how services call it
+- Services receive repositories via constructor injection - trivially swappable in tests
 - Mock `BaseMongoRepository` once and all concrete repos inherit the mock behavior
 
 ---
 
-## Backend — Project Structure
+## Backend - Project Structure
 
 ```
 backend/
@@ -358,7 +358,7 @@ model Budget {
 }
 ```
 
-### ExpenseCategory (shared enum — FE and BE)
+### ExpenseCategory (shared enum - FE and BE)
 ```ts
 "Food & Dining" | "Transport" | "Shopping" | "Entertainment" |
 "Health" | "Utilities" | "Travel" | "Income" |
@@ -418,9 +418,9 @@ model Budget {
 
 ### 2. One-Off Daily Transaction Entry
 
-Two complementary entry paths — both hit `POST /expenses` with `source: "manual"`.
+Two complementary entry paths - both hit `POST /expenses` with `source: "manual"`.
 
-#### Path A — FAB Quick-Add (Primary, lowest friction)
+#### Path A - FAB Quick-Add (Primary, lowest friction)
 
 A persistent floating `+` action button visible on every page at all times.
 
@@ -442,7 +442,7 @@ A persistent floating `+` action button visible on every page at all times.
   └─────────────────────────┘
 ```
 
-#### Path B — Natural Language Entry (Power Users)
+#### Path B - Natural Language Entry (Power Users)
 
 The NL bar supports an Ask / Add mode toggle.
 
@@ -481,15 +481,15 @@ Handles fuzzy input naturally: "grabbed coffee $6.50", "netflix 17.99 last frida
 
 - **Auth:** JWT access tokens (15 min expiry) + refresh tokens (7 days), stored in `httpOnly` cookies
 - **Passwords:** bcrypt, salt rounds 12
-- **Field-level encryption:** MongoDB CSFLE — `amount`, `description`, `merchantName`, `originalDescription` encrypted per user using individual Data Encryption Keys (DEK) stored in a key vault collection
+- **Field-level encryption:** MongoDB CSFLE - `amount`, `description`, `merchantName`, `originalDescription` encrypted per user using individual Data Encryption Keys (DEK) stored in a key vault collection
 - **Transport:** HTTPS only, CORS restricted to frontend origin
-- **Input validation:** Zod schemas at controller layer — nothing raw reaches services
+- **Input validation:** Zod schemas at controller layer - nothing raw reaches services
 - **Rate limiting:** `express-rate-limit` on `/upload` and `/query/nl` endpoints
-- **User scoping:** `ExpenseRepository` base query always includes `userId` filter — enforced at the repo layer not just the service layer
+- **User scoping:** `ExpenseRepository` base query always includes `userId` filter - enforced at the repo layer not just the service layer
 
 ---
 
-## Frontend — Responsive & Mobile-First Design
+## Frontend - Responsive & Mobile-First Design
 
 ### Breakpoints (MUI defaults)
 
@@ -505,7 +505,7 @@ xl:  1536px   → large desktop
 
 **Mobile (xs/sm):**
 - Bottom navigation bar with 5 items: Dashboard, Expenses, Add, Budgets, Analytics
-- The Add item in the center of the bottom nav IS the FAB — always prominent
+- The Add item in the center of the bottom nav IS the FAB - always prominent
 - Sidebar hidden, accessible via hamburger as a full-height drawer
 - Expense tables collapse to card-list view
 - Charts stack vertically at full width
@@ -534,7 +534,7 @@ xl:  1536px   → large desktop
 
 ---
 
-## Frontend — Project Structure
+## Frontend - Project Structure
 
 ```
 frontend/
@@ -666,12 +666,12 @@ frontend/
 
 ### Emotion `styled()`
 - MUI component extensions that need dynamic theme-aware props
-- `BudgetProgressBar` — fill color driven by `percentUsed` prop via `theme.palette`
-- `QuickAddSheet` — layout shifts between mobile and desktop via theme breakpoints inline
+- `BudgetProgressBar` - fill color driven by `percentUsed` prop via `theme.palette`
+- `QuickAddSheet` - layout shifts between mobile and desktop via theme breakpoints inline
 
 ### Token Sync
 - `tokens.ts` is the single source of truth
-- `variables.scss` mirrors these values manually — update both together when changing a token
+- `variables.scss` mirrors these values manually - update both together when changing a token
 
 ---
 
@@ -720,21 +720,21 @@ VITE_API_BASE_URL=http://localhost:3000
 
 ## Build Phases
 
-### Phase 1 — Foundation
+### Phase 1 - Foundation
 - Monorepo setup, tsconfigs, package.jsons
 - Prisma schema, MongoDB connection, CSFLE setup
 - Base repositories (`BaseMongoRepository`, `BaseHttpRepository`)
 - Auth flow: register, login, JWT middleware, refresh tokens
-- Frontend: Vite + React + TS scaffold, MUI theme (light + dark), responsive AppShell — sidebar on desktop, bottom nav on mobile from day one, routing
+- Frontend: Vite + React + TS scaffold, MUI theme (light + dark), responsive AppShell - sidebar on desktop, bottom nav on mobile from day one, routing
 
-### Phase 2 — AI Provider Factory
+### Phase 2 - AI Provider Factory
 - `IAIProvider` interface and shared `AITypes.ts`
 - All provider implementations (Anthropic, OpenAI, Google, Bedrock, Local)
 - Shared prompt templates in `prompts/`
 - `AIProviderFactory` env-driven resolution
 - Smoke test: hit classification endpoint with each provider
 
-### Phase 3 — Upload & Classification
+### Phase 3 - Upload & Classification
 - CSV parser on backend (multer + papaparse)
 - Column mapper UI (step 1)
 - `ClassificationRepository` → AIProviderFactory
@@ -743,43 +743,43 @@ VITE_API_BASE_URL=http://localhost:3000
 - Staging review table with inline category correction (step 2)
 - Confirm batch → expenses (step 3)
 
-### Phase 4 — One-Off Transaction Entry
+### Phase 4 - One-Off Transaction Entry
 - `POST /expenses` endpoint for manual entries
-- `QuickAddFAB` + `QuickAddSheet` — bottom sheet on mobile, dialog on desktop
+- `QuickAddFAB` + `QuickAddSheet` - bottom sheet on mobile, dialog on desktop
 - Real-time AI category suggestion as user types description (debounced 400ms)
-- NL Add mode on the query bar — parse natural language → pre-fill confirm card
+- NL Add mode on the query bar - parse natural language → pre-fill confirm card
 
-### Phase 5 — Expenses & Dashboard
+### Phase 5 - Expenses & Dashboard
 - `ExpenseRepository` filter + aggregation methods
 - Expense service, controller, routes
 - `ExpenseTable` (desktop) + `ExpenseCardList` (mobile)
 - `FilterBar` (desktop) + `FilterDrawer` bottom sheet (mobile)
 - Dashboard: monthly summary cards, spending donut, category bar chart
 
-### Phase 6 — Budgets
+### Phase 6 - Budgets
 - `BudgetRepository`, budget service, CRUD routes
 - Budget management page
 - Progress bars with color thresholds
 - In-app alerts when threshold crossed
 
-### Phase 7 — Analytics
+### Phase 7 - Analytics
 - Multi-month trend charts
 - Category drill-down views
 - Recurring transaction detection
 - Advanced filters (date range, category, merchant, amount range)
 
-### Phase 8 — Natural Language Queries
+### Phase 8 - Natural Language Queries
 - `NLQueryRepository` → AIProviderFactory intent extraction
 - `nlQuery.service` → structured query → analytics service
 - Ask / Add toggle on the NL query bar
 - Query result cards with supporting mini charts
 
-### Phase 9 — Polish & Extra Features
+### Phase 9 - Polish & Extra Features
 - Anomaly detection alerts
 - PDF/CSV export
 - Split transactions
 - Goals tracking
-- PWA config — manifest, service worker, add-to-homescreen
+- PWA config - manifest, service worker, add-to-homescreen
 - Performance: Prisma query indexes, React Query caching, virtualized tables for large datasets
 
 ---
@@ -788,16 +788,16 @@ VITE_API_BASE_URL=http://localhost:3000
 
 Build in this sequence to avoid circular dependencies and keep each step independently testable:
 
-1. **Scaffold structure** — monorepo folders, tsconfigs, package.jsons, Prisma schema
-2. **Base repositories** — `BaseMongoRepository` and `BaseHttpRepository`
-3. **AI Provider Factory** — `IAIProvider`, all providers, `AIProviderFactory`, prompt templates
-4. **Auth backend** — UserRepository → AuthService → AuthController → routes + middleware
-5. **MUI theme + responsive AppShell** — build sidebar (desktop) and bottom nav (mobile) from the start; all pages built inside this shell
-6. **Upload pipeline** — most complex flow; tackle early while codebase is small
-7. **Quick-add transaction** — FAB + bottom sheet/dialog + NL add mode
-8. **Expenses CRUD** — straightforward once upload and manual entry work
-9. **Dashboard + charts** — requires expense data to exist
-10. **Budgets** — self-contained; build after dashboard
-11. **Analytics** — builds on expense + budget data
-12. **NL Query** — last AI feature; depends on analytics service being solid
-13. **PWA + performance pass** — indexes, caching, virtualization, add-to-homescreen
+1. **Scaffold structure** - monorepo folders, tsconfigs, package.jsons, Prisma schema
+2. **Base repositories** - `BaseMongoRepository` and `BaseHttpRepository`
+3. **AI Provider Factory** - `IAIProvider`, all providers, `AIProviderFactory`, prompt templates
+4. **Auth backend** - UserRepository → AuthService → AuthController → routes + middleware
+5. **MUI theme + responsive AppShell** - build sidebar (desktop) and bottom nav (mobile) from the start; all pages built inside this shell
+6. **Upload pipeline** - most complex flow; tackle early while codebase is small
+7. **Quick-add transaction** - FAB + bottom sheet/dialog + NL add mode
+8. **Expenses CRUD** - straightforward once upload and manual entry work
+9. **Dashboard + charts** - requires expense data to exist
+10. **Budgets** - self-contained; build after dashboard
+11. **Analytics** - builds on expense + budget data
+12. **NL Query** - last AI feature; depends on analytics service being solid
+13. **PWA + performance pass** - indexes, caching, virtualization, add-to-homescreen

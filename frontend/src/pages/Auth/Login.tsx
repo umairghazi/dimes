@@ -56,7 +56,7 @@ export function Login() {
             Take control of your finances.
           </Typography>
           <Typography sx={{ opacity: 0.8, fontSize: "1.0625rem", lineHeight: 1.7 }}>
-            Track expenses, set budgets, and get AI-powered insights — all in one place.
+            Track expenses, set budgets, and get AI-powered insights - all in one place.
           </Typography>
         </Box>
         <Typography variant="caption" sx={{ opacity: 0.5 }}>

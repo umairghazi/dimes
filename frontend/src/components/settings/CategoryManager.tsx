@@ -118,7 +118,7 @@ function AddDialog({ open, defaultGroup, onClose, onAdd }: AddDialogProps) {
             label="Group (optional)"
             value={group}
             onChange={(e) => setGroup(e.target.value)}
-            placeholder="e.g. Home, Car — leave blank for standalone"
+            placeholder="e.g. Home, Car - leave blank for standalone"
             helperText="Leave blank to create a standalone category"
           />
         </Box>

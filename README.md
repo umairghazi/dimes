@@ -156,7 +156,7 @@ createdAt / updatedAt
 
 All routes except `/auth/*` require `Authorization: Bearer <accessToken>`.
 
-#### Auth — `/auth`
+#### Auth - `/auth`
 | Method | Path | Description |
 |---|---|---|
 | POST | `/register` | Create account → returns `{ accessToken }` + sets httpOnly refresh cookie |
@@ -164,7 +164,7 @@ All routes except `/auth/*` require `Authorization: Bearer <accessToken>`.
 | POST | `/refresh` | Uses refresh cookie → issues new access token |
 | POST | `/logout` | Clears refresh cookie |
 
-#### Expenses — `/expenses`
+#### Expenses - `/expenses`
 | Method | Path | Description |
 |---|---|---|
 | GET | `/` | List expenses (paginated, filterable by category / date / source) |
@@ -172,7 +172,7 @@ All routes except `/auth/*` require `Authorization: Bearer <accessToken>`.
 | PUT | `/:id` | Update expense |
 | DELETE | `/:id` | Delete expense |
 
-#### CSV Upload — `/upload`
+#### CSV Upload - `/upload`
 | Method | Path | Description |
 |---|---|---|
 | POST | `/csv` | Upload CSV + column mapping → creates staging batch, returns `{ batchId, count, aiAvailable }` |
@@ -182,7 +182,7 @@ All routes except `/auth/*` require `Authorization: Bearer <accessToken>`.
 | POST | `/:batchId/confirm` | Promote all remaining staging rows to real Expenses |
 | DELETE | `/:batchId` | Discard the entire batch |
 
-#### Budgets — `/budgets`
+#### Budgets - `/budgets`
 | Method | Path | Description |
 |---|---|---|
 | GET | `/` | List budgets |
@@ -190,7 +190,7 @@ All routes except `/auth/*` require `Authorization: Bearer <accessToken>`.
 | PUT | `/:id` | Update budget |
 | DELETE | `/:id` | Delete budget |
 
-#### Analytics — `/analytics`
+#### Analytics - `/analytics`
 | Method | Path | Description |
 |---|---|---|
 | GET | `/summary?monthYear=YYYY-MM` | Monthly totals by category + budget overlap |
@@ -199,12 +199,12 @@ All routes except `/auth/*` require `Authorization: Bearer <accessToken>`.
 | GET | `/recurring` | Recurring transactions |
 | GET | `/insight?monthYear=YYYY-MM` | AI-generated natural language insight |
 
-#### Natural Language Query — `/query`
+#### Natural Language Query - `/query`
 | Method | Path | Description |
 |---|---|---|
-| POST | `/` | `{ input, mode: "ask"\|"add" }` — ask a spending question or parse a transaction |
+| POST | `/` | `{ input, mode: "ask"\|"add" }` - ask a spending question or parse a transaction |
 
-#### Categories — `/categories`
+#### Categories - `/categories`
 | Method | Path | Description |
 |---|---|---|
 | GET | `/` | List user's categories (auto-seeds 37 defaults on first call) |
@@ -217,16 +217,16 @@ All routes except `/auth/*` require `Authorization: Bearer <accessToken>`.
 ### Authentication flow
 
 1. `POST /auth/login` → server returns `{ accessToken }` in JSON body and sets an httpOnly `refreshToken` cookie.
-2. Frontend stores `accessToken` in Zustand (`authStore`). Not persisted to localStorage — cleared on hard refresh by design.
+2. Frontend stores `accessToken` in Zustand (`authStore`). Not persisted to localStorage - cleared on hard refresh by design.
 3. Every API request attaches `Authorization: Bearer <accessToken>` via Axios request interceptor in `api/client.ts`.
 4. On a 401 response, the Axios response interceptor automatically calls `POST /auth/refresh` (the browser sends the httpOnly cookie), receives a new access token, updates the store, and retries the original request transparently.
-5. `ProtectedRoute` reads `authStore` — if no token, redirects to `/login`.
+5. `ProtectedRoute` reads `authStore` - if no token, redirects to `/login`.
 
 ---
 
 ### CSV import flow
 
-#### Step 1 — Column mapping (client-side only)
+#### Step 1 - Column mapping (client-side only)
 
 `ColumnMapper.tsx` parses the file immediately on selection using PapaParse with `header: false`, showing the first 5 rows.
 
@@ -246,31 +246,31 @@ descriptionIndex  number
 hasHeader         "true"|"false"
 ```
 
-#### Step 2 — Processing (backend)
+#### Step 2 - Processing (backend)
 
 `UploadService.processCSV`:
 1. Parses the full CSV with `header: false`
 2. Slices off row 0 if `hasHeader: true`
 3. Extracts date / amount / description by column index
 4. Strips currency symbols: `/[^0-9.]/g` applied to debit cell
-5. **Filters out** rows where debit parsed as NaN or ≤ 0 — these are income/refund rows (empty debit cell in a Debit/Credit two-column CSV will produce NaN and get dropped automatically)
+5. **Filters out** rows where debit parsed as NaN or ≤ 0 - these are income/refund rows (empty debit cell in a Debit/Credit two-column CSV will produce NaN and get dropped automatically)
 6. Fetches user's category list via `CategoryService.getCategoryNames(userId)`
 7. Classifies transactions via `ClassificationRepository.classify(transactions, categoryNames)`
 8. AI runs in batches of 50; if AI unavailable or a batch fails → category = `"Miscellaneous"`, confidence = `0`
 9. Writes `StagingExpense` rows with `status: "pending"`
 10. Returns `{ batchId, count, aiAvailable }`
 
-#### Step 3 — Staging review (frontend)
+#### Step 3 - Staging review (frontend)
 
 `StagingReviewTable.tsx`:
 - Row highlighted **amber** if `aiConfidence < 0.85` (low confidence)
 - Row highlighted **red** if `aiConfidence === 0` (no AI, manual required)
 - Category dropdown powered by `CategorySelect` → user's live category list
-- **Skip** (trash icon) → `DELETE /upload/:batchId/staging/:id` — removes row from batch immediately
+- **Skip** (trash icon) → `DELETE /upload/:batchId/staging/:id` - removes row from batch immediately
 - **Confirm** button blocked until every remaining row has a non-default category
 - **Discard** wipes the entire batch
 
-#### Step 4 — Confirm
+#### Step 4 - Confirm
 
 `POST /upload/:batchId/confirm` → for each staging row creates a real `Expense` using `userCorrectedCategory ?? aiSuggestedCategory`, then deletes all staging rows for the batch.
 
@@ -282,11 +282,11 @@ hasHeader         "true"|"false"
 
 Each user has their own `UserCategory` rows. The `name` is the full value stored on `Expense.category` (e.g. `"Bill - Electricity"`). The `group` field is the visual parent (`"Bill"`) or `null` for standalones.
 
-The category stored on an Expense is just a plain string — no foreign key. This means renaming or deleting a category doesn't invalidate existing expenses (they keep their original string), which is intentional.
+The category stored on an Expense is just a plain string - no foreign key. This means renaming or deleting a category doesn't invalidate existing expenses (they keep their original string), which is intentional.
 
 #### Seeding
 
-On the first `GET /categories` for a user, `CategoryService` checks the count. If zero, it bulk-creates all 37 defaults from `backend/src/types/defaultCategories.ts`. The client just sees a populated list — no special first-run logic needed anywhere.
+On the first `GET /categories` for a user, `CategoryService` checks the count. If zero, it bulk-creates all 37 defaults from `backend/src/types/defaultCategories.ts`. The client just sees a populated list - no special first-run logic needed anywhere.
 
 #### Frontend tree
 
@@ -308,8 +308,8 @@ Because `useCategories` is called at the component level (not a singleton), ever
 `CategoryManager` component:
 - Collapsible groups, showing child count
 - Per-item **rename** (dialog, pre-filled) and **delete**
-- **"Add subcategory"** button on group headers — opens Add dialog with group pre-filled
-- Top-level **"Add category"** — group field blank by default (leave empty = standalone)
+- **"Add subcategory"** button on group headers - opens Add dialog with group pre-filled
+- Top-level **"Add category"** - group field blank by default (leave empty = standalone)
 
 ---
 
@@ -351,7 +351,7 @@ If no AI provider is configured, `isAIAvailable()` returns false. Classification
 
 ### Budget system
 
-Budgets are per-category per-month (`monthYear: "YYYY-MM"`). Spend data is aggregated on the fly — no denormalization.
+Budgets are per-category per-month (`monthYear: "YYYY-MM"`). Spend data is aggregated on the fly - no denormalization.
 
 `BudgetProgress` computed in `AnalyticsService.getBudgetProgress`:
 ```
@@ -368,13 +368,13 @@ percent = (spent / limitAmount) * 100
 `POST /query` with `{ input, mode }`:
 
 **`mode: "ask"`**
-1. `NLQueryService` calls `parseIntent` — AI extracts `{ metric, category, period }` from free text (e.g. "how much did I spend on groceries last month")
+1. `NLQueryService` calls `parseIntent` - AI extracts `{ metric, category, period }` from free text (e.g. "how much did I spend on groceries last month")
 2. Runs `AnalyticsService.getMonthlySummary` for the resolved period
 3. Composes a human-readable answer string based on the metric type
 
 **`mode: "add"`**
-1. Calls `parseNLTransaction` — AI extracts `{ amount, description, category, date }` from natural language (e.g. "spent 40 bucks at Costco yesterday")
-2. Returns `parsedTransaction` to the frontend — QuickAdd uses it to pre-fill the form
+1. Calls `parseNLTransaction` - AI extracts `{ amount, description, category, date }` from natural language (e.g. "spent 40 bucks at Costco yesterday")
+2. Returns `parsedTransaction` to the frontend - QuickAdd uses it to pre-fill the form
 
 ---
 
@@ -473,4 +473,4 @@ Set `AI_PROVIDER` in `backend/.env` to one of:
 | `bedrock` | AWS credentials in env |
 | `local` | `LOCAL_AI_BASE_URL` (Ollama etc.) |
 
-If no provider is configured, CSV import still works — transactions land as uncategorized and you assign categories manually in the staging review.
+If no provider is configured, CSV import still works - transactions land as uncategorized and you assign categories manually in the staging review.

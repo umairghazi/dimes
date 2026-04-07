@@ -1,6 +1,6 @@
 export const tokens = {
   colors: {
-    // Accent — violet
+    // Accent - violet
     accent: "#7c3aed",
     accentDark: "#6d28d9",
     accentLight: "#8b5cf6",

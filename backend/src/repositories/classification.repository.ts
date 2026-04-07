@@ -2,11 +2,11 @@ import { BaseHttpRepository } from "../base/BaseHttpRepository";
 import { getAIProvider, isAIAvailable } from "../ai/AIProviderFactory";
 import { ClassifiedTransaction, RawTransaction } from "../ai/interfaces/AITypes";
 
-// Delegates to AIProviderFactory — the HTTP abstraction is for API-based providers
+// Delegates to AIProviderFactory - the HTTP abstraction is for API-based providers
 // but we unify the interface here so services don't care how classification happens
 export class ClassificationRepository extends BaseHttpRepository {
   constructor() {
-    super(""); // BaseHttpRepository required — not used for local AI calls
+    super(""); // BaseHttpRepository required - not used for local AI calls
   }
 
   async classify(transactions: RawTransaction[], categories?: string[]): Promise<ClassifiedTransaction[]> {
