@@ -30,7 +30,7 @@ export function buildNLTransactionPrompt(input: string, context: UserContext): s
           Available categories: ${categories.join(", ")}
 
           Return a JSON object with:
-          - amount: number (positive for expenses, negative for income)
+          - amount: number (always positive)
           - description: string (clean description)
           - category: one of the available categories
           - date: ISO date string (e.g. "${today}")

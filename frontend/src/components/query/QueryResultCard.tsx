@@ -22,7 +22,7 @@ export function QueryResultCard({ result, mode, onDismiss }: QueryResultCardProp
     if (!result.parsedTransaction) return;
     const t = result.parsedTransaction;
     await expensesApi.create({
-      amount: t.amount,
+      amount: Math.abs(t.amount),
       description: t.description,
       date: t.date,
       category: t.category as import("@/types/expense.types").ExpenseCategory,
@@ -48,7 +48,7 @@ export function QueryResultCard({ result, mode, onDismiss }: QueryResultCardProp
             <Divider sx={{ my: 1.5 }} />
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, mb: 2 }}>
               {[
-                ["Amount", `$${result.parsedTransaction.amount.toFixed(2)}`],
+                ["Amount", `$${Math.abs(result.parsedTransaction.amount).toFixed(2)}`],
                 ["Category", result.parsedTransaction.category],
                 ["Date", new Date(result.parsedTransaction.date).toLocaleDateString()],
                 ["Merchant", result.parsedTransaction.merchantName ?? "-"],
