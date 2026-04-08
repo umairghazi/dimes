@@ -21,7 +21,9 @@ Set hard monthly budget limits in the Anthropic and OpenAI dashboards. Last line
 
 **File:** `backend/src/routes/analytics.routes.ts`
 
-This route calls the AI provider with zero rate limiting. Apply `nlQueryRateLimiter` to it.
+This route calls the AI provider. It no longer auto-fires on page load (user must click "Generate"), which reduces exposure, but it still has no rate limit. Apply `nlQueryRateLimiter` to it.
+
+Also apply to `/analytics/budget-comparison` if history-based classification isn't yet built — this route is cheap (DB only) but good practice.
 
 ### Priority 3 — Rate limit `/auth/refresh` (2 min)
 
@@ -56,16 +58,18 @@ app.use(mongoSanitize())
 
 ### Priority 6 — Per-user daily AI usage tracking (2-3 hours)
 
-No per-user AI call tracking exists anywhere. A single user can trigger unlimited AI API calls.
+No per-user AI call tracking exists. A single user can trigger unlimited AI API calls.
 
 **What to build:**
 
-- Add `AIUsage` model to Prisma schema (userId, date, callType, count)
+- Add `AIUsage` model to Prisma schema (`userId`, `date`, `callType`, `count`)
 - Middleware that checks usage before AI calls and increments after
 - Suggested daily limits per user:
   - NL queries: 20/day
   - CSV uploads: 3/day
   - Insight generation: 5/day
+
+Note: implementing history-based classification (see `FEATURES.md`) will significantly reduce AI calls for CSV uploads, lowering the blast radius of this gap.
 
 ### Priority 7 — Fix JWT in query param for SSE endpoint (1-2 hours)
 
@@ -73,7 +77,7 @@ No per-user AI call tracking exists anywhere. A single user can trigger unlimite
 
 JWT is passed as a query param to work around the EventSource API limitation. This means tokens appear in server access logs and browser history.
 
-**Fix:** Generate a short-lived one-time UUID (valid ~30s), store in memory, exchange for stream access instead of passing the full JWT.
+**Fix:** Generate a short-lived one-time UUID (valid ~30s), store in memory (`jobStore`), exchange for stream access instead of passing the full JWT.
 
 ---
 
@@ -82,3 +86,4 @@ JWT is passed as a query param to work around the EventSource API limitation. Th
 1. **Hard spend caps** in AI provider dashboards (Anthropic console, OpenAI dashboard) — do this first
 2. **Per-user rate limiting** by user ID (not IP) — prevents VPN bypass
 3. **Per-user daily call limits** tracked in DB — hard cutoff per account
+4. *(Planned)* **History-based classification** — reduces AI calls for CSV uploads by ~60–90% over time
