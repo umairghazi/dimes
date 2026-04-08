@@ -1,7 +1,6 @@
 import { Budget } from "../types/prisma.types";
 import { prisma } from "../config/db";
 import { BaseMongoRepository } from "../base/BaseMongoRepository";
-import { RepositoryError } from "../errors/RepositoryError";
 
 export class BudgetRepository extends BaseMongoRepository<Budget> {
   constructor() {
@@ -25,11 +24,7 @@ export class BudgetRepository extends BaseMongoRepository<Budget> {
     return this.findOne({ userId, category, monthYear });
   }
 
-  async updateManyByUser(userId: string): Promise<void> {
-    try {
-      await prisma.budget.findMany({ where: { userId } });
-    } catch (err) {
-      throw new RepositoryError("Failed to updateManyByUser", "updateManyByUser", err);
-    }
+  async findCarryForwardByMonth(userId: string, monthYear: string): Promise<Budget[]> {
+    return this.findMany({ userId, monthYear, carryForward: true });
   }
 }

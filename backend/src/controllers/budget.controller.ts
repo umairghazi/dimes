@@ -11,11 +11,17 @@ const createSchema = z.object({
   limitAmount: z.number().positive(),
   currency: z.string().default("USD"),
   alertThreshold: z.number().min(0).max(1).optional(),
+  carryForward: z.boolean().optional(),
 });
 
 const updateSchema = z.object({
   limitAmount: z.number().positive().optional(),
   alertThreshold: z.number().min(0).max(1).optional(),
+  carryForward: z.boolean().optional(),
+});
+
+const rolloverSchema = z.object({
+  monthYear: z.string().regex(/^\d{4}-\d{2}$/, "monthYear must be YYYY-MM"),
 });
 
 function requireUser(req: Request) {
@@ -60,6 +66,17 @@ export async function deleteBudget(req: Request, res: Response, next: NextFuncti
     const user = requireUser(req);
     await budgetService.deleteBudget(user.id, req.params.id);
     res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function rolloverBudgets(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = requireUser(req);
+    const { monthYear } = rolloverSchema.parse(req.body);
+    const created = await budgetService.rolloverBudgets(user.id, monthYear);
+    res.json({ created: created.length, budgets: created });
   } catch (err) {
     next(err);
   }

@@ -24,6 +24,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
+import RepeatIcon from "@mui/icons-material/Repeat";
 import { useCategories } from "@/hooks/useCategories";
 import { useBudgets } from "@/hooks/useBudgets";
 import { useAnalytics } from "@/hooks/useAnalytics";
@@ -132,13 +133,18 @@ export function Categories() {
     if (existing) {
       await updateBudget(existing.id, { limitAmount: amount });
     } else {
-      await createBudget({ category: categoryName, monthYear, limitAmount: amount, currency });
+      await createBudget({ category: categoryName, monthYear, limitAmount: amount, currency, carryForward: true });
     }
   };
 
   const handleClearBudget = async (categoryName: string) => {
     const existing = budgetMap.get(categoryName);
     if (existing) await deleteBudget(existing.id);
+  };
+
+  const handleToggleCarryForward = async (categoryName: string) => {
+    const existing = budgetMap.get(categoryName);
+    if (existing) await updateBudget(existing.id, { carryForward: !existing.carryForward });
   };
 
   const loading = catLoading || budgetLoading;
@@ -205,6 +211,7 @@ export function Categories() {
                       onDelete={() => setDeleteTarget(cat)}
                       onSetBudget={(amount) => void handleSetBudget(cat.name, amount)}
                       onClearBudget={() => void handleClearBudget(cat.name)}
+                      onToggleCarryForward={() => void handleToggleCarryForward(cat.name)}
                     />
                   </Grid>
                 ))}
@@ -311,9 +318,10 @@ interface CategoryCardProps {
   onDelete: () => void;
   onSetBudget: (amount: number) => void;
   onClearBudget: () => void;
+  onToggleCarryForward: () => void;
 }
 
-function CategoryCard({ cat, budget, spent, onEdit, onDelete, onSetBudget, onClearBudget }: CategoryCardProps) {
+function CategoryCard({ cat, budget, spent, onEdit, onDelete, onSetBudget, onClearBudget, onToggleCarryForward }: CategoryCardProps) {
   const [budgetEditing, setBudgetEditing] = useState(false);
   const [budgetInput, setBudgetInput] = useState("");
   const [budgetSaving, setBudgetSaving] = useState(false);
@@ -405,7 +413,7 @@ function CategoryCard({ cat, budget, spent, onEdit, onDelete, onSetBudget, onCle
                 ${remaining.toFixed(2)} left
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", gap: 1, mt: 1.5 }}>
+            <Box sx={{ display: "flex", gap: 1, mt: 1.5, alignItems: "center" }}>
               <Button size="small" variant="outlined" onClick={startBudgetEdit} sx={{ fontSize: "0.75rem" }}>
                 Edit limit
               </Button>
@@ -418,6 +426,11 @@ function CategoryCard({ cat, budget, spent, onEdit, onDelete, onSetBudget, onCle
               >
                 Remove
               </Button>
+              <Tooltip title={budget.carryForward ? "Repeats monthly — click to stop" : "Click to repeat every month"}>
+                <IconButton size="small" onClick={onToggleCarryForward} sx={{ ml: "auto", color: budget.carryForward ? "primary.main" : "text.disabled" }}>
+                  <RepeatIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             </Box>
           </>
         ) : (

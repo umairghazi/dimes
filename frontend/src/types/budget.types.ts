@@ -6,6 +6,7 @@ export interface Budget {
   limitAmount: number;
   currency: string;
   alertThreshold: number;
+  carryForward: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -16,9 +17,11 @@ export interface CreateBudgetDto {
   limitAmount: number;
   currency?: string;
   alertThreshold?: number;
+  carryForward?: boolean;
 }
 
 export interface UpdateBudgetDto {
   limitAmount?: number;
   alertThreshold?: number;
+  carryForward?: boolean;
 }

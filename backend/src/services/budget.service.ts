@@ -8,11 +8,13 @@ export interface CreateBudgetDto {
   limitAmount: number;
   currency: string;
   alertThreshold?: number;
+  carryForward?: boolean;
 }
 
 export interface UpdateBudgetDto {
   limitAmount?: number;
   alertThreshold?: number;
+  carryForward?: boolean;
 }
 
 export class BudgetService {
@@ -42,7 +44,38 @@ export class BudgetService {
         "BUDGET_EXISTS",
       );
     }
-    return this.budgetRepo.create({ ...dto, userId, alertThreshold: dto.alertThreshold ?? 0.8 }) as Promise<Budget>;
+    return this.budgetRepo.create({
+      ...dto,
+      userId,
+      alertThreshold: dto.alertThreshold ?? 0.8,
+      carryForward: dto.carryForward ?? false,
+    }) as Promise<Budget>;
+  }
+
+  async rolloverBudgets(userId: string, targetMonth: string): Promise<Budget[]> {
+    const [year, month] = targetMonth.split("-").map(Number);
+    const prevDate = new Date(year, month - 2); // month is 1-indexed, so -2 gives previous month
+    const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
+
+    const sources = await this.budgetRepo.findCarryForwardByMonth(userId, prevMonth);
+    if (sources.length === 0) return [];
+
+    const created: Budget[] = [];
+    for (const src of sources) {
+      const existing = await this.budgetRepo.findByUserCategoryMonth(userId, src.category, targetMonth);
+      if (existing) continue;
+      const budget = await this.budgetRepo.create({
+        userId,
+        category: src.category,
+        monthYear: targetMonth,
+        limitAmount: src.limitAmount,
+        currency: src.currency,
+        alertThreshold: src.alertThreshold,
+        carryForward: true,
+      }) as Budget;
+      created.push(budget);
+    }
+    return created;
   }
 
   async updateBudget(userId: string, id: string, dto: UpdateBudgetDto): Promise<Budget> {

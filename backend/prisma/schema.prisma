@@ -71,6 +71,7 @@ model Budget {
   limitAmount    Float
   currency       String
   alertThreshold Float    @default(0.8)
+  carryForward   Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

@@ -11,4 +11,7 @@ export const budgetsApi = {
     apiClient.patch<Budget>(`/budgets/${id}`, data).then((r) => r.data),
 
   delete: (id: string) => apiClient.delete(`/budgets/${id}`),
+
+  rollover: (monthYear: string) =>
+    apiClient.post<{ created: number; budgets: Budget[] }>("/budgets/rollover", { monthYear }).then((r) => r.data),
 };
