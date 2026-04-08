@@ -14,6 +14,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | Async AI classification via SSE | ✅ | Progress bar during classification |
 | Categories — CRUD with parent groups | ✅ | |
 | Budgets — merged into Categories page, inline budget per category | ✅ | Per-month limit with progress bar |
+| Budget carry-forward | ✅ | Repeat toggle on each category card; auto-rolls over on page load via `POST /budgets/rollover` |
 | Analytics — monthly summary, 6-month trend, donut, bar chart | ✅ | |
 | NL query bar — ask and add modes | ✅ | |
 | Dashboard — stat cards, donut, trend, NL bar | ✅ | |
@@ -49,4 +50,12 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | Feature | Status | Notes |
 |---|---|---|
 | CSV export | ⬜ | Export filtered expenses as CSV |
-| Budget carry-forward | ⬜ | Budgets are per-month with no way to copy last month's budgets forward |
+
+---
+
+## Dependency Versions (last updated 2026-04-08)
+
+| Area | Key packages |
+|---|---|
+| Frontend | React 19.2, MUI 9, Vite 7.3, recharts 3.8, react-router-dom 7.14, zustand 5 |
+| Backend | Express 5.2, Prisma 6.19 (pinned — Prisma 7 requires MongoDB adapter migration), zod 4, openai SDK 6, multer 2 |

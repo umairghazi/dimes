@@ -85,8 +85,7 @@ export function Sidebar({ rail = false }: SidebarProps) {
         {!rail && (
           <Typography
             variant="h6"
-            fontWeight={800}
-            sx={{ letterSpacing: "-0.02em", background: `linear-gradient(135deg, ${tokens.colors.accentDark}, ${tokens.colors.accentLight})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
+            sx={{ fontWeight: 800, letterSpacing: "-0.02em", background: `linear-gradient(135deg, ${tokens.colors.accentDark}, ${tokens.colors.accentLight})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
           >
             Dimes
           </Typography>
@@ -125,7 +124,7 @@ export function Sidebar({ rail = false }: SidebarProps) {
                 {!rail && (
                   <ListItemText
                     primary={item.label}
-                    primaryTypographyProps={{ fontSize: "0.875rem", fontWeight: active ? 600 : 500 }}
+                    slotProps={{ primary: { style: { fontSize: "0.875rem", fontWeight: active ? 600 : 500 } } }}
                   />
                 )}
               </ListItemButton>
@@ -147,7 +146,7 @@ export function Sidebar({ rail = false }: SidebarProps) {
               <SettingsIcon fontSize="small" />
             </ListItemIcon>
             {!rail && (
-              <ListItemText primary="Settings" primaryTypographyProps={{ fontSize: "0.875rem", fontWeight: 500 }} />
+              <ListItemText primary="Settings" slotProps={{ primary: { style: { fontSize: "0.875rem", fontWeight: 500 } } }} />
             )}
           </ListItemButton>
         </Tooltip>

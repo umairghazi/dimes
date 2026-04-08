@@ -31,7 +31,7 @@ export function CategoryBarChart({ data, height = 260 }: CategoryBarChartProps) 
         <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.3} />
         <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
         <YAxis type="category" dataKey="category" tick={{ fontSize: 12 }} width={80} />
-        <Tooltip formatter={(v: number) => `$${v.toFixed(2)}`} />
+        <Tooltip formatter={(v) => v != null ? `$${Number(v).toFixed(2)}` : ""} />
         <Bar dataKey="amount" name="Amount" radius={[0, 4, 4, 0]}>
           {filtered.map((_, i) => (
             <Cell key={i} fill={COLORS[i % COLORS.length]} />

@@ -165,7 +165,7 @@ export function CategoryManager() {
   return (
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Typography variant="subtitle1" fontWeight={600}>Categories</Typography>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Categories</Typography>
         <Button
           size="small"
           startIcon={<AddIcon />}
@@ -211,7 +211,7 @@ export function CategoryManager() {
                     onClick={() => toggleGroup(groupKey)}
                   >
                     {isExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
-                    <Typography variant="body2" fontWeight={600}>{group.group}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{group.group}</Typography>
                     <Typography variant="caption" color="text.secondary">
                       ({group.items.length})
                     </Typography>

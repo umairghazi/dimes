@@ -22,7 +22,7 @@ export function TrendLine({ data, height = 220 }: TrendLineProps) {
         <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
         <XAxis dataKey="period" tick={{ fontSize: 12 }} />
         <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
-        <Tooltip formatter={(v: number) => `$${v.toFixed(2)}`} />
+        <Tooltip formatter={(v) => v != null ? `$${Number(v).toFixed(2)}` : ""} />
         <Legend />
         <Line
           type="monotone"

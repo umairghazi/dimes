@@ -31,7 +31,7 @@ export function SpendingDonut({ data }: SpendingDonutProps) {
             <Cell key={i} fill={COLORS[i % COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip formatter={(v: number) => `$${v.toFixed(2)}`} />
+        <Tooltip formatter={(v) => v != null ? `$${Number(v).toFixed(2)}` : ""} />
         <Legend
           iconType="circle"
           iconSize={8}

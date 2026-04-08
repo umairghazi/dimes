@@ -31,7 +31,7 @@ export function FilterBar() {
         value={filters.dateFrom ?? ""}
         onChange={(e) => setFilter("dateFrom", e.target.value || undefined)}
         size="small"
-        InputLabelProps={{ shrink: true }}
+        slotProps={{ inputLabel: { shrink: true } }}
         sx={{ minWidth: 150 }}
       />
 
@@ -41,7 +41,7 @@ export function FilterBar() {
         value={filters.dateTo ?? ""}
         onChange={(e) => setFilter("dateTo", e.target.value || undefined)}
         size="small"
-        InputLabelProps={{ shrink: true }}
+        slotProps={{ inputLabel: { shrink: true } }}
         sx={{ minWidth: 150 }}
       />
 

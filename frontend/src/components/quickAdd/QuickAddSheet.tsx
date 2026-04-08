@@ -106,13 +106,15 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
         autoFocus
-        inputProps={{ inputMode: "decimal" }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <AttachMoneyIcon />
-            </InputAdornment>
-          ),
+        slotProps={{
+          htmlInput: { inputMode: "decimal" },
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <AttachMoneyIcon />
+              </InputAdornment>
+            ),
+          },
         }}
         fullWidth
       />
@@ -149,7 +151,7 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
         value={date}
         onChange={(e) => setDate(e.target.value)}
         fullWidth
-        InputLabelProps={{ shrink: true }}
+        slotProps={{ inputLabel: { shrink: true } }}
       />
     </Box>
   );
@@ -160,16 +162,18 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
         anchor="bottom"
         open={open}
         onClose={onClose}
-        PaperProps={{
-          sx: {
-            borderTopLeftRadius: tokens.radii.xl,
-            borderTopRightRadius: tokens.radii.xl,
-            p: 3,
-            pb: 4,
+        slotProps={{
+          paper: {
+            sx: {
+              borderTopLeftRadius: tokens.radii.xl,
+              borderTopRightRadius: tokens.radii.xl,
+              p: 3,
+              pb: 4,
+            },
           },
         }}
       >
-        <Typography variant="h6" fontWeight={600} mb={2}>Add Transaction</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Add Transaction</Typography>
         {content}
         <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
           <Button fullWidth variant="outlined" onClick={onClose}>Cancel</Button>

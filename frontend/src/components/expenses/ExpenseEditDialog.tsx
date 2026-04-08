@@ -73,14 +73,16 @@ export function ExpenseEditDialog({ expense, onClose, onSaved }: ExpenseEditDial
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             fullWidth
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <AttachMoneyIcon fontSize="small" />
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AttachMoneyIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              },
+              htmlInput: { min: 0 },
             }}
-            inputProps={{ min: 0 }}
           />
           <TextField
             label="Date"
@@ -88,7 +90,7 @@ export function ExpenseEditDialog({ expense, onClose, onSaved }: ExpenseEditDial
             value={date}
             onChange={(e) => setDate(e.target.value)}
             fullWidth
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
           <FormControl fullWidth>
             <InputLabel>Category</InputLabel>

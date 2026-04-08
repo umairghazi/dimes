@@ -36,7 +36,7 @@ export function BudgetProgressBar({ spent, limit, currency = "USD" }: BudgetProg
         </Typography>
         <Typography
           variant="caption"
-          fontWeight={600}
+          sx={{ fontWeight: 600 }}
           color={percent >= 90 ? "error.main" : percent >= 70 ? "warning.main" : "success.main"}
         >
           {percent.toFixed(0)}%

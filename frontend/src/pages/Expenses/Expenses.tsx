@@ -18,7 +18,7 @@ export function Expenses() {
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
-      <Typography variant="h4" fontWeight={700} mb={3}>Expenses</Typography>
+      <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>Expenses</Typography>
 
       <FilterBar />
 

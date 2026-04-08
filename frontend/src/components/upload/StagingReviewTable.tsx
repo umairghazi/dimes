@@ -15,7 +15,7 @@ import {
   Alert,
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import { StagingExpense } from "@/types/upload.types";
 import { CategorySelect } from "@/components/shared/CategorySelect";
 
@@ -64,7 +64,7 @@ export function StagingReviewTable({
             {rows.length} transactions ready to review.
           </Typography>
           {uncategorizedCount > 0 && (
-            <Typography variant="caption" color="warning.main" fontWeight={600}>
+            <Typography variant="caption" color="warning.main" sx={{ fontWeight: 600 }}>
               {uncategorizedCount} row{uncategorizedCount !== 1 ? "s" : ""} still need a category.
             </Typography>
           )}

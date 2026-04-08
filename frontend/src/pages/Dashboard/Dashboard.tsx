@@ -48,28 +48,28 @@ export function Dashboard() {
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1400, mx: "auto" }}>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" fontWeight={800} mb={0.25}>Dashboard</Typography>
+        <Typography variant="h4" sx={{ fontWeight: 800, mb: 0.25 }}>Dashboard</Typography>
         <Typography color="text.secondary" sx={{ fontSize: "0.9375rem" }}>{monthLabel}</Typography>
       </Box>
 
       <NLQueryBar />
 
-      <Grid container spacing={2} mb={3}>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
         {loading
           ? [0, 1, 2].map((i) => (
-              <Grid item xs={12} sm={4} key={i}>
+              <Grid size={{ xs: 12, sm: 4 }} key={i}>
                 <Skeleton variant="rectangular" height={108} sx={{ borderRadius: 2 }} />
               </Grid>
             ))
           : summary && (
               <>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <StatCard label="Total Spend" amount={summary.totalSpend} icon={<TrendingDownIcon sx={{ fontSize: 18 }} />} iconBg={tokens.colors.errorBg} iconColor={tokens.colors.error} />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <StatCard label="Total Income" amount={summary.totalIncome} icon={<TrendingUpIcon sx={{ fontSize: 18 }} />} iconBg={tokens.colors.successBg} iconColor={tokens.colors.success} />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <StatCard label="Net Savings" amount={summary.netSavings} icon={<SavingsIcon sx={{ fontSize: 18 }} />} iconBg={tokens.colors.accentBg} iconColor={tokens.colors.accent} />
                 </Grid>
               </>
@@ -77,18 +77,18 @@ export function Dashboard() {
       </Grid>
 
       <Grid container spacing={2}>
-        <Grid item xs={12} md={5}>
+        <Grid size={{ xs: 12, md: 5 }}>
           <Card sx={{ height: "100%" }}>
             <CardContent sx={{ p: "20px !important" }}>
-              <Typography variant="h6" fontWeight={700} mb={2}>Spending by Category</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Spending by Category</Typography>
               {loading ? <Skeleton variant="circular" width={200} height={200} sx={{ mx: "auto" }} /> : summary ? <SpendingDonut data={summary.byCategory} /> : null}
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={7}>
+        <Grid size={{ xs: 12, md: 7 }}>
           <Card sx={{ height: "100%" }}>
             <CardContent sx={{ p: "20px !important" }}>
-              <Typography variant="h6" fontWeight={700} mb={2}>Spending Trend</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Spending Trend</Typography>
               {loading ? <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 2 }} /> : <TrendLine data={trends} height={isMobile ? 180 : 220} />}
             </CardContent>
           </Card>

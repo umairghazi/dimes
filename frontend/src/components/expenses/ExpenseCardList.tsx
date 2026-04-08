@@ -33,7 +33,7 @@ export function ExpenseCardList({ expenses, loading, onUpdate }: ExpenseCardList
 
   if (expenses.length === 0) {
     return (
-      <Typography color="text.secondary" textAlign="center" py={6}>
+      <Typography color="text.secondary" sx={{ textAlign: "center", py: 6 }}>
         No expenses found
       </Typography>
     );
@@ -46,7 +46,7 @@ export function ExpenseCardList({ expenses, loading, onUpdate }: ExpenseCardList
           <CardContent sx={{ py: "12px !important", px: 2 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <Box sx={{ flex: 1, minWidth: 0, pr: 1 }}>
-                <Typography variant="body2" fontWeight={600} noWrap>
+                <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
                   {expense.description}
                 </Typography>
                 <Box sx={{ display: "flex", gap: 1, mt: 0.5, alignItems: "center" }}>
@@ -62,7 +62,7 @@ export function ExpenseCardList({ expenses, loading, onUpdate }: ExpenseCardList
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 <Typography
-                  fontWeight={700}
+                  sx={{ fontWeight: 700 }}
                   color={expense.category === "Income" ? "success.main" : "inherit"}
                 >
                   ${expense.amount.toFixed(2)}

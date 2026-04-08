@@ -62,7 +62,7 @@ export function NLQueryBar() {
               : "e.g. spent $24 on lunch at chipotle today"
           }
           variant="standard"
-          InputProps={{ disableUnderline: true }}
+          slotProps={{ input: { disableUnderline: true } }}
           sx={{ flex: 1 }}
         />
 

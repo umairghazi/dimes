@@ -56,8 +56,8 @@ export function TopBar({ onMenuClick, showMenu = false }: TopBarProps) {
           </Box>
           <Typography
             variant="h6"
-            fontWeight={800}
             sx={{
+              fontWeight: 800,
               letterSpacing: "-0.02em",
               fontSize: "1rem",
               background: `linear-gradient(135deg, ${tokens.colors.accentDark}, ${tokens.colors.accentLight})`,

@@ -32,18 +32,18 @@ export function Settings() {
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 600, mx: "auto" }}>
-      <Typography variant="h4" fontWeight={700} mb={3}>Settings</Typography>
+      <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>Settings</Typography>
 
       <Card sx={{ mb: 2 }}>
         <CardContent>
-          <Typography variant="h6" fontWeight={600} mb={1}>Account</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>Account</Typography>
           <Typography variant="body2" color="text.secondary">{user?.email}</Typography>
         </CardContent>
       </Card>
 
       <Card sx={{ mb: 2 }}>
         <CardContent>
-          <Typography variant="h6" fontWeight={600} mb={1}>Appearance</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>Appearance</Typography>
           <List disablePadding>
             <ListItem
               secondaryAction={
@@ -58,7 +58,7 @@ export function Settings() {
 
       <Card sx={{ mb: 2 }}>
         <CardContent>
-          <Typography variant="h6" fontWeight={600} mb={2}>Currency</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Currency</Typography>
           <ToggleButtonGroup
             value={currency}
             exclusive

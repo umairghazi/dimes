@@ -99,7 +99,7 @@ export function ExpenseTable({
                     </TableCell>
                     <TableCell>
                       <Typography
-                        fontWeight={600}
+                        sx={{ fontWeight: 600 }}
                         color={expense.category === "Income" ? "success.main" : "inherit"}
                       >
                         ${expense.amount.toFixed(2)}

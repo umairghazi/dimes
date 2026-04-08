@@ -11,22 +11,22 @@ export function Analytics() {
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
-      <Typography variant="h4" fontWeight={700} mb={3}>Analytics</Typography>
+      <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>Analytics</Typography>
 
       <Grid container spacing={2}>
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Card>
             <CardContent>
-              <Typography variant="h6" fontWeight={600} mb={2}>6-Month Trend</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>6-Month Trend</Typography>
               {loading ? <Skeleton height={260} /> : <TrendLine data={trends} height={260} />}
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={5}>
+        <Grid size={{ xs: 12, md: 5 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6" fontWeight={600} mb={2}>This Month by Category</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>This Month by Category</Typography>
               {loading ? (
                 <Skeleton variant="circular" width={200} height={200} sx={{ mx: "auto" }} />
               ) : summary ? (
@@ -36,10 +36,10 @@ export function Analytics() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={7}>
+        <Grid size={{ xs: 12, md: 7 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6" fontWeight={600} mb={2}>Category Breakdown</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Category Breakdown</Typography>
               {loading ? (
                 <Skeleton height={260} />
               ) : summary ? (

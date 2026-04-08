@@ -19,7 +19,7 @@ export function Upload() {
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1000, mx: "auto" }}>
-      <Typography variant="h4" fontWeight={700} mb={3}>Import CSV</Typography>
+      <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>Import CSV</Typography>
 
       <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
         {STEPS.map((label) => (
@@ -37,10 +37,10 @@ export function Upload() {
 
       {upload.step === "processing" && (
         <Box sx={{ textAlign: "center", py: 8, maxWidth: 480, mx: "auto" }}>
-          <Typography variant="h6" fontWeight={600} mb={1}>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
             Classifying transactions…
           </Typography>
-          <Typography variant="body2" color="text.secondary" mb={4}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
             AI is categorising your transactions in the background.
           </Typography>
 
@@ -70,8 +70,8 @@ export function Upload() {
       )}
 
       {upload.step === "done" && (
-        <Box textAlign="center" py={6}>
-          <Typography variant="h5" fontWeight={600} color="success.main" mb={2}>
+        <Box sx={{ textAlign: "center", py: 6 }}>
+          <Typography variant="h5" color="success.main" sx={{ fontWeight: 600, mb: 2 }}>
             Import complete!
           </Typography>
           <Typography color="text.secondary">

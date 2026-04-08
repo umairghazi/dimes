@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npm install:*)",
       "Bash(npx tsc:*)",
-      "Bash(npx prisma:*)"
+      "Bash(npx prisma:*)",
+      "Bash(npm outdated:*)",
+      "Bash(npm view:*)",
+      "Bash(echo \"Exit code: $?\")"
     ]
   }
 }

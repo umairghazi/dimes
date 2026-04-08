@@ -152,7 +152,7 @@ export function Categories() {
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h4" fontWeight={700}>Categories</Typography>
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>Categories</Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddOpen(true)}>
           Add Category
         </Button>
@@ -163,7 +163,7 @@ export function Categories() {
       {loading ? (
         <Grid container spacing={2}>
           {Array.from({ length: 6 }).map((_, i) => (
-            <Grid item xs={12} sm={6} md={4} key={i}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
               <Skeleton variant="rectangular" height={160} sx={{ borderRadius: 2 }} />
             </Grid>
           ))}
@@ -178,8 +178,8 @@ export function Categories() {
             borderRadius: 2,
           }}
         >
-          <Typography variant="h6" fontWeight={600} mb={1}>No categories yet</Typography>
-          <Typography color="text.secondary" mb={3}>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>No categories yet</Typography>
+          <Typography color="text.secondary" sx={{ mb: 3 }}>
             Add categories to organise your expenses and set monthly budgets.
           </Typography>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddOpen(true)}>
@@ -194,15 +194,14 @@ export function Categories() {
                 <Typography
                   variant="overline"
                   color="text.secondary"
-                  fontWeight={600}
-                  sx={{ mb: 1, display: "block" }}
+                  sx={{ fontWeight: 600, mb: 1, display: "block" }}
                 >
                   {group.group}
                 </Typography>
               )}
               <Grid container spacing={2}>
                 {group.items.map((cat) => (
-                  <Grid item xs={12} sm={6} md={4} key={cat.id}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={cat.id}>
                     <CategoryCard
                       cat={cat}
                       budget={budgetMap.get(cat.name) ?? null}
@@ -351,11 +350,11 @@ function CategoryCard({ cat, budget, spent, onEdit, onDelete, onSetBudget, onCle
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
           <Box sx={{ minWidth: 0, flex: 1 }}>
             {cat.group && (
-              <Typography variant="overline" color="text.secondary" display="block" lineHeight={1.4}>
+              <Typography variant="overline" color="text.secondary" sx={{ display: "block", lineHeight: 1.4 }}>
                 {cat.group}
               </Typography>
             )}
-            <Typography variant="h6" fontWeight={600} noWrap>
+            <Typography variant="h6" sx={{ fontWeight: 600 }} noWrap>
               {cat.group ? cat.name.replace(`${cat.group} - `, "") : cat.name}
             </Typography>
           </Box>
@@ -384,8 +383,10 @@ function CategoryCard({ cat, budget, spent, onEdit, onDelete, onSetBudget, onCle
               autoFocus
               fullWidth
               label="Monthly limit"
-              InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
-              inputProps={{ min: 0 }}
+              slotProps={{
+                input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+                htmlInput: { min: 0 },
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") void saveBudget();
                 if (e.key === "Escape") { setBudgetEditing(false); setBudgetInput(""); }
@@ -407,7 +408,7 @@ function CategoryCard({ cat, budget, spent, onEdit, onDelete, onSetBudget, onCle
               </Typography>
               <Typography
                 variant="caption"
-                fontWeight={600}
+                sx={{ fontWeight: 600 }}
                 color={percent >= 90 ? "error.main" : percent >= 70 ? "warning.main" : "text.secondary"}
               >
                 ${remaining.toFixed(2)} left

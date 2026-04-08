@@ -39,7 +39,7 @@ export function QueryResultCard({ result, mode, onDismiss }: QueryResultCardProp
     <Card sx={{ mt: 1.5, animation: "fadeIn 0.2s ease-in-out" }}>
       <CardContent>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <Typography variant="h6" fontWeight={600}>{result.answer}</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>{result.answer}</Typography>
           <IconButton size="small" onClick={onDismiss}><CloseIcon fontSize="small" /></IconButton>
         </Box>
 
@@ -55,7 +55,7 @@ export function QueryResultCard({ result, mode, onDismiss }: QueryResultCardProp
               ].map(([label, value]) => (
                 <Box key={label}>
                   <Typography variant="caption" color="text.secondary">{label}</Typography>
-                  <Typography variant="body2" fontWeight={500}>{value}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{value}</Typography>
                 </Box>
               ))}
             </Box>

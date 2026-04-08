@@ -167,7 +167,7 @@ export function ColumnMapper({ onSubmit, loading }: ColumnMapperProps) {
         onClick={() => inputRef.current?.click()}
       >
         <UploadFileIcon color="primary" sx={{ fontSize: 48, mb: 1 }} />
-        <Typography variant="body1" fontWeight={500}>
+        <Typography variant="body1" sx={{ fontWeight: 500 }}>
           {file ? file.name : "Click to select a CSV file"}
         </Typography>
         <Typography variant="caption" color="text.secondary">
@@ -188,7 +188,7 @@ export function ColumnMapper({ onSubmit, loading }: ColumnMapperProps) {
       {rawRows.length > 0 && (
         <>
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-            <Typography variant="subtitle1" fontWeight={600}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
               Map your columns
             </Typography>
             <FormControlLabel
