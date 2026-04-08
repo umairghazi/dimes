@@ -18,6 +18,8 @@ import {
   InputAdornment,
   Tooltip,
   Skeleton,
+  ToggleButtonGroup,
+  ToggleButton,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -25,6 +27,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import RepeatIcon from "@mui/icons-material/Repeat";
+import GridViewIcon from "@mui/icons-material/GridView";
+import ViewListIcon from "@mui/icons-material/ViewList";
 import { useCategories } from "@/hooks/useCategories";
 import { useBudgets } from "@/hooks/useBudgets";
 import { useAnalytics } from "@/hooks/useAnalytics";
@@ -32,6 +36,7 @@ import { usePreferencesStore } from "@/store/preferencesStore";
 import { UserCategory } from "@/types/category.types";
 import { Budget } from "@/types/budget.types";
 import { BudgetProgressBar } from "@/components/charts/BudgetProgressBar";
+import { CategoryCompactView } from "@/components/settings/CategoryCompactView";
 
 function currentMonthYear() {
   const now = new Date();
@@ -149,13 +154,33 @@ export function Categories() {
 
   const loading = catLoading || budgetLoading;
 
+  const [view, setView] = useState<"cards" | "compact">(() =>
+    (localStorage.getItem("categories-view") as "cards" | "compact") ?? "cards"
+  );
+
+  const handleViewChange = (_: React.MouseEvent, v: "cards" | "compact" | null) => {
+    if (!v) return;
+    setView(v);
+    localStorage.setItem("categories-view", v);
+  };
+
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 700 }}>Categories</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddOpen(true)}>
-          Add Category
-        </Button>
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+          <ToggleButtonGroup value={view} exclusive onChange={handleViewChange} size="small">
+            <ToggleButton value="cards" aria-label="card view">
+              <Tooltip title="Card view"><GridViewIcon fontSize="small" /></Tooltip>
+            </ToggleButton>
+            <ToggleButton value="compact" aria-label="compact view">
+              <Tooltip title="Compact view"><ViewListIcon fontSize="small" /></Tooltip>
+            </ToggleButton>
+          </ToggleButtonGroup>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddOpen(true)}>
+            Add Category
+          </Button>
+        </Box>
       </Box>
 
       {catError && <Alert severity="error" sx={{ mb: 2 }}>{catError}</Alert>}
@@ -186,6 +211,18 @@ export function Categories() {
             Add your first category
           </Button>
         </Box>
+      ) : view === "compact" ? (
+        <CategoryCompactView
+          tree={tree}
+          budgetMap={budgetMap}
+          spentMap={spentMap}
+          onEdit={openEdit}
+          onDelete={(cat) => setDeleteTarget(cat)}
+          onSetBudget={(name, amount) => void handleSetBudget(name, amount)}
+          onClearBudget={(name) => void handleClearBudget(name)}
+          onToggleCarryForward={(name) => void handleToggleCarryForward(name)}
+          onAddInGroup={(group) => { setNewGroup(group); setAddOpen(true); }}
+        />
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
           {tree.map((group) => (

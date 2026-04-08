@@ -30,19 +30,19 @@ export function useBudgets() {
 
   const createBudget = async (dto: CreateBudgetDto) => {
     const budget = await budgetsApi.create(dto);
-    void fetch();
+    setBudgets((prev) => [...prev, budget]);
     return budget;
   };
 
   const updateBudget = async (id: string, dto: UpdateBudgetDto) => {
     const updated = await budgetsApi.update(id, dto);
-    void fetch();
+    setBudgets((prev) => prev.map((b) => (b.id === id ? updated : b)));
     return updated;
   };
 
   const deleteBudget = async (id: string) => {
     await budgetsApi.delete(id);
-    void fetch();
+    setBudgets((prev) => prev.filter((b) => b.id !== id));
   };
 
   return { budgets, loading, error, refetch: fetch, createBudget, updateBudget, deleteBudget };
