@@ -10,7 +10,7 @@ import {
 } from "../interfaces/AITypes";
 import { buildClassificationPrompt } from "../prompts/classification.prompt";
 import { buildIntentParsingPrompt, buildNLTransactionPrompt } from "../prompts/intentParsing.prompt";
-import { buildInsightPrompt, buildCategorySuggestionPrompt } from "../prompts/insights.prompt";
+import { buildInsightPrompt } from "../prompts/insights.prompt";
 
 export class OpenAIProvider implements IAIProvider {
   protected readonly client: OpenAI;
@@ -52,11 +52,5 @@ export class OpenAIProvider implements IAIProvider {
   async generateInsight(data: AnalyticsData): Promise<string> {
     const prompt = buildInsightPrompt(data);
     return this.complete(prompt);
-  }
-
-  async suggestCategory(description: string): Promise<{ category: string; confidence: number }> {
-    const prompt = buildCategorySuggestionPrompt(description);
-    const raw = await this.complete(prompt);
-    return JSON.parse(raw);
   }
 }

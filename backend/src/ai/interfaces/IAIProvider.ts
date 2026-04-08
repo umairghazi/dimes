@@ -12,5 +12,4 @@ export interface IAIProvider {
   parseIntent(query: string, context: UserContext): Promise<StructuredQuery>;
   parseNLTransaction(input: string, context: UserContext): Promise<ParsedNLTransaction>;
   generateInsight(data: AnalyticsData): Promise<string>;
-  suggestCategory(description: string): Promise<{ category: string; confidence: number }>;
 }

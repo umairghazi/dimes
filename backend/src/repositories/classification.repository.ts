@@ -35,14 +35,4 @@ export class ClassificationRepository extends BaseHttpRepository {
     }
     return results;
   }
-
-  async suggestCategory(description: string): Promise<{ category: string; confidence: number }> {
-    if (!isAIAvailable()) return { category: "Other", confidence: 0 };
-    try {
-      const provider = getAIProvider();
-      return provider.suggestCategory(description);
-    } catch {
-      return { category: "Uncategorized", confidence: 0 };
-    }
-  }
 }

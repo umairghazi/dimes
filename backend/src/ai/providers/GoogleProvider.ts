@@ -10,7 +10,7 @@ import {
 } from "../interfaces/AITypes";
 import { buildClassificationPrompt } from "../prompts/classification.prompt";
 import { buildIntentParsingPrompt, buildNLTransactionPrompt } from "../prompts/intentParsing.prompt";
-import { buildInsightPrompt, buildCategorySuggestionPrompt } from "../prompts/insights.prompt";
+import { buildInsightPrompt } from "../prompts/insights.prompt";
 
 export class GoogleProvider implements IAIProvider {
   private readonly client: GoogleGenerativeAI;
@@ -48,10 +48,5 @@ export class GoogleProvider implements IAIProvider {
 
   async generateInsight(data: AnalyticsData): Promise<string> {
     return this.complete(buildInsightPrompt(data));
-  }
-
-  async suggestCategory(description: string): Promise<{ category: string; confidence: number }> {
-    const raw = await this.complete(buildCategorySuggestionPrompt(description));
-    return JSON.parse(raw);
   }
 }

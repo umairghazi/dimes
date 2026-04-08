@@ -11,15 +11,3 @@ export function buildInsightPrompt(data: AnalyticsData): string {
 
           Be specific, helpful, and positive. Do not use bullet points. Return plain text only.`;
 }
-
-export function buildCategorySuggestionPrompt(description: string): string {
-  return `Classify this transaction description into a spending category.
-
-          Description: "${description}"
-
-          Return a JSON object with:
-          - category: one of: Food & Dining, Transport, Shopping, Entertainment, Health, Utilities, Travel, Income, Subscriptions, Personal Care, Education, Other
-          - confidence: number between 0 and 1
-
-          Return ONLY valid JSON.`;
-}
