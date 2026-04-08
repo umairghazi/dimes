@@ -3,7 +3,7 @@
 ## Tech Stack
 
 | Layer | Technology |
-|---|---|
+| --- | --- |
 | Frontend | React 19, TypeScript, Vite |
 | Component Library | MUI (Material UI) v6 + Emotion |
 | Custom Styling | SCSS Modules + Emotion `styled()` |
@@ -35,7 +35,7 @@
 
 ## System Architecture Overview
 
-```
+```text
 Client (React + TypeScript + Vite)
         │  HTTPS/REST + JWT
         ▼
@@ -64,7 +64,7 @@ API Gateway (Node/Express)
 
 All AI functionality routes through a single interface. The concrete provider is resolved at startup from environment variables - no code changes needed to switch models or providers, including local ones.
 
-```
+```text
 IAIProvider (interface)
   → classify(transactions: RawTransaction[]): Promise<ClassifiedTransaction[]>
   → parseIntent(query: string, context: UserContext): Promise<StructuredQuery>
@@ -73,7 +73,7 @@ IAIProvider (interface)
 
 ### Provider Tree
 
-```
+```text
 IAIProvider (interface)
   ├── AnthropicProvider       → Anthropic SDK
   ├── OpenAIProvider          → OpenAI SDK
@@ -119,7 +119,7 @@ LOCAL_AI_API_KEY=ollama
 
 ### AI Module Structure
 
-```
+```text
 src/
   ai/
     interfaces/
@@ -145,7 +145,7 @@ src/
 
 ### Layer Responsibilities
 
-```
+```text
 routes/         → define endpoints, attach middleware
 controllers/    → input validation (Zod), instantiate & inject services
 services/       → business logic, dependency injection of repositories
@@ -158,7 +158,7 @@ Prisma replaces Mongoose. All models defined once in `schema.prisma` - no duplic
 
 `BaseMongoRepository<T>` wraps the relevant Prisma delegate:
 
-```
+```text
 constructor receives prisma delegate (e.g. prisma.expense)
 
 getById     → prisma.expense.findUnique({ where: { id } })
@@ -175,11 +175,13 @@ count       → prisma.expense.count({ where })
 ### Base Repository Classes
 
 #### `BaseMongoRepository<T>` (abstract)
+
 - Generic typed to the Prisma model delegate
 - Constructor receives the Prisma delegate via `super(prisma.expense)`
 - Throws normalized `RepositoryError` - services never handle raw Prisma errors
 
 #### `BaseHttpRepository` (abstract)
+
 - Wraps an axios instance
 - Constructor receives `baseURL` and default headers
 - Methods: `get`, `post`, `put`, `patch`, `delete`
@@ -188,7 +190,7 @@ count       → prisma.expense.count({ where })
 
 ### Repository Inheritance Tree
 
-```
+```text
 BaseMongoRepository<T>
   ├── UserRepository
   ├── ExpenseRepository
@@ -204,6 +206,7 @@ BaseHttpRepository
 ```
 
 ### Key Design Notes
+
 - `ExpenseRepository.getAll` always scopes by `userId` - enforced at the repo layer, not just the service layer, preventing cross-user data leaks regardless of how services call it
 - Services receive repositories via constructor injection - trivially swappable in tests
 - Mock `BaseMongoRepository` once and all concrete repos inherit the mock behavior
@@ -212,7 +215,7 @@ BaseHttpRepository
 
 ## Backend - Project Structure
 
-```
+```text
 backend/
   prisma/
     schema.prisma              ← single source of truth for all models
@@ -359,6 +362,7 @@ model Budget {
 ```
 
 ### ExpenseCategory (shared enum - FE and BE)
+
 ```ts
 "Food & Dining" | "Transport" | "Shopping" | "Entertainment" |
 "Health" | "Utilities" | "Travel" | "Income" |
@@ -370,7 +374,7 @@ model Budget {
 ## API Endpoints
 
 | Method | Route | Description |
-|---|---|---|
+| --- | --- | --- |
 | POST | `/auth/register` | Create account |
 | POST | `/auth/login` | Login → access + refresh tokens |
 | POST | `/auth/refresh` | Refresh access token |
@@ -400,7 +404,7 @@ model Budget {
 
 ### 1. CSV Upload & AI Classification
 
-```
+```text
 1. User uploads CSV file
 2. Column mapper UI → user maps: date col, amount col, description col
 3. Backend parses rows, creates a staging batch (uploadBatchId)
@@ -432,7 +436,7 @@ A persistent floating `+` action button visible on every page at all times.
 - ~10 seconds from tap to saved
 - Confirmation snackbar with Undo for 5 seconds after save
 
-```
+```text
 [ + FAB ] → Bottom Sheet / Modal
   ┌─────────────────────────┐
   │  $ 0.00    [numeric kb] │  ← auto-focused
@@ -446,7 +450,7 @@ A persistent floating `+` action button visible on every page at all times.
 
 The NL bar supports an Ask / Add mode toggle.
 
-```
+```text
 User types: "spent $24 on lunch at chipotle today"
 AI parses:  { amount: 24, description: "Chipotle", category: "Food & Dining", date: today }
 Shows confirmation card with parsed fields → user taps Confirm or edits inline
@@ -456,7 +460,7 @@ Handles fuzzy input naturally: "grabbed coffee $6.50", "netflix 17.99 last frida
 
 ### 3. Natural Language Query
 
-```
+```text
 1. User types: "how much did I spend on eating out in March?"
 2. NLQueryRepository → AIProviderFactory → parseIntent()
    Returns: { metric: "total_spend", category: "Food & Dining", period: "2025-03" }
@@ -467,7 +471,7 @@ Handles fuzzy input naturally: "grabbed coffee $6.50", "netflix 17.99 last frida
 
 ### 4. Budget Progress
 
-```
+```text
 1. Budget set: Food & Dining = $600/month
 2. analytics.service aggregates current month spend for category
 3. Returns: { spent: 430, limit: 600, percent: 71.6, daysRemaining: 11 }
@@ -493,7 +497,7 @@ Handles fuzzy input naturally: "grabbed coffee $6.50", "netflix 17.99 last frida
 
 ### Breakpoints (MUI defaults)
 
-```
+```text
 xs:  0px      → mobile portrait
 sm:  600px    → mobile landscape / small tablet
 md:  900px    → tablet
@@ -504,6 +508,7 @@ xl:  1536px   → large desktop
 ### Responsive Layout Strategy
 
 **Mobile (xs/sm):**
+
 - Bottom navigation bar with 5 items: Dashboard, Expenses, Add, Budgets, Analytics
 - The Add item in the center of the bottom nav IS the FAB - always prominent
 - Sidebar hidden, accessible via hamburger as a full-height drawer
@@ -513,11 +518,13 @@ xl:  1536px   → large desktop
 - Filters accessible via a bottom sheet drawer
 
 **Tablet (md):**
+
 - Sidebar as icon-only rail, expands on hover
 - 2-column grid for dashboard cards
 - Tables visible with horizontal scroll if needed
 
 **Desktop (lg+):**
+
 - Full sidebar at 240px fixed width
 - 3–4 column dashboard grid
 - Modals as centered dialogs
@@ -536,7 +543,7 @@ xl:  1536px   → large desktop
 
 ## Frontend - Project Structure
 
-```
+```text
 frontend/
   src/
     styles/
@@ -654,22 +661,26 @@ frontend/
 ## Styling Architecture
 
 ### MUI Theme (Emotion)
+
 - `createTheme()` defined separately for light and dark
 - Custom palette, border radii, shadows, and typography defined via `tokens.ts`
 - Global overrides for `MuiCard`, `MuiButton`, `MuiTable`, `MuiBottomNavigation`
 - Dark/light toggle via Zustand `themeStore`, persisted to `localStorage`
 
 ### SCSS Modules
+
 - Page-level grid layouts and structural composition
 - Responsive breakpoint mixins from `mixins.scss`
 - Keyframe animations from `animations.scss`
 
 ### Emotion `styled()`
+
 - MUI component extensions that need dynamic theme-aware props
 - `BudgetProgressBar` - fill color driven by `percentUsed` prop via `theme.palette`
 - `QuickAddSheet` - layout shifts between mobile and desktop via theme breakpoints inline
 
 ### Token Sync
+
 - `tokens.ts` is the single source of truth
 - `variables.scss` mirrors these values manually - update both together when changing a token
 
@@ -678,6 +689,7 @@ frontend/
 ## Environment Variables
 
 ### Backend `.env`
+
 ```bash
 PORT=3000
 MONGO_URI="" # will be updated later
@@ -712,6 +724,7 @@ LOCAL_AI_API_KEY=ollama
 ```
 
 ### Frontend `.env`
+
 ```bash
 VITE_API_BASE_URL=http://localhost:3000
 ```
@@ -721,6 +734,7 @@ VITE_API_BASE_URL=http://localhost:3000
 ## Build Phases
 
 ### Phase 1 - Foundation
+
 - Monorepo setup, tsconfigs, package.jsons
 - Prisma schema, MongoDB connection, CSFLE setup
 - Base repositories (`BaseMongoRepository`, `BaseHttpRepository`)
@@ -728,6 +742,7 @@ VITE_API_BASE_URL=http://localhost:3000
 - Frontend: Vite + React + TS scaffold, MUI theme (light + dark), responsive AppShell - sidebar on desktop, bottom nav on mobile from day one, routing
 
 ### Phase 2 - AI Provider Factory
+
 - `IAIProvider` interface and shared `AITypes.ts`
 - All provider implementations (Anthropic, OpenAI, Google, Bedrock, Local)
 - Shared prompt templates in `prompts/`
@@ -735,6 +750,7 @@ VITE_API_BASE_URL=http://localhost:3000
 - Smoke test: hit classification endpoint with each provider
 
 ### Phase 3 - Upload & Classification
+
 - CSV parser on backend (multer + papaparse)
 - Column mapper UI (step 1)
 - `ClassificationRepository` → AIProviderFactory
@@ -744,12 +760,14 @@ VITE_API_BASE_URL=http://localhost:3000
 - Confirm batch → expenses (step 3)
 
 ### Phase 4 - One-Off Transaction Entry
+
 - `POST /expenses` endpoint for manual entries
 - `QuickAddFAB` + `QuickAddSheet` - bottom sheet on mobile, dialog on desktop
 - Real-time AI category suggestion as user types description (debounced 400ms)
 - NL Add mode on the query bar - parse natural language → pre-fill confirm card
 
 ### Phase 5 - Expenses & Dashboard
+
 - `ExpenseRepository` filter + aggregation methods
 - Expense service, controller, routes
 - `ExpenseTable` (desktop) + `ExpenseCardList` (mobile)
@@ -757,24 +775,28 @@ VITE_API_BASE_URL=http://localhost:3000
 - Dashboard: monthly summary cards, spending donut, category bar chart
 
 ### Phase 6 - Budgets
+
 - `BudgetRepository`, budget service, CRUD routes
 - Budget management page
 - Progress bars with color thresholds
 - In-app alerts when threshold crossed
 
 ### Phase 7 - Analytics
+
 - Multi-month trend charts
 - Category drill-down views
 - Recurring transaction detection
 - Advanced filters (date range, category, merchant, amount range)
 
 ### Phase 8 - Natural Language Queries
+
 - `NLQueryRepository` → AIProviderFactory intent extraction
 - `nlQuery.service` → structured query → analytics service
 - Ask / Add toggle on the NL query bar
 - Query result cards with supporting mini charts
 
 ### Phase 9 - Polish & Extra Features
+
 - Anomaly detection alerts
 - PDF/CSV export
 - Split transactions
