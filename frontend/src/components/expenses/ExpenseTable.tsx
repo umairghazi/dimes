@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate } from "@/lib/date";
 import {
   Table,
   TableBody,
@@ -79,7 +80,7 @@ export function ExpenseTable({
                 )
               : expenses.map((expense) => (
                   <TableRow key={expense.id} hover>
-                    <TableCell>{new Date(expense.date).toLocaleDateString()}</TableCell>
+                    <TableCell>{formatDate(expense.date)}</TableCell>
                     <TableCell>
                       <Box>
                         <Typography variant="body2">{expense.description}</Typography>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate } from "@/lib/date";
 import { Box, Card, CardContent, Typography, IconButton, Skeleton } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -56,7 +57,7 @@ export function ExpenseCardList({ expenses, loading, onUpdate }: ExpenseCardList
                     onUpdated={onUpdate}
                   />
                   <Typography variant="caption" color="text.secondary">
-                    {new Date(expense.date).toLocaleDateString()}
+                    {formatDate(expense.date)}
                   </Typography>
                 </Box>
               </Box>

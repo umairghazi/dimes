@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/date";
 import {
   Card,
   CardContent,
@@ -50,7 +51,7 @@ export function QueryResultCard({ result, mode, onDismiss }: QueryResultCardProp
               {[
                 ["Amount", `$${Math.abs(result.parsedTransaction.amount).toFixed(2)}`],
                 ["Category", result.parsedTransaction.category],
-                ["Date", new Date(result.parsedTransaction.date).toLocaleDateString()],
+                ["Date", formatDate(result.parsedTransaction.date)],
                 ["Merchant", result.parsedTransaction.merchantName ?? "-"],
               ].map(([label, value]) => (
                 <Box key={label}>

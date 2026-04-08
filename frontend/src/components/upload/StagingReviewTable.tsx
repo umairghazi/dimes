@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/date";
 import {
   Box,
   Table,
@@ -117,7 +118,7 @@ export function StagingReviewTable({
                       opacity: needsCategory || isLowConfidence ? 0.9 : 1,
                     }}
                   >
-                    <TableCell>{new Date(row.date).toLocaleDateString()}</TableCell>
+                    <TableCell>{formatDate(row.date)}</TableCell>
                     <TableCell sx={{ maxWidth: 200 }}>
                       <Typography variant="body2" noWrap title={row.description}>
                         {row.description}
