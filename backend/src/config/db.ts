@@ -7,12 +7,17 @@ export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     log: [
+      { emit: "event", level: "query" },
       { emit: "event", level: "error" },
       { emit: "event", level: "warn" },
     ],
   });
 
 // Route Prisma diagnostics through the logger instead of stdout
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(prisma as any).$on("query", (e: { query: string; duration: number }) =>
+  logger.debug({ durationMs: e.duration }, `db: ${e.query}`),
+);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (prisma as any).$on("error", (e: { message: string; target: string }) =>
   logger.error({ target: e.target }, e.message),

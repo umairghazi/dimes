@@ -2,6 +2,7 @@ import { ExpenseRepository } from "../repositories/expense.repository";
 import { BudgetRepository } from "../repositories/budget.repository";
 import { getAIProvider } from "../ai/AIProviderFactory";
 import { AnalyticsData } from "../ai/interfaces/AITypes";
+import { logger } from "../config/logger";
 
 export interface MonthlySummary {
   period: string;
@@ -167,6 +168,9 @@ export class AnalyticsService {
         count: c.count,
       })),
     };
-    return getAIProvider().generateInsight(analyticsData);
+    const start = Date.now();
+    const result = await getAIProvider().generateInsight(analyticsData);
+    logger.info({ durationMs: Date.now() - start }, "ai: generateInsight");
+    return result;
   }
 }
