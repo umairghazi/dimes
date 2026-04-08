@@ -1,43 +1,59 @@
-import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { expensesApi } from "@/api/expenses.api";
 import { Expense, ExpenseFilters, PaginatedExpenses } from "@/types/expense.types";
 
 export function useExpenses(filters: ExpenseFilters = {}, page = 1, limit = 20) {
-  const [data, setData] = useState<PaginatedExpenses | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetch = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await expensesApi.list({ ...filters, page, limit });
-      setData(result);
-    } catch {
-      setError("Failed to load expenses");
-    } finally {
-      setLoading(false);
-    }
-  }, [JSON.stringify(filters), page, limit]); // eslint-disable-line react-hooks/exhaustive-deps
+  const query = useQuery<PaginatedExpenses>({
+    queryKey: ["expenses", filters, page, limit],
+    queryFn: () => expensesApi.list({ ...filters, page, limit }),
+    staleTime: 2 * 60 * 1000,
+  });
 
-  useEffect(() => { void fetch(); }, [fetch]);
+  const invalidateExpenses = () =>
+    queryClient.invalidateQueries({ queryKey: ["expenses"] });
 
-  const createExpense = async (dto: Omit<Expense, "id" | "userId" | "createdAt" | "updatedAt">) => {
-    const created = await expensesApi.create(dto);
-    void fetch();
-    return created;
+  const invalidateAnalytics = () =>
+    queryClient.invalidateQueries({ queryKey: ["analytics"] });
+
+  const invalidateAll = () => {
+    invalidateExpenses();
+    invalidateAnalytics();
   };
 
-  const updateExpense = async (id: string, dto: Partial<Expense>) => {
-    const updated = await expensesApi.update(id, dto);
-    void fetch();
-    return updated;
-  };
+  const createMutation = useMutation({
+    mutationFn: (dto: Omit<Expense, "id" | "userId" | "createdAt" | "updatedAt">) =>
+      expensesApi.create(dto),
+    onSuccess: invalidateAll,
+  });
 
-  const deleteExpense = async (id: string) => {
-    await expensesApi.delete(id);
-    void fetch();
-  };
+  const updateMutation = useMutation({
+    mutationFn: ({ id, dto }: { id: string; dto: Partial<Expense> }) =>
+      expensesApi.update(id, dto),
+    onSuccess: invalidateAll,
+  });
 
-  return { data, loading, error, refetch: fetch, createExpense, updateExpense, deleteExpense };
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => expensesApi.delete(id),
+    onSuccess: invalidateAll,
+  });
+
+  const createExpense = (dto: Omit<Expense, "id" | "userId" | "createdAt" | "updatedAt">) =>
+    createMutation.mutateAsync(dto);
+
+  const updateExpense = (id: string, dto: Partial<Expense>) =>
+    updateMutation.mutateAsync({ id, dto });
+
+  const deleteExpense = (id: string) => deleteMutation.mutateAsync(id);
+
+  return {
+    data: query.data ?? null,
+    loading: query.isLoading,
+    error: query.isError ? "Failed to load expenses" : null,
+    refetch: invalidateExpenses,
+    createExpense,
+    updateExpense,
+    deleteExpense,
+  };
 }

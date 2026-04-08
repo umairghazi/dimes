@@ -7,7 +7,9 @@
       "Bash(npm outdated:*)",
       "Bash(npm view:*)",
       "Bash(echo \"Exit code: $?\")",
-      "Bash(ls frontend/tsconfig*)"
+      "Bash(ls frontend/tsconfig*)",
+      "Bash(node -e \"require\\('@tanstack/react-query'\\)\")",
+      "Bash(npx --yes -- node -e \"import\\('@tanstack/react-query'\\).then\\(m => console.log\\(m.version || 'ok'\\)\\)\")"
     ]
   }
 }

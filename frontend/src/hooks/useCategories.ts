@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { categoriesApi } from "@/api/categories.api";
 import { UserCategory, CategoryGroup } from "@/types/category.types";
 
@@ -11,10 +12,8 @@ function buildTree(categories: UserCategory[]): CategoryGroup[] {
     groupMap.get(key)!.push(cat);
   }
 
-  // Groups with a name come first (sorted), then standalones (null group)
   const groups: CategoryGroup[] = [];
 
-  // Named groups
   for (const [group, items] of groupMap.entries()) {
     if (group !== null) {
       groups.push({ group, items });
@@ -22,7 +21,6 @@ function buildTree(categories: UserCategory[]): CategoryGroup[] {
   }
   groups.sort((a, b) => (a.group ?? "").localeCompare(b.group ?? ""));
 
-  // Standalones - each is its own "group" entry with group=null
   const standalones = groupMap.get(null) ?? [];
   for (const item of standalones) {
     groups.push({ group: null, items: [item] });
@@ -32,55 +30,52 @@ function buildTree(categories: UserCategory[]): CategoryGroup[] {
 }
 
 export function useCategories() {
-  const [categories, setCategories] = useState<UserCategory[]>([]);
-  const [tree, setTree] = useState<CategoryGroup[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await categoriesApi.getAll();
-      setCategories(data);
-      setTree(buildTree(data));
-    } catch {
-      setError("Failed to load categories");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const query = useQuery({
+    queryKey: ["categories"],
+    queryFn: categoriesApi.getAll,
+    staleTime: Infinity,
+  });
 
-  useEffect(() => { void load(); }, [load]);
+  const categories = query.data ?? [];
+  const tree = useMemo(() => buildTree(categories), [categories]);
 
-  const addCategory = async (name: string, group?: string) => {
-    const created = await categoriesApi.create({ name, group });
-    setCategories((prev) => {
-      const next = [...prev, created];
-      setTree(buildTree(next));
-      return next;
-    });
-    return created;
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["categories"] });
+
+  const addMutation = useMutation({
+    mutationFn: ({ name, group }: { name: string; group?: string }) =>
+      categoriesApi.create({ name, group }),
+    onSuccess: invalidate,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { name?: string; group?: string | null } }) =>
+      categoriesApi.update(id, data),
+    onSuccess: invalidate,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => categoriesApi.delete(id),
+    onSuccess: invalidate,
+  });
+
+  const addCategory = (name: string, group?: string) =>
+    addMutation.mutateAsync({ name, group });
+
+  const updateCategory = (id: string, data: { name?: string; group?: string | null }) =>
+    updateMutation.mutateAsync({ id, data });
+
+  const deleteCategory = (id: string) => deleteMutation.mutateAsync(id);
+
+  return {
+    categories,
+    tree,
+    loading: query.isLoading,
+    error: query.isError ? "Failed to load categories" : null,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    reload: invalidate,
   };
-
-  const updateCategory = async (id: string, data: { name?: string; group?: string | null }) => {
-    const updated = await categoriesApi.update(id, data);
-    setCategories((prev) => {
-      const next = prev.map((c) => (c.id === id ? updated : c));
-      setTree(buildTree(next));
-      return next;
-    });
-    return updated;
-  };
-
-  const deleteCategory = async (id: string) => {
-    await categoriesApi.delete(id);
-    setCategories((prev) => {
-      const next = prev.filter((c) => c.id !== id);
-      setTree(buildTree(next));
-      return next;
-    });
-  };
-
-  return { categories, tree, loading, error, addCategory, updateCategory, deleteCategory, reload: load };
 }

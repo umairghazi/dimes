@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { analyticsApi } from "@/api/analytics.api";
 import { MonthlySummary, BudgetComparison } from "@/types/analytics.types";
 
@@ -7,32 +8,38 @@ function currentMonthYear(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
+const ANALYTICS_STALE = 5 * 60 * 1000; // 5 min
+
 export function useAnalytics() {
   const [month, setMonth] = useState(currentMonthYear);
-
-  const [summary, setSummary] = useState<MonthlySummary | null>(null);
-  const [trends, setTrends] = useState<MonthlySummary[]>([]);
-  const [comparison, setComparison] = useState<BudgetComparison | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const [insight, setInsight] = useState<string | null>(null);
   const [insightLoading, setInsightLoading] = useState(false);
   const [insightError, setInsightError] = useState<string | null>(null);
 
+  // Reset insight when month changes
   useEffect(() => {
     setInsight(null);
     setInsightError(null);
-    setLoading(true);
-    Promise.all([
-      analyticsApi.getSummary(month),
-      analyticsApi.getTrends(),
-      analyticsApi.getBudgetComparison(month),
-    ])
-      .then(([s, t, c]) => { setSummary(s); setTrends(t); setComparison(c); })
-      .catch(() => setError("Failed to load analytics"))
-      .finally(() => setLoading(false));
   }, [month]);
+
+  const summaryQuery = useQuery<MonthlySummary>({
+    queryKey: ["analytics", "summary", month],
+    queryFn: () => analyticsApi.getSummary(month),
+    staleTime: ANALYTICS_STALE,
+  });
+
+  const trendsQuery = useQuery<MonthlySummary[]>({
+    queryKey: ["analytics", "trends", 6],
+    queryFn: () => analyticsApi.getTrends(),
+    staleTime: ANALYTICS_STALE,
+  });
+
+  const comparisonQuery = useQuery<BudgetComparison>({
+    queryKey: ["analytics", "budget-comparison", month],
+    queryFn: () => analyticsApi.getBudgetComparison(month),
+    staleTime: ANALYTICS_STALE,
+  });
 
   const fetchInsight = useCallback(async () => {
     setInsightLoading(true);
@@ -46,7 +53,6 @@ export function useAnalytics() {
       setInsightLoading(false);
     }
   }, [month]);
-
 
   const prevMonth = useCallback(() => {
     setMonth((m) => {
@@ -66,10 +72,20 @@ export function useAnalytics() {
 
   const isCurrentMonth = month === currentMonthYear();
 
+  const loading =
+    summaryQuery.isLoading || trendsQuery.isLoading || comparisonQuery.isLoading;
+  const error =
+    summaryQuery.isError || trendsQuery.isError || comparisonQuery.isError
+      ? "Failed to load analytics"
+      : null;
+
   return {
     month, prevMonth, nextMonth, isCurrentMonth,
-    summary, trends, comparison,
-    loading, error,
+    summary: summaryQuery.data ?? null,
+    trends: trendsQuery.data ?? [],
+    comparison: comparisonQuery.data ?? null,
+    loading,
+    error,
     insight, insightLoading, insightError, refreshInsight: fetchInsight,
   };
 }
