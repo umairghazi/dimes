@@ -2,6 +2,7 @@ import { Expense } from "../types/prisma.types";
 import { ExpenseFilters, ExpenseRepository } from "../repositories/expense.repository";
 import { AppError } from "../errors/AppError";
 import { PaginatedResult } from "../types/common.types";
+import { cache } from "../lib/cache";
 
 export interface CreateExpenseDto {
   date: string;
@@ -32,6 +33,10 @@ export interface UpdateExpenseDto {
 export class ExpenseService {
   constructor(private readonly expenseRepo: ExpenseRepository) {}
 
+  private invalidateAnalytics(userId: string): void {
+    cache.delPrefix(`analytics:${userId}:`);
+  }
+
   async getExpenses(
     userId: string,
     filters: Omit<ExpenseFilters, "userId">,
@@ -55,25 +60,30 @@ export class ExpenseService {
   }
 
   async createExpense(userId: string, dto: CreateExpenseDto): Promise<Expense> {
-    return this.expenseRepo.create({
+    const result = await this.expenseRepo.create({
       ...dto,
       userId,
       date: new Date(dto.date),
       isRecurring: dto.isRecurring ?? false,
       tags: dto.tags ?? [],
-    }) as Promise<Expense>;
+    }) as Expense;
+    this.invalidateAnalytics(userId);
+    return result;
   }
 
   async updateExpense(userId: string, id: string, dto: UpdateExpenseDto): Promise<Expense> {
     await this.getExpenseById(userId, id); // ownership check
-    return this.expenseRepo.updateById(id, {
+    const result = await this.expenseRepo.updateById(id, {
       ...dto,
       ...(dto.date ? { date: new Date(dto.date) } : {}),
-    }) as Promise<Expense>;
+    }) as Expense;
+    this.invalidateAnalytics(userId);
+    return result;
   }
 
   async deleteExpense(userId: string, id: string): Promise<void> {
     await this.getExpenseById(userId, id); // ownership check
     await this.expenseRepo.deleteById(id);
+    this.invalidateAnalytics(userId);
   }
 }

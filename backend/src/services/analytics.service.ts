@@ -3,6 +3,7 @@ import { BudgetRepository } from "../repositories/budget.repository";
 import { getAIProvider } from "../ai/AIProviderFactory";
 import { AnalyticsData } from "../ai/interfaces/AITypes";
 import { logger } from "../config/logger";
+import { cache, TTL } from "../lib/cache";
 
 export interface MonthlySummary {
   period: string;
@@ -42,6 +43,10 @@ export class AnalyticsService {
   ) {}
 
   async getMonthlySummary(userId: string, monthYear: string): Promise<MonthlySummary> {
+    const cacheKey = `analytics:summary:${userId}:${monthYear}`;
+    const cached = cache.get<MonthlySummary>(cacheKey);
+    if (cached) return cached;
+
     const [year, month] = monthYear.split("-").map(Number);
     const from = new Date(year, month - 1, 1);
     const to = new Date(year, month, 0, 23, 59, 59);
@@ -71,23 +76,29 @@ export class AnalyticsService {
       };
     });
 
-    return {
+    const result: MonthlySummary = {
       period: monthYear,
       totalSpend,
       totalIncome,
       netSavings: totalIncome - totalSpend,
       byCategory,
     };
+    cache.set(cacheKey, result, TTL.ANALYTICS);
+    return result;
   }
 
   async getTrends(userId: string, months: number = 6): Promise<MonthlySummary[]> {
-    const results: MonthlySummary[] = [];
+    const cacheKey = `analytics:trends:${userId}:${months}`;
+    const cached = cache.get<MonthlySummary[]>(cacheKey);
+    if (cached) return cached;
+
     const now = new Date();
-    for (let i = months - 1; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthYear = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      results.push(await this.getMonthlySummary(userId, monthYear));
-    }
+    const monthYears = Array.from({ length: months }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (months - 1 - i), 1);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    });
+    const results = await Promise.all(monthYears.map((m) => this.getMonthlySummary(userId, m)));
+    cache.set(cacheKey, results, TTL.ANALYTICS);
     return results;
   }
 
@@ -121,6 +132,10 @@ export class AnalyticsService {
   }
 
   async getBudgetComparison(userId: string, monthYear: string): Promise<BudgetComparison> {
+    const cacheKey = `analytics:budget-comparison:${userId}:${monthYear}`;
+    const cached = cache.get<BudgetComparison>(cacheKey);
+    if (cached) return cached;
+
     const [year, month] = monthYear.split("-").map(Number);
     const from = new Date(year, month - 1, 1);
     const to = new Date(year, month, 0, 23, 59, 59);
@@ -146,15 +161,27 @@ export class AnalyticsService {
     const totalPlanned = rows.reduce((s, r) => s + r.planned, 0);
     const totalActual = rows.reduce((s, r) => s + r.actual, 0);
 
-    return {
+    const result: BudgetComparison = {
       monthYear,
       totals: { planned: totalPlanned, actual: totalActual, diff: totalPlanned - totalActual },
       rows,
     };
+    cache.set(cacheKey, result, TTL.ANALYTICS);
+    return result;
   }
 
   async getRecurringTransactions(userId: string): Promise<unknown[]> {
-    return this.expenseRepo.findMany({ userId, isRecurring: true });
+    const cacheKey = `analytics:recurring:${userId}`;
+    const cached = cache.get<unknown[]>(cacheKey);
+    if (cached) return cached;
+
+    const result = await this.expenseRepo.findMany({ userId, isRecurring: true });
+    cache.set(cacheKey, result, TTL.RECURRING);
+    return result;
+  }
+
+  invalidateUser(userId: string): void {
+    cache.delPrefix(`analytics:${userId}:`);
   }
 
   async generateInsight(userId: string, monthYear: string): Promise<string> {

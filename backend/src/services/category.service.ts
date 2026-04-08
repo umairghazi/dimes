@@ -1,12 +1,19 @@
 import { UserCategory } from "../types/prisma.types";
 import { CategoryRepository } from "../repositories/category.repository";
 import { AppError } from "../errors/AppError";
+import { cache, TTL } from "../lib/cache";
 
 export class CategoryService {
   constructor(private readonly categoryRepo: CategoryRepository) {}
 
   async getCategories(userId: string): Promise<UserCategory[]> {
-    return this.categoryRepo.findByUserId(userId);
+    const cacheKey = `categories:${userId}`;
+    const cached = cache.get<UserCategory[]>(cacheKey);
+    if (cached) return cached;
+
+    const result = await this.categoryRepo.findByUserId(userId);
+    cache.set(cacheKey, result, TTL.CATEGORIES);
+    return result;
   }
 
   async createCategory(
@@ -27,7 +34,9 @@ export class CategoryService {
     const siblings = group ? await this.categoryRepo.findMany({ userId, group }) : [];
     const sortOrder = siblings.length;
 
-    return this.categoryRepo.create({ userId, name: fullName, group, sortOrder });
+    const result = await this.categoryRepo.create({ userId, name: fullName, group, sortOrder });
+    cache.del(`categories:${userId}`);
+    return result;
   }
 
   async updateCategory(
@@ -46,7 +55,9 @@ export class CategoryService {
     const newFullName = newGroup ? `${newGroup} - ${newBareName}` : newBareName;
 
     const updates: Partial<UserCategory> = { name: newFullName, group: newGroup };
-    return this.categoryRepo.updateById(id, updates as Record<string, unknown>);
+    const result = await this.categoryRepo.updateById(id, updates as Record<string, unknown>);
+    cache.del(`categories:${userId}`);
+    return result;
   }
 
   async deleteCategory(userId: string, id: string): Promise<void> {
@@ -54,10 +65,11 @@ export class CategoryService {
     if (!category) throw new AppError("Category not found", 404, "NOT_FOUND");
     if (category.userId !== userId) throw new AppError("Forbidden", 403, "FORBIDDEN");
     await this.categoryRepo.deleteById(id);
+    cache.del(`categories:${userId}`);
   }
 
   async getCategoryNames(userId: string): Promise<string[]> {
-    const categories = await this.categoryRepo.findByUserId(userId);
+    const categories = await this.getCategories(userId);
     return categories.map((c) => c.name);
   }
 }

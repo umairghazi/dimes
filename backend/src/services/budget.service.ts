@@ -1,6 +1,7 @@
 import { Budget } from "../types/prisma.types";
 import { BudgetRepository } from "../repositories/budget.repository";
 import { AppError } from "../errors/AppError";
+import { cache, TTL } from "../lib/cache";
 
 export interface CreateBudgetDto {
   category: string;
@@ -21,7 +22,18 @@ export class BudgetService {
   constructor(private readonly budgetRepo: BudgetRepository) {}
 
   async getBudgets(userId: string): Promise<Budget[]> {
-    return this.budgetRepo.findAllByUser(userId);
+    const cacheKey = `budgets:${userId}`;
+    const cached = cache.get<Budget[]>(cacheKey);
+    if (cached) return cached;
+
+    const result = await this.budgetRepo.findAllByUser(userId);
+    cache.set(cacheKey, result, TTL.BUDGETS);
+    return result;
+  }
+
+  private invalidate(userId: string): void {
+    cache.del(`budgets:${userId}`);
+    cache.delPrefix(`analytics:${userId}:`);
   }
 
   async getBudgetById(userId: string, id: string): Promise<Budget> {
@@ -44,12 +56,14 @@ export class BudgetService {
         "BUDGET_EXISTS",
       );
     }
-    return this.budgetRepo.create({
+    const result = await this.budgetRepo.create({
       ...dto,
       userId,
       alertThreshold: dto.alertThreshold ?? 0.8,
       carryForward: dto.carryForward ?? false,
-    }) as Promise<Budget>;
+    }) as Budget;
+    this.invalidate(userId);
+    return result;
   }
 
   async rolloverBudgets(userId: string, targetMonth: string): Promise<Budget[]> {
@@ -75,16 +89,20 @@ export class BudgetService {
       }) as Budget;
       created.push(budget);
     }
+    if (created.length > 0) this.invalidate(userId);
     return created;
   }
 
   async updateBudget(userId: string, id: string, dto: UpdateBudgetDto): Promise<Budget> {
     await this.getBudgetById(userId, id); // ownership check
-    return this.budgetRepo.updateById(id, dto as Record<string, unknown>) as Promise<Budget>;
+    const result = await this.budgetRepo.updateById(id, dto as Record<string, unknown>) as Budget;
+    this.invalidate(userId);
+    return result;
   }
 
   async deleteBudget(userId: string, id: string): Promise<void> {
     await this.getBudgetById(userId, id); // ownership check
     await this.budgetRepo.deleteById(id);
+    this.invalidate(userId);
   }
 }

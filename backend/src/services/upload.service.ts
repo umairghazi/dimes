@@ -8,6 +8,7 @@ import { CategoryService } from "./category.service";
 import { AppError } from "../errors/AppError";
 import { isAIAvailable } from "../ai/AIProviderFactory";
 import { jobStore } from "./jobStore";
+import { cache } from "../lib/cache";
 
 export interface ColumnMapping {
   dateIndex: number;
@@ -170,6 +171,7 @@ export class UploadService {
     );
 
     await this.stagingRepo.deleteByBatchId(batchId);
+    cache.delPrefix(`analytics:${userId}:`);
     return { imported: rows.length };
   }
 

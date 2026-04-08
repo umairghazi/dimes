@@ -36,6 +36,10 @@ model Expense {
   originalDescription String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+
+  @@index([userId, date])
+  @@index([userId, isRecurring])
+  @@index([userId, category])
 }
 
 model StagingExpense {
@@ -60,6 +64,8 @@ model UserCategory {
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Budget {
@@ -74,4 +80,6 @@ model Budget {
   carryForward   Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@index([userId, monthYear])
 }
