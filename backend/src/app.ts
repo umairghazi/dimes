@@ -2,7 +2,9 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
+import pinoHttp from "pino-http";
 import { env } from "./config/env";
+import { logger } from "./config/logger";
 import { errorMiddleware } from "./middleware/error.middleware";
 
 import authRoutes from "./routes/auth.routes";
@@ -15,6 +17,18 @@ import categoryRoutes from "./routes/category.routes";
 
 const app = express();
 
+app.use(pinoHttp({
+  logger,
+  customLogLevel: (_req, res) => {
+    if (res.statusCode >= 500) return "error";
+    if (res.statusCode >= 400) return "warn";
+    return "info";
+  },
+  serializers: {
+    req: (req) => ({ method: req.method, url: req.url }),
+    res: (res) => ({ statusCode: res.statusCode }),
+  },
+}));
 app.use(helmet());
 app.use(
   cors({

@@ -1,4 +1,5 @@
 import { env } from "../config/env";
+import { logger } from "../config/logger";
 import { IAIProvider } from "./interfaces/IAIProvider";
 import { AnthropicProvider } from "./providers/AnthropicProvider";
 import { OpenAIProvider } from "./providers/OpenAIProvider";
@@ -44,6 +45,6 @@ export function getAIProvider(): IAIProvider {
   instance = factory();
   aiAvailable = true;
 
-  console.log(`AI provider initialized: ${env.AI_PROVIDER}`);
+  logger.info({ provider: env.AI_PROVIDER }, "AI provider initialized");
   return instance;
 }

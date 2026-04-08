@@ -2,17 +2,18 @@ import "./config/env"; // validate env first
 import app from "./app";
 import { env } from "./config/env";
 import { prisma } from "./config/db";
+import { logger } from "./config/logger";
 
 async function start(): Promise<void> {
   await prisma.$connect();
-  console.log("Connected to MongoDB");
+  logger.info("Connected to MongoDB");
 
   app.listen(env.PORT, () => {
-    console.log(`Server running on http://localhost:${env.PORT} [${env.NODE_ENV}]`);
+    logger.info({ port: env.PORT, env: env.NODE_ENV }, "Server started");
   });
 }
 
 start().catch((err) => {
-  console.error("Failed to start server:", err);
+  logger.fatal({ err }, "Failed to start server");
   process.exit(1);
 });

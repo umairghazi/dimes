@@ -2,10 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/AppError";
 import { RepositoryError } from "../errors/RepositoryError";
 import { ZodError } from "zod";
+import { logger } from "../config/logger";
 
 export function errorMiddleware(
   err: unknown,
-  _req: Request,
+  req: Request,
   res: Response,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _next: NextFunction,
@@ -19,6 +20,9 @@ export function errorMiddleware(
   }
 
   if (err instanceof AppError) {
+    if (err.statusCode >= 500) {
+      logger.error({ err, method: req.method, url: req.url }, err.message);
+    }
     res.status(err.statusCode).json({
       error: err.message,
       code: err.code,
@@ -27,11 +31,11 @@ export function errorMiddleware(
   }
 
   if (err instanceof RepositoryError) {
-    console.error(`[RepositoryError] ${err.operation}:`, err.cause);
+    logger.error({ err: err.cause, operation: err.operation }, "Repository error");
     res.status(500).json({ error: "Database operation failed" });
     return;
   }
 
-  console.error("[UnhandledError]", err);
+  logger.error({ err, method: req.method, url: req.url }, "Unhandled error");
   res.status(500).json({ error: "Internal server error" });
 }
