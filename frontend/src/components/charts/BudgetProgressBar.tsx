@@ -24,8 +24,12 @@ interface BudgetProgressBarProps {
   currency?: string;
 }
 
-export function BudgetProgressBar({ spent, limit, currency = "USD" }: BudgetProgressBarProps) {
-  const percent = Math.min((spent / limit) * 100, 100);
+export function BudgetProgressBar({
+  spent,
+  limit,
+  currency = "USD",
+}: BudgetProgressBarProps) {
+  const percent = limit === 0 ? 0 : Math.min((spent / limit) * 100, 100);
   const fmt = (n: number) => `$${n.toFixed(2)}`;
 
   return (
@@ -37,16 +41,18 @@ export function BudgetProgressBar({ spent, limit, currency = "USD" }: BudgetProg
         <Typography
           variant="caption"
           sx={{ fontWeight: 600 }}
-          color={percent >= 90 ? "error.main" : percent >= 70 ? "warning.main" : "success.main"}
+          color={
+            percent >= 90
+              ? "error.main"
+              : percent >= 70
+                ? "warning.main"
+                : "success.main"
+          }
         >
           {percent.toFixed(0)}%
         </Typography>
       </Box>
-      <StyledLinearProgress
-        variant="determinate"
-        value={percent}
-        percentUsed={percent}
-      />
+      <StyledLinearProgress variant="determinate" value={percent} percentUsed={percent} />
     </Box>
   );
 }
