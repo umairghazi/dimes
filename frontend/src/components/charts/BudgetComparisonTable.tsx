@@ -17,6 +17,7 @@ import { BudgetComparison } from "@/types/analytics.types";
 interface Props {
   data: BudgetComparison | null;
   loading: boolean;
+  onCategoryClick?: (category: string) => void;
 }
 
 function fmt(n: number) {
@@ -33,7 +34,7 @@ function DiffCell({ value }: { value: number }) {
   );
 }
 
-export function BudgetComparisonTable({ data, loading }: Props) {
+export function BudgetComparisonTable({ data, loading, onCategoryClick }: Props) {
   const [hideEmpty, setHideEmpty] = useState(false);
 
   if (loading) {
@@ -93,7 +94,12 @@ export function BudgetComparisonTable({ data, loading }: Props) {
             </TableRow>
 
             {rows.map((row) => (
-              <TableRow key={row.category} hover>
+              <TableRow
+                key={row.category}
+                hover
+                onClick={onCategoryClick ? () => onCategoryClick(row.category) : undefined}
+                sx={onCategoryClick ? { cursor: "pointer" } : undefined}
+              >
                 <TableCell>{row.category}</TableCell>
                 <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", color: "text.secondary" }}>
                   {fmt(row.planned)}

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Box, Grid, Card, CardContent, Typography, Skeleton, Alert } from "@mui/material";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
@@ -9,6 +10,7 @@ import { TrendLine } from "@/components/charts/TrendLine";
 import { NLQueryBar } from "@/components/query/NLQueryBar";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { tokens } from "@/styles/theme/tokens";
+import { DrillDownDrawer, DrillDown } from "@/components/expenses/DrillDownDrawer";
 
 interface StatCardProps {
   label: string;
@@ -39,9 +41,14 @@ function StatCard({ label, amount, icon, iconBg, iconColor }: StatCardProps) {
 }
 
 export function Dashboard() {
-  const { summary, trends, loading, error } = useAnalytics();
+  const { summary, trends, month, loading, error } = useAnalytics();
   const { isMobile } = useBreakpoint();
   const monthLabel = new Date().toLocaleString("default", { month: "long", year: "numeric" });
+
+  const [drillDown, setDrillDown] = useState<DrillDown | null>(null);
+  const openDrillDown = (category?: string, overrideMonth?: string) =>
+    setDrillDown({ category, month: overrideMonth ?? month });
+  const closeDrillDown = () => setDrillDown(null);
 
   if (error) return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>;
 
@@ -81,7 +88,7 @@ export function Dashboard() {
           <Card sx={{ height: "100%" }}>
             <CardContent sx={{ p: "20px !important" }}>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Spending by Category</Typography>
-              {loading ? <Skeleton variant="circular" width={200} height={200} sx={{ mx: "auto" }} /> : summary ? <SpendingDonut data={summary.byCategory} /> : null}
+              {loading ? <Skeleton variant="circular" width={200} height={200} sx={{ mx: "auto" }} /> : summary ? <SpendingDonut data={summary.byCategory} onCategoryClick={(c) => openDrillDown(c)} /> : null}
             </CardContent>
           </Card>
         </Grid>
@@ -89,13 +96,19 @@ export function Dashboard() {
           <Card sx={{ height: "100%" }}>
             <CardContent sx={{ p: "20px !important" }}>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Spending Trend</Typography>
-              {loading ? <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 2 }} /> : <TrendLine data={trends} height={isMobile ? 180 : 220} />}
+              {loading ? <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 2 }} /> : <TrendLine data={trends} height={isMobile ? 180 : 220} onMonthClick={(m) => openDrillDown(undefined, m)} />}
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
       <QuickAddFAB />
+
+      <DrillDownDrawer
+        open={drillDown !== null}
+        onClose={closeDrillDown}
+        drillDown={drillDown}
+      />
     </Box>
   );
 }

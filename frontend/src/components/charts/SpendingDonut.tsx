@@ -9,9 +9,10 @@ const COLORS = [
 
 interface SpendingDonutProps {
   data: CategorySummary[];
+  onCategoryClick?: (category: string) => void;
 }
 
-export function SpendingDonut({ data }: SpendingDonutProps) {
+export function SpendingDonut({ data, onCategoryClick }: SpendingDonutProps) {
   const filtered = data.filter((d) => d.amount > 0 && d.category !== "Income");
 
   return (
@@ -26,6 +27,8 @@ export function SpendingDonut({ data }: SpendingDonutProps) {
           innerRadius={55}
           outerRadius={85}
           paddingAngle={2}
+          onClick={onCategoryClick ? (entry) => onCategoryClick((entry as unknown as { category: string }).category) : undefined}
+          style={onCategoryClick ? { cursor: "pointer" } : undefined}
         >
           {filtered.map((_, i) => (
             <Cell key={i} fill={COLORS[i % COLORS.length]} />

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Box,
   Typography,
@@ -18,6 +19,7 @@ import { TrendLine } from "@/components/charts/TrendLine";
 import { SpendingDonut } from "@/components/charts/SpendingDonut";
 import { CategoryBarChart } from "@/components/charts/CategoryBarChart";
 import { BudgetComparisonTable } from "@/components/charts/BudgetComparisonTable";
+import { DrillDownDrawer, DrillDown } from "@/components/expenses/DrillDownDrawer";
 
 function formatMonthLabel(monthYear: string): string {
   const [year, month] = monthYear.split("-").map(Number);
@@ -31,6 +33,11 @@ export function Analytics() {
     loading, error,
     insight, insightLoading, insightError, refreshInsight,
   } = useAnalytics();
+
+  const [drillDown, setDrillDown] = useState<DrillDown | null>(null);
+  const openDrillDown = (category?: string, overrideMonth?: string) =>
+    setDrillDown({ category, month: overrideMonth ?? month });
+  const closeDrillDown = () => setDrillDown(null);
 
   if (error) return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>;
 
@@ -87,7 +94,7 @@ export function Analytics() {
           <Card>
             <CardContent>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>6-Month Trend</Typography>
-              {loading ? <Skeleton height={260} /> : <TrendLine data={trends} height={260} />}
+              {loading ? <Skeleton height={260} /> : <TrendLine data={trends} height={260} onMonthClick={(m) => openDrillDown(undefined, m)} />}
             </CardContent>
           </Card>
         </Grid>
@@ -99,7 +106,7 @@ export function Analytics() {
               {loading ? (
                 <Skeleton variant="circular" width={200} height={200} sx={{ mx: "auto" }} />
               ) : summary ? (
-                <SpendingDonut data={summary.byCategory} />
+                <SpendingDonut data={summary.byCategory} onCategoryClick={(c) => openDrillDown(c)} />
               ) : null}
             </CardContent>
           </Card>
@@ -112,7 +119,7 @@ export function Analytics() {
               {loading ? (
                 <Skeleton height={260} />
               ) : summary ? (
-                <CategoryBarChart data={summary.byCategory} />
+                <CategoryBarChart data={summary.byCategory} onCategoryClick={(c) => openDrillDown(c)} />
               ) : null}
             </CardContent>
           </Card>
@@ -122,11 +129,17 @@ export function Analytics() {
           <Card>
             <CardContent>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Budget vs. Actual</Typography>
-              <BudgetComparisonTable data={comparison} loading={loading} />
+              <BudgetComparisonTable data={comparison} loading={loading} onCategoryClick={(c) => openDrillDown(c)} />
             </CardContent>
           </Card>
         </Grid>
       </Grid>
+
+      <DrillDownDrawer
+        open={drillDown !== null}
+        onClose={closeDrillDown}
+        drillDown={drillDown}
+      />
     </Box>
   );
 }

@@ -19,15 +19,22 @@ const COLORS = [
 interface CategoryBarChartProps {
   data: CategorySummary[];
   height?: number;
+  onCategoryClick?: (category: string) => void;
 }
 
-export function CategoryBarChart({ data, height = 260 }: CategoryBarChartProps) {
+export function CategoryBarChart({ data, height = 260, onCategoryClick }: CategoryBarChartProps) {
   const filtered = data.filter((d) => d.amount > 0 && d.category !== "Income")
     .sort((a, b) => b.amount - a.amount);
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={filtered} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 80 }}>
+      <BarChart
+        data={filtered}
+        layout="vertical"
+        margin={{ top: 5, right: 20, bottom: 5, left: 80 }}
+        onClick={onCategoryClick ? (e) => { if (e?.activeLabel) onCategoryClick(String(e.activeLabel)); } : undefined}
+        style={onCategoryClick ? { cursor: "pointer" } : undefined}
+      >
         <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.3} />
         <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
         <YAxis type="category" dataKey="category" tick={{ fontSize: 12 }} width={80} />

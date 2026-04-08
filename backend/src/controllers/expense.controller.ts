@@ -27,7 +27,7 @@ const filterSchema = z.object({
   source: z.string().optional(),
   isRecurring: z.string().optional(),
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
+  limit: z.coerce.number().int().positive().max(250).default(20),
 });
 
 function requireUser(req: Request): { id: string; email: string } {

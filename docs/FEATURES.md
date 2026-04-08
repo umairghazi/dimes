@@ -34,6 +34,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | Apply currency preference to all `$` displays | ⬜ | Preference is stored but most displays are hardcoded |
 | Backend caching — in-memory TTL cache + MongoDB indexes | ✅ | Analytics (1hr TTL), budgets (4hr), categories (8hr), recurring (4hr); invalidated on writes; 5 DB indexes added; getTrends parallelized |
 | Frontend caching — TanStack Query | ✅ | Categories (staleTime: Infinity), budgets (10min), analytics (5min), expenses (2min); mutations invalidate relevant query keys |
+| Drill-down drawer | ✅ | Click any chart or budget table row → slide-in drawer showing transactions for that category/month; "Open in Expenses" pre-fills filters and navigates |
 
 ---
 
