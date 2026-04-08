@@ -6,7 +6,8 @@
       "Bash(npx prisma:*)",
       "Bash(npm outdated:*)",
       "Bash(npm view:*)",
-      "Bash(echo \"Exit code: $?\")"
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(ls frontend/tsconfig*)"
     ]
   }
 }

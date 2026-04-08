@@ -55,6 +55,20 @@ export async function getRecurring(req: Request, res: Response, next: NextFuncti
   }
 }
 
+export async function getBudgetComparison(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = requireUser(req);
+    const { month } = monthSchema.parse(req.query);
+    const now = new Date();
+    const monthYear =
+      month ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const comparison = await analyticsService.getBudgetComparison(user.id, monthYear);
+    res.json(comparison);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getInsight(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);

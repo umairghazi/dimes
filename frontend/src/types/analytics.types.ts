@@ -23,3 +23,16 @@ export interface BudgetProgress {
   daysRemaining: number;
   alertThreshold: number;
 }
+
+export interface BudgetComparisonRow {
+  category: string;
+  planned: number;
+  actual: number;
+  diff: number;
+}
+
+export interface BudgetComparison {
+  monthYear: string;
+  totals: { planned: number; actual: number; diff: number };
+  rows: BudgetComparisonRow[];
+}

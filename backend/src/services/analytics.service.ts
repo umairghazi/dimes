@@ -21,6 +21,19 @@ export interface BudgetProgress {
   alertThreshold: number;
 }
 
+export interface BudgetComparisonRow {
+  category: string;
+  planned: number;
+  actual: number;
+  diff: number;
+}
+
+export interface BudgetComparison {
+  monthYear: string;
+  totals: { planned: number; actual: number; diff: number };
+  rows: BudgetComparisonRow[];
+}
+
 export class AnalyticsService {
   constructor(
     private readonly expenseRepo: ExpenseRepository,
@@ -104,6 +117,39 @@ export class AnalyticsService {
         alertThreshold: b.alertThreshold,
       };
     });
+  }
+
+  async getBudgetComparison(userId: string, monthYear: string): Promise<BudgetComparison> {
+    const [year, month] = monthYear.split("-").map(Number);
+    const from = new Date(year, month - 1, 1);
+    const to = new Date(year, month, 0, 23, 59, 59);
+
+    const [spendData, budgets] = await Promise.all([
+      this.expenseRepo.aggregateByCategory(userId, from, to),
+      this.budgetRepo.findByUserAndMonth(userId, monthYear),
+    ]);
+
+    const spendMap = new Map(spendData.map((c) => [c.category, c.total]));
+    const budgetMap = new Map(budgets.map((b) => [b.category, b.limitAmount]));
+
+    const allCategories = new Set([...budgetMap.keys(), ...spendMap.keys()]);
+
+    const rows: BudgetComparisonRow[] = Array.from(allCategories)
+      .sort()
+      .map((category) => {
+        const planned = budgetMap.get(category) ?? 0;
+        const actual = spendMap.get(category) ?? 0;
+        return { category, planned, actual, diff: planned - actual };
+      });
+
+    const totalPlanned = rows.reduce((s, r) => s + r.planned, 0);
+    const totalActual = rows.reduce((s, r) => s + r.actual, 0);
+
+    return {
+      monthYear,
+      totals: { planned: totalPlanned, actual: totalActual, diff: totalPlanned - totalActual },
+      rows,
+    };
   }
 
   async getRecurringTransactions(userId: string): Promise<unknown[]> {

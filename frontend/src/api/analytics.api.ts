@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import { MonthlySummary } from "@/types/analytics.types";
+import { MonthlySummary, BudgetComparison } from "@/types/analytics.types";
 
 export const analyticsApi = {
   getSummary: (month?: string) =>
@@ -13,4 +13,7 @@ export const analyticsApi = {
 
   getInsight: (month?: string) =>
     apiClient.get<{ insight: string }>("/analytics/insight", { params: { month } }).then((r) => r.data),
+
+  getBudgetComparison: (month?: string) =>
+    apiClient.get<BudgetComparison>("/analytics/budget-comparison", { params: { month } }).then((r) => r.data),
 };
