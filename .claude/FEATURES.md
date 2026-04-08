@@ -41,7 +41,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | Budget progress on Dashboard | ⬜ | `getBudgetProgress` exists on backend, never called. Show "90% through Groceries with 12 days left" |
 | Recurring transactions UI | ⬜ | `isRecurring` flag in data model, `getRecurringTransactions` on backend — nothing in UI |
 | Description text search in Expenses filter | ⬜ | FilterBar only filters by category and date range |
-| AI insights | ⬜ | `generateInsight` implemented on backend, not exposed via route or shown in UI |
+| AI insights | ✅ | Card at top of Analytics page; auto-fetches on load, refresh button to regenerate |
 
 ---
 

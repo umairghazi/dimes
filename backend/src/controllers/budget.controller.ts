@@ -8,14 +8,14 @@ const budgetService = new BudgetService(new BudgetRepository());
 const createSchema = z.object({
   category: z.string().min(1),
   monthYear: z.string().regex(/^\d{4}-\d{2}$/, "monthYear must be YYYY-MM"),
-  limitAmount: z.number().positive(),
+  limitAmount: z.number().min(0),
   currency: z.string().default("USD"),
   alertThreshold: z.number().min(0).max(1).optional(),
   carryForward: z.boolean().optional(),
 });
 
 const updateSchema = z.object({
-  limitAmount: z.number().positive().optional(),
+  limitAmount: z.number().min(0).optional(),
   alertThreshold: z.number().min(0).max(1).optional(),
   carryForward: z.boolean().optional(),
 });

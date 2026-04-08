@@ -1,11 +1,13 @@
-import { Box, Typography, Grid, Card, CardContent, Skeleton, Alert } from "@mui/material";
+import { Box, Typography, Grid, Card, CardContent, Skeleton, Alert, IconButton, Tooltip } from "@mui/material";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { TrendLine } from "@/components/charts/TrendLine";
 import { SpendingDonut } from "@/components/charts/SpendingDonut";
 import { CategoryBarChart } from "@/components/charts/CategoryBarChart";
 
 export function Analytics() {
-  const { summary, trends, loading, error } = useAnalytics();
+  const { summary, trends, loading, error, insight, insightLoading, insightError, refreshInsight } = useAnalytics();
 
   if (error) return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>;
 
@@ -14,6 +16,37 @@ export function Analytics() {
       <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>Analytics</Typography>
 
       <Grid container spacing={2}>
+        <Grid size={12}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <AutoAwesomeIcon fontSize="small" color="primary" />
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>AI Insight</Typography>
+                </Box>
+                <Tooltip title="Regenerate">
+                  <span>
+                    <IconButton size="small" onClick={() => void refreshInsight()} disabled={insightLoading}>
+                      <RefreshIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </Box>
+              {insightLoading ? (
+                <Box>
+                  <Skeleton width="95%" />
+                  <Skeleton width="80%" />
+                  <Skeleton width="60%" />
+                </Box>
+              ) : insightError ? (
+                <Typography variant="body2" color="text.disabled">{insightError}</Typography>
+              ) : insight ? (
+                <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.7 }}>{insight}</Typography>
+              ) : null}
+            </CardContent>
+          </Card>
+        </Grid>
+
         <Grid size={12}>
           <Card>
             <CardContent>

@@ -97,7 +97,7 @@ export function Categories() {
 
   const openEdit = (cat: UserCategory) => {
     setEditTarget(cat);
-    setEditName(cat.name);
+    setEditName(cat.group ? cat.name.replace(`${cat.group} - `, "") : cat.name);
     setEditGroup(cat.group ?? "");
   };
 
@@ -335,7 +335,7 @@ function CategoryCard({ cat, budget, spent, onEdit, onDelete, onSetBudget, onCle
 
   const saveBudget = async () => {
     const amount = parseFloat(budgetInput);
-    if (!isNaN(amount) && amount > 0) {
+    if (!isNaN(amount) && amount >= 0) {
       setBudgetSaving(true);
       try { onSetBudget(amount); } finally { setBudgetSaving(false); }
     }

@@ -13,22 +13,21 @@ export class CategoryService {
     userId: string,
     data: { name: string; group?: string },
   ): Promise<UserCategory> {
-    const name = data.name.trim();
-    if (!name) throw new AppError("Category name is required", 400, "VALIDATION_ERROR");
+    const bareName = data.name.trim();
+    if (!bareName) throw new AppError("Category name is required", 400, "VALIDATION_ERROR");
 
-    // Check for duplicate within the user's categories
-    const existing = await this.categoryRepo.findMany({ userId, name });
+    const group = data.group?.trim() || null;
+    const fullName = group ? `${group} - ${bareName}` : bareName;
+
+    const existing = await this.categoryRepo.findMany({ userId, name: fullName });
     if (existing.length > 0) {
       throw new AppError("Category already exists", 409, "DUPLICATE_CATEGORY");
     }
 
-    const group = data.group?.trim() || null;
-    const siblings = group
-      ? await this.categoryRepo.findMany({ userId, group })
-      : [];
+    const siblings = group ? await this.categoryRepo.findMany({ userId, group }) : [];
     const sortOrder = siblings.length;
 
-    return this.categoryRepo.create({ userId, name, group, sortOrder });
+    return this.categoryRepo.create({ userId, name: fullName, group, sortOrder });
   }
 
   async updateCategory(
@@ -40,10 +39,13 @@ export class CategoryService {
     if (!category) throw new AppError("Category not found", 404, "NOT_FOUND");
     if (category.userId !== userId) throw new AppError("Forbidden", 403, "FORBIDDEN");
 
-    const updates: Partial<UserCategory> = {};
-    if (data.name !== undefined) updates.name = data.name.trim();
-    if (data.group !== undefined) updates.group = data.group?.trim() || null;
+    const newGroup = data.group !== undefined ? (data.group?.trim() || null) : category.group;
+    const newBareName = data.name !== undefined
+      ? data.name.trim()
+      : (category.group ? category.name.replace(`${category.group} - `, "") : category.name);
+    const newFullName = newGroup ? `${newGroup} - ${newBareName}` : newBareName;
 
+    const updates: Partial<UserCategory> = { name: newFullName, group: newGroup };
     return this.categoryRepo.updateById(id, updates as Record<string, unknown>);
   }
 

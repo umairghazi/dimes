@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { analyticsApi } from "@/api/analytics.api";
 import { MonthlySummary } from "@/types/analytics.types";
 
@@ -8,6 +8,10 @@ export function useAnalytics(month?: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [insight, setInsight] = useState<string | null>(null);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const [insightError, setInsightError] = useState<string | null>(null);
+
   useEffect(() => {
     setLoading(true);
     Promise.all([analyticsApi.getSummary(month), analyticsApi.getTrends()])
@@ -16,5 +20,20 @@ export function useAnalytics(month?: string) {
       .finally(() => setLoading(false));
   }, [month]);
 
-  return { summary, trends, loading, error };
+  const fetchInsight = useCallback(async () => {
+    setInsightLoading(true);
+    setInsightError(null);
+    try {
+      const { insight: text } = await analyticsApi.getInsight(month);
+      setInsight(text);
+    } catch {
+      setInsightError("AI insight unavailable — check your AI provider configuration.");
+    } finally {
+      setInsightLoading(false);
+    }
+  }, [month]);
+
+  useEffect(() => { void fetchInsight(); }, [fetchInsight]);
+
+  return { summary, trends, loading, error, insight, insightLoading, insightError, refreshInsight: fetchInsight };
 }
