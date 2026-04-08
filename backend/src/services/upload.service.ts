@@ -7,12 +7,12 @@ import { ClassificationRepository } from "../repositories/classification.reposit
 import { CategoryService } from "./category.service";
 import { AppError } from "../errors/AppError";
 import { isAIAvailable } from "../ai/AIProviderFactory";
-import { ClassifiedTransaction } from "../ai/interfaces/AITypes";
+import { jobStore } from "./jobStore";
 
 export interface ColumnMapping {
   dateIndex: number;
   debitIndex: number;
-  creditIndex: number; // -1 if not mapped
+  creditIndex: number;
   descriptionIndex: number;
   hasHeader: boolean;
 }
@@ -29,7 +29,7 @@ export class UploadService {
     userId: string,
     fileBuffer: Buffer,
     columnMapping: ColumnMapping,
-  ): Promise<{ batchId: string; count: number; aiAvailable: boolean }> {
+  ): Promise<{ batchId: string; jobId: string; count: number }> {
     const csv = fileBuffer.toString("utf-8");
     const { data, errors } = Papa.parse<string[]>(csv, { header: false, skipEmptyLines: true });
 
@@ -40,53 +40,86 @@ export class UploadService {
     const rows = columnMapping.hasHeader ? (data as string[][]).slice(1) : (data as string[][]);
 
     const rawTransactions = rows
-      .map((row) => {
-        const debitRaw = (row[columnMapping.debitIndex] ?? "").replace(/[^0-9.]/g, "");
-        const amount = parseFloat(debitRaw);
-        return {
-          date: row[columnMapping.dateIndex] ?? "",
-          amount,
-          description: row[columnMapping.descriptionIndex] ?? "",
-        };
-      })
-      // Skip rows where debit is empty/zero - these are income/credit rows
+      .map((row) => ({
+        date: row[columnMapping.dateIndex] ?? "",
+        amount: parseFloat((row[columnMapping.debitIndex] ?? "").replace(/[^0-9.]/g, "")),
+        description: row[columnMapping.descriptionIndex] ?? "",
+      }))
       .filter((t) => t.date && !isNaN(t.amount) && t.amount > 0);
 
-    const userCategories = await this.categoryService.getCategoryNames(userId);
-    const uploadBatchId = uuidv4();
+    const batchId = uuidv4();
+    const jobId = uuidv4();
 
-    // No categories yet — skip AI and mark everything Miscellaneous
-    let classified: ClassifiedTransaction[];
-    let aiUsed: boolean;
-    if (userCategories.length === 0) {
-      classified = rawTransactions.map((t) => ({
-        ...t,
-        category: "Miscellaneous",
-        isRecurring: false,
-        confidence: 0,
-      }));
-      aiUsed = false;
-    } else {
-      classified = await this.classificationRepo.classify(rawTransactions, userCategories);
-      aiUsed = isAIAvailable();
-    }
-
+    // Save all rows immediately as Miscellaneous — AI will update them in background
     await Promise.all(
-      classified.map((t) =>
+      rawTransactions.map((t) =>
         this.stagingRepo.create({
           userId,
-          uploadBatchId,
+          uploadBatchId: batchId,
           date: new Date(t.date),
           description: t.description,
           amount: t.amount,
-          aiSuggestedCategory: t.category,
-          aiConfidence: t.confidence,
+          aiSuggestedCategory: "Miscellaneous",
+          aiConfidence: 0,
           status: "pending",
         }),
       ),
     );
 
-    return { batchId: uploadBatchId, count: classified.length, aiAvailable: aiUsed };
+    jobStore.create(jobId, batchId, rawTransactions.length);
+
+    const userCategories = await this.categoryService.getCategoryNames(userId);
+
+    if (userCategories.length === 0 || !isAIAvailable()) {
+      // Nothing to classify — mark job done immediately
+      jobStore.complete(jobId, false);
+    } else {
+      // Fire-and-forget background classification
+      void this.runClassification(jobId, batchId, userId, rawTransactions, userCategories);
+    }
+
+    return { batchId, jobId, count: rawTransactions.length };
+  }
+
+  private async runClassification(
+    jobId: string,
+    batchId: string,
+    userId: string,
+    rawTransactions: { date: string; amount: number; description: string }[],
+    userCategories: string[],
+  ): Promise<void> {
+    const batchSize = 50;
+    let classified = 0;
+
+    try {
+      for (let i = 0; i < rawTransactions.length; i += batchSize) {
+        const batch = rawTransactions.slice(i, i + batchSize);
+        const results = await this.classificationRepo.classify(batch, userCategories);
+
+        // Update each staging row with AI result
+        const stagingRows = await this.stagingRepo.findByBatchId(batchId);
+        await Promise.all(
+          results.map((result) => {
+            const row = stagingRows.find(
+              (r) => r.description === result.description && r.amount === result.amount,
+            );
+            if (!row) return Promise.resolve();
+            return this.stagingRepo.updateById(row.id, {
+              aiSuggestedCategory: result.category,
+              aiConfidence: result.confidence,
+            });
+          }),
+        );
+
+        classified += results.length;
+        jobStore.update(jobId, classified);
+      }
+
+      jobStore.complete(jobId, true);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Classification failed";
+      jobStore.fail(jobId, msg);
+    }
   }
 
   async getStagingRows(userId: string, batchId: string): Promise<StagingExpense[]> {

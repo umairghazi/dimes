@@ -1,14 +1,21 @@
-import { Box, Typography, Alert, Stepper, Step, StepLabel } from "@mui/material";
+import { Box, Typography, Alert, Stepper, Step, StepLabel, LinearProgress } from "@mui/material";
 import { useUpload } from "@/hooks/useUpload";
 import { ColumnMapper } from "@/components/upload/ColumnMapper";
 import { StagingReviewTable } from "@/components/upload/StagingReviewTable";
 
-const STEPS = ["Pick Columns", "Review & Correct", "Confirmed"];
+const STEPS = ["Pick Columns", "Classifying", "Review & Correct", "Done"];
 
 export function Upload() {
   const upload = useUpload();
 
-  const activeStep = upload.step === "map" ? 0 : upload.step === "review" ? 1 : 2;
+  const activeStep =
+    upload.step === "map" ? 0
+    : upload.step === "processing" ? 1
+    : upload.step === "review" ? 2
+    : 3;
+
+  const { classified = 0, total = 0 } = upload.progress ?? {};
+  const percent = total > 0 ? Math.round((classified / total) * 100) : 0;
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1000, mx: "auto" }}>
@@ -26,6 +33,28 @@ export function Upload() {
 
       {upload.step === "map" && (
         <ColumnMapper onSubmit={upload.uploadCSV} loading={upload.loading} />
+      )}
+
+      {upload.step === "processing" && (
+        <Box sx={{ textAlign: "center", py: 8, maxWidth: 480, mx: "auto" }}>
+          <Typography variant="h6" fontWeight={600} mb={1}>
+            Classifying transactions…
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mb={4}>
+            AI is categorising your transactions in the background.
+          </Typography>
+
+          <LinearProgress
+            variant={total > 0 ? "determinate" : "indeterminate"}
+            value={percent}
+            sx={{ borderRadius: 4, height: 8, mb: 1.5 }}
+          />
+          {total > 0 && (
+            <Typography variant="caption" color="text.secondary">
+              {classified} of {total} classified ({percent}%)
+            </Typography>
+          )}
+        </Box>
       )}
 
       {upload.step === "review" && (

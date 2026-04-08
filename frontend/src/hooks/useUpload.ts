@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { uploadApi } from "@/api/upload.api";
 import { StagingExpense } from "@/types/upload.types";
 
-export type UploadStep = "map" | "review" | "done";
+export type UploadStep = "map" | "processing" | "review" | "done";
 
 export function useUpload() {
   const [step, setStep] = useState<UploadStep>("map");
@@ -10,7 +10,10 @@ export function useUpload() {
   const [stagingRows, setStagingRows] = useState<StagingExpense[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [aiAvailable, setAiAvailable] = useState<boolean>(true);
+  const [aiAvailable, setAiAvailable] = useState<boolean>(false);
+  const [progress, setProgress] = useState<{ classified: number; total: number } | null>(null);
+
+  const sseCleanup = useRef<(() => void) | null>(null);
 
   const uploadCSV = async (
     file: File,
@@ -22,15 +25,31 @@ export function useUpload() {
   ) => {
     setLoading(true);
     setError(null);
+    setProgress(null);
     try {
-      const { batchId: id, aiAvailable: hasAI } = await uploadApi.uploadCSV(file, dateIndex, debitIndex, creditIndex, descriptionIndex, hasHeader);
+      const { batchId: id, jobId, count } = await uploadApi.uploadCSV(
+        file, dateIndex, debitIndex, creditIndex, descriptionIndex, hasHeader,
+      );
       setBatchId(id);
-      setAiAvailable(hasAI);
-      const rows = await uploadApi.getStagingRows(id);
-      setStagingRows(rows);
-      setStep("review");
+      setProgress({ classified: 0, total: count });
+      setStep("processing");
+
+      sseCleanup.current = uploadApi.streamJob(
+        jobId,
+        (e) => setProgress({ classified: e.classified, total: e.total }),
+        async (e) => {
+          setAiAvailable(e.aiAvailable);
+          const rows = await uploadApi.getStagingRows(id);
+          setStagingRows(rows);
+          setStep("review");
+        },
+        (msg) => {
+          setError(msg);
+          setStep("map");
+        },
+      );
     } catch {
-      setError("Upload failed");
+      setError("Upload failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -55,7 +74,7 @@ export function useUpload() {
       await uploadApi.confirmBatch(batchId);
       setStep("done");
     } catch {
-      setError("Confirm failed");
+      setError("Import failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -63,17 +82,23 @@ export function useUpload() {
 
   const discard = async () => {
     if (!batchId) return;
+    sseCleanup.current?.();
     await uploadApi.discardBatch(batchId);
     reset();
   };
 
   const reset = () => {
+    sseCleanup.current?.();
     setStep("map");
     setBatchId(null);
     setStagingRows([]);
     setError(null);
-    setAiAvailable(true);
+    setAiAvailable(false);
+    setProgress(null);
   };
 
-  return { step, batchId, stagingRows, loading, error, aiAvailable, uploadCSV, correctCategory, skipRow, confirm, discard, reset };
+  return {
+    step, batchId, stagingRows, loading, error, aiAvailable, progress,
+    uploadCSV, correctCategory, skipRow, confirm, discard, reset,
+  };
 }

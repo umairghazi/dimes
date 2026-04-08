@@ -4,6 +4,7 @@ import { uploadRateLimiter } from "../middleware/rateLimiter.middleware";
 import {
   upload,
   uploadCSV,
+  streamJob,
   getStagingRows,
   correctCategory,
   skipStagingRow,
@@ -13,6 +14,10 @@ import {
 
 const router = Router();
 const uploadLimiter = uploadRateLimiter as unknown as RequestHandler;
+
+// SSE endpoint handles its own auth via query param (EventSource can't set headers)
+// — must be registered before the authenticate middleware
+router.get("/jobs/:jobId/stream", streamJob as unknown as RequestHandler);
 
 router.use(authenticate);
 
