@@ -10,6 +10,10 @@ import {
   Button,
   FormControl,
   InputLabel,
+  Select,
+  MenuItem,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
   useTheme,
   useMediaQuery,
@@ -17,7 +21,11 @@ import {
   Chip,
 } from "@mui/material";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import TrendingDownIcon from "@mui/icons-material/TrendingDown";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { CategorySelect } from "@/components/shared/CategorySelect";
+
+const INCOME_SOURCES = ["Paycheck", "Salary", "Bonus", "Interest", "Freelance", "Rebates", "Other"];
 import { expensesApi } from "@/api/expenses.api";
 import { usePreferencesStore } from "@/store/preferencesStore";
 import { queryApi } from "@/api/query.api";
@@ -36,10 +44,12 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const { currency } = usePreferencesStore();
+  const [mode, setMode] = useState<"expense" | "income">("expense");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(today());
   const [category, setCategory] = useState("Groceries");
+  const [incomeSource, setIncomeSource] = useState("Paycheck");
   const [suggestedCategory, setSuggestedCategory] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -48,18 +58,20 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
   // Reset on open
   useEffect(() => {
     if (open) {
+      setMode("expense");
       setAmount("");
       setDescription("");
       setDate(today());
       setCategory("Groceries");
+      setIncomeSource("Paycheck");
       setSuggestedCategory(null);
     }
   }, [open]);
 
-  // Real-time AI category suggestion debounced 400ms
+  // Real-time AI category suggestion debounced 400ms (expense mode only)
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    if (description.length < 3) { setSuggestedCategory(null); return; }
+    if (mode === "income" || description.length < 3) { setSuggestedCategory(null); return; }
 
     debounceTimer.current = setTimeout(async () => {
       try {
@@ -73,7 +85,7 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
     }, 400);
 
     return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
-  }, [description]);
+  }, [description, mode]);
 
   const handleSave = async () => {
     if (!amount || !description) return;
@@ -83,7 +95,8 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
         amount: parseFloat(amount),
         description,
         date,
-        category: category as import("@/types/expense.types").ExpenseCategory,
+        category: (mode === "income" ? "Income" : category) as import("@/types/expense.types").ExpenseCategory,
+        ...(mode === "income" ? { subCategory: incomeSource } : {}),
         currency,
         source: "manual",
         isRecurring: false,
@@ -100,6 +113,23 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
 
   const content = (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+      <ToggleButtonGroup
+        value={mode}
+        exclusive
+        onChange={(_, v) => { if (v) setMode(v as "expense" | "income"); }}
+        fullWidth
+        size="small"
+      >
+        <ToggleButton value="expense" sx={{ gap: 0.75 }}>
+          <TrendingDownIcon fontSize="small" />
+          Expense
+        </ToggleButton>
+        <ToggleButton value="income" sx={{ gap: 0.75 }}>
+          <TrendingUpIcon fontSize="small" />
+          Income
+        </ToggleButton>
+      </ToggleButtonGroup>
+
       <TextField
         label="Amount"
         type="number"
@@ -137,14 +167,29 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
           />
         </Box>
       )}
-      <FormControl fullWidth>
-        <InputLabel>Category</InputLabel>
-        <CategorySelect
-          label="Category"
-          value={category}
-          onChange={(e) => setCategory(e.target.value as string)}
-        />
-      </FormControl>
+      {mode === "expense" ? (
+        <FormControl fullWidth>
+          <InputLabel>Category</InputLabel>
+          <CategorySelect
+            label="Category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value as string)}
+          />
+        </FormControl>
+      ) : (
+        <FormControl fullWidth>
+          <InputLabel>Income Source</InputLabel>
+          <Select
+            label="Income Source"
+            value={incomeSource}
+            onChange={(e) => setIncomeSource(e.target.value)}
+          >
+            {INCOME_SOURCES.map((s) => (
+              <MenuItem key={s} value={s}>{s}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
       <TextField
         label="Date"
         type="date"

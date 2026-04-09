@@ -42,7 +42,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 
 | Feature | Status | Notes |
 | --- | --- | --- |
-| Income tracking | ⬜ | Analytics separates income but there's no way to record it. QuickAdd and CSV only capture debits |
+| Income tracking | ✅ | QuickAdd has Expense/Income toggle; income stored as category="Income" + subCategory=source (Paycheck, Bonus, etc.); Dashboard shows two-panel Income vs Expenses view with planned/actual bars + tables + net savings |
 | Budget progress on Dashboard | ⬜ | Budget vs Actual exists on Analytics page; a summary widget on Dashboard would surface it faster |
 | Recurring transactions UI | ⬜ | `isRecurring` flag in data model, `getRecurringTransactions` on backend — nothing in UI |
 | Description text search in Expenses filter | ✅ | Case-insensitive contains search on description; debounced 300ms in FilterBar |

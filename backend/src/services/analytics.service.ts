@@ -150,7 +150,12 @@ export class AnalyticsService {
 
     const allCategories = new Set([...budgetMap.keys(), ...spendMap.keys()]);
 
-    const rows: BudgetComparisonRow[] = Array.from(allCategories)
+    // Exclude income entries — those are handled by getIncomeBreakdown
+    const expenseCategories = Array.from(allCategories).filter(
+      (c) => c !== "Income" && !c.startsWith("Income - "),
+    );
+
+    const rows: BudgetComparisonRow[] = expenseCategories
       .sort()
       .map((category) => {
         const planned = budgetMap.get(category) ?? 0;
@@ -164,6 +169,49 @@ export class AnalyticsService {
     const result: BudgetComparison = {
       monthYear,
       totals: { planned: totalPlanned, actual: totalActual, diff: totalPlanned - totalActual },
+      rows,
+    };
+    cache.set(cacheKey, result, TTL.ANALYTICS);
+    return result;
+  }
+
+  async getIncomeBreakdown(userId: string, monthYear: string): Promise<BudgetComparison> {
+    const cacheKey = `analytics:income-breakdown:${userId}:${monthYear}`;
+    const cached = cache.get<BudgetComparison>(cacheKey);
+    if (cached) return cached;
+
+    const [year, month] = monthYear.split("-").map(Number);
+    const from = new Date(year, month - 1, 1);
+    const to = new Date(year, month, 0, 23, 59, 59);
+
+    const [incomeData, budgets] = await Promise.all([
+      this.expenseRepo.aggregateBySubCategory(userId, from, to, "Income"),
+      this.budgetRepo.findByUserAndMonth(userId, monthYear),
+    ]);
+
+    // Income budgets are stored as "Income - Paycheck", "Income - Bonus", etc.
+    const incomeBudgets = budgets.filter((b) => b.category.startsWith("Income - "));
+    const budgetMap = new Map(
+      incomeBudgets.map((b) => [b.category.replace("Income - ", ""), b.limitAmount]),
+    );
+    const actualMap = new Map(incomeData.map((c) => [c.subCategory, c.total]));
+
+    const allSources = new Set([...budgetMap.keys(), ...actualMap.keys()]);
+    const rows: BudgetComparisonRow[] = Array.from(allSources)
+      .sort()
+      .map((source) => {
+        const planned = budgetMap.get(source) ?? 0;
+        const actual = actualMap.get(source) ?? 0;
+        // For income: positive diff = earned more than planned (good)
+        return { category: source, planned, actual, diff: actual - planned };
+      });
+
+    const totalPlanned = rows.reduce((s, r) => s + r.planned, 0);
+    const totalActual = rows.reduce((s, r) => s + r.actual, 0);
+
+    const result: BudgetComparison = {
+      monthYear,
+      totals: { planned: totalPlanned, actual: totalActual, diff: totalActual - totalPlanned },
       rows,
     };
     cache.set(cacheKey, result, TTL.ANALYTICS);

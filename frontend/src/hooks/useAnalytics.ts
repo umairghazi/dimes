@@ -41,6 +41,12 @@ export function useAnalytics() {
     staleTime: ANALYTICS_STALE,
   });
 
+  const incomeBreakdownQuery = useQuery<BudgetComparison>({
+    queryKey: ["analytics", "income-breakdown", month],
+    queryFn: () => analyticsApi.getIncomeBreakdown(month),
+    staleTime: ANALYTICS_STALE,
+  });
+
   const fetchInsight = useCallback(async () => {
     setInsightLoading(true);
     setInsightError(null);
@@ -73,9 +79,9 @@ export function useAnalytics() {
   const isCurrentMonth = month === currentMonthYear();
 
   const loading =
-    summaryQuery.isLoading || trendsQuery.isLoading || comparisonQuery.isLoading;
+    summaryQuery.isLoading || trendsQuery.isLoading || comparisonQuery.isLoading || incomeBreakdownQuery.isLoading;
   const error =
-    summaryQuery.isError || trendsQuery.isError || comparisonQuery.isError
+    summaryQuery.isError || trendsQuery.isError || comparisonQuery.isError || incomeBreakdownQuery.isError
       ? "Failed to load analytics"
       : null;
 
@@ -84,6 +90,7 @@ export function useAnalytics() {
     summary: summaryQuery.data ?? null,
     trends: trendsQuery.data ?? [],
     comparison: comparisonQuery.data ?? null,
+    incomeBreakdown: incomeBreakdownQuery.data ?? null,
     loading,
     error,
     insight, insightLoading, insightError, refreshInsight: fetchInsight,

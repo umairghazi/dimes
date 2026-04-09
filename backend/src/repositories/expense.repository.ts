@@ -111,4 +111,32 @@ export class ExpenseRepository extends BaseMongoRepository<Expense> {
       throw new RepositoryError("Failed to aggregateByCategory", "aggregateByCategory", err);
     }
   }
+
+  async aggregateBySubCategory(
+    userId: string,
+    from: Date,
+    to: Date,
+    category: string,
+  ): Promise<Array<{ subCategory: string; total: number; count: number }>> {
+    try {
+      const expenses = await prisma.expense.findMany({
+        where: { userId, category, date: { gte: from, lte: to } },
+        select: { subCategory: true, amount: true },
+      });
+
+      const map = new Map<string, { total: number; count: number }>();
+      for (const e of expenses) {
+        const key = e.subCategory ?? "Other";
+        const existing = map.get(key) ?? { total: 0, count: 0 };
+        map.set(key, { total: existing.total + e.amount, count: existing.count + 1 });
+      }
+
+      return Array.from(map.entries()).map(([subCategory, data]) => ({
+        subCategory,
+        ...data,
+      }));
+    } catch (err) {
+      throw new RepositoryError("Failed to aggregateBySubCategory", "aggregateBySubCategory", err);
+    }
+  }
 }

@@ -16,4 +16,7 @@ export const analyticsApi = {
 
   getBudgetComparison: (month?: string) =>
     apiClient.get<BudgetComparison>("/analytics/budget-comparison", { params: { month } }).then((r) => r.data),
+
+  getIncomeBreakdown: (month?: string) =>
+    apiClient.get<BudgetComparison>("/analytics/income-breakdown", { params: { month } }).then((r) => r.data),
 };

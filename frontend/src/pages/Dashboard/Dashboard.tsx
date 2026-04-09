@@ -16,6 +16,7 @@ import { SpendingDonut } from "@/components/charts/SpendingDonut";
 import { CategoryBarChart } from "@/components/charts/CategoryBarChart";
 import { TrendLine } from "@/components/charts/TrendLine";
 import { BudgetComparisonTable } from "@/components/charts/BudgetComparisonTable";
+import { IncomeExpenseOverview } from "@/components/charts/IncomeExpenseOverview";
 import { NLQueryBar } from "@/components/query/NLQueryBar";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { tokens } from "@/styles/theme/tokens";
@@ -57,7 +58,7 @@ function StatCard({ label, amount, icon, iconBg, iconColor }: StatCardProps) {
 export function Dashboard() {
   const {
     month, prevMonth, nextMonth, isCurrentMonth,
-    summary, trends, comparison,
+    summary, trends, comparison, incomeBreakdown,
     loading, error,
     insight, insightLoading, insightError, refreshInsight,
   } = useAnalytics();
@@ -189,12 +190,17 @@ export function Dashboard() {
           </Card>
         </Grid>
 
-        {/* Budget vs Actual */}
+        {/* Income vs Expenses Overview */}
         <Grid size={12}>
           <Card>
             <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Budget vs. Actual</Typography>
-              <BudgetComparisonTable data={comparison} loading={loading} onCategoryClick={(c) => openDrillDown(c)} />
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>Income vs. Expenses</Typography>
+              <IncomeExpenseOverview
+                expenses={comparison}
+                income={incomeBreakdown}
+                loading={loading}
+                onCategoryClick={(c) => openDrillDown(c)}
+              />
             </CardContent>
           </Card>
         </Grid>
