@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -17,10 +17,12 @@ import {
   Divider,
   CircularProgress,
   Alert,
+  Chip,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import RestoreIcon from "@mui/icons-material/RestoreFromTrash";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useCategories } from "@/hooks/useCategories";
@@ -87,6 +89,13 @@ function AddDialog({ open, defaultGroup, onClose, onAdd }: AddDialogProps) {
   const [group, setGroup] = useState(defaultGroup ?? "");
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (open) {
+      setName("");
+      setGroup(defaultGroup ?? "");
+    }
+  }, [open, defaultGroup]);
+
   const handleAdd = async () => {
     if (!name.trim()) return;
     setSaving(true);
@@ -136,11 +145,16 @@ function AddDialog({ open, defaultGroup, onClose, onAdd }: AddDialogProps) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function CategoryManager() {
-  const { tree, loading, error, addCategory, updateCategory, deleteCategory } = useCategories();
+  const { tree, categories, loading, error, addCategory, updateCategory, deleteCategory, restoreCategory } =
+    useCategories({ includeDeleted: true });
+
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [editTarget, setEditTarget] = useState<UserCategory | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [addGroupDefault, setAddGroupDefault] = useState<string | undefined>(undefined);
+  const [showDeleted, setShowDeleted] = useState(false);
+
+  const deletedCategories = categories.filter((c) => c.deletedAt !== null);
 
   const toggleGroup = (group: string) => {
     setExpanded((prev) => {
@@ -175,8 +189,12 @@ export function CategoryManager() {
         </Button>
       </Box>
 
+      {/* Active categories */}
       <List disablePadding>
-        {tree.map((group, gi) => {
+        {tree.filter((g) => g.items.some((c) => !c.deletedAt)).map((group, gi) => {
+          const activeItems = group.items.filter((c) => !c.deletedAt);
+          if (activeItems.length === 0) return null;
+
           const isGroup = group.group !== null;
           const groupKey = group.group ?? `standalone-${gi}`;
           const isExpanded = !isGroup || expanded.has(groupKey);
@@ -186,7 +204,6 @@ export function CategoryManager() {
               {gi > 0 && <Divider />}
 
               {isGroup ? (
-                // Named group header
                 <ListItem
                   disablePadding
                   sx={{ px: 0 }}
@@ -199,29 +216,19 @@ export function CategoryManager() {
                   }
                 >
                   <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 0.5,
-                      cursor: "pointer",
-                      py: 1,
-                      px: 0,
-                      flexGrow: 1,
-                    }}
+                    sx={{ display: "flex", alignItems: "center", gap: 0.5, cursor: "pointer", py: 1, px: 0, flexGrow: 1 }}
                     onClick={() => toggleGroup(groupKey)}
                   >
                     {isExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>{group.group}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      ({group.items.length})
-                    </Typography>
+                    <Typography variant="caption" color="text.secondary">({activeItems.length})</Typography>
                   </Box>
                 </ListItem>
               ) : null}
 
               <Collapse in={isExpanded} timeout="auto">
                 <List disablePadding>
-                  {group.items.map((cat) => (
+                  {activeItems.map((cat) => (
                     <ListItem
                       key={cat.id}
                       disablePadding
@@ -234,11 +241,7 @@ export function CategoryManager() {
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Delete">
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => void deleteCategory(cat.id)}
-                            >
+                            <IconButton size="small" color="error" onClick={() => void deleteCategory(cat.id)}>
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
@@ -260,6 +263,50 @@ export function CategoryManager() {
           );
         })}
       </List>
+
+      {/* Deleted categories */}
+      {deletedCategories.length > 0 && (
+        <Box sx={{ mt: 3 }}>
+          <Divider />
+          <Box
+            sx={{ display: "flex", alignItems: "center", gap: 1, mt: 2, mb: 1, cursor: "pointer" }}
+            onClick={() => setShowDeleted((v) => !v)}
+          >
+            {showDeleted ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+              Deleted categories
+            </Typography>
+            <Chip label={deletedCategories.length} size="small" sx={{ height: 18, fontSize: "0.7rem" }} />
+          </Box>
+
+          <Collapse in={showDeleted}>
+            <List disablePadding>
+              {deletedCategories.map((cat) => (
+                <ListItem
+                  key={cat.id}
+                  disablePadding
+                  sx={{ opacity: 0.5 }}
+                  secondaryAction={
+                    <Tooltip title="Restore">
+                      <IconButton size="small" onClick={() => void restoreCategory(cat.id)}>
+                        <RestoreIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  }
+                >
+                  <ListItemText
+                    primary={
+                      <Typography variant="body2" sx={{ textDecoration: "line-through" }}>
+                        {cat.name}
+                      </Typography>
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </Collapse>
+        </Box>
+      )}
 
       <EditDialog
         category={editTarget}

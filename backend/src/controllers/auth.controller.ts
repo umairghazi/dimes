@@ -26,7 +26,7 @@ export async function register(req: Request, res: Response, next: NextFunction):
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.status(201).json({ user: result.user, accessToken: result.tokens.accessToken });
+    res.status(201).json({ user: result.user, accessToken: result.tokens.accessToken, refreshToken: result.tokens.refreshToken });
   } catch (err) {
     next(err);
   }
@@ -42,7 +42,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.json({ user: result.user, accessToken: result.tokens.accessToken });
+    res.json({ user: result.user, accessToken: result.tokens.accessToken, refreshToken: result.tokens.refreshToken });
   } catch (err) {
     next(err);
   }
@@ -50,7 +50,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
 
 export async function refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const token = req.cookies?.refreshToken as string | undefined;
+    const token = (req.cookies?.refreshToken ?? req.body?.refreshToken) as string | undefined;
     if (!token) {
       res.status(401).json({ error: "Refresh token missing" });
       return;
@@ -62,7 +62,7 @@ export async function refresh(req: Request, res: Response, next: NextFunction): 
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.json({ accessToken: tokens.accessToken });
+    res.json({ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
   } catch (err) {
     next(err);
   }

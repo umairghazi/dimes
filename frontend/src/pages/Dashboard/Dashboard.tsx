@@ -15,7 +15,6 @@ import { QuickAddFAB } from "@/components/quickAdd/QuickAddFAB";
 import { SpendingDonut } from "@/components/charts/SpendingDonut";
 import { CategoryBarChart } from "@/components/charts/CategoryBarChart";
 import { TrendLine } from "@/components/charts/TrendLine";
-import { BudgetComparisonTable } from "@/components/charts/BudgetComparisonTable";
 import { IncomeExpenseOverview } from "@/components/charts/IncomeExpenseOverview";
 import { NLQueryBar } from "@/components/query/NLQueryBar";
 import { useBreakpoint } from "@/hooks/useBreakpoint";

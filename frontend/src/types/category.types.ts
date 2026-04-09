@@ -4,6 +4,7 @@ export interface UserCategory {
   name: string;
   group: string | null;
   sortOrder: number;
+  deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

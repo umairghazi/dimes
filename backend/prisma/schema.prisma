@@ -27,7 +27,8 @@ model Expense {
   description         String
   amount              Float
   currency            String
-  category            String
+  category            String   // denormalized name, kept in sync with UserCategory.name
+  categoryId          String?  @db.ObjectId // FK → UserCategory (null for Income / legacy)
   subCategory         String?
   merchantName        String?
   source              String   // "manual" | "csv-upload"
@@ -57,13 +58,14 @@ model StagingExpense {
 }
 
 model UserCategory {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-  name      String   // full stored value e.g. "Bill - Electricity", "Groceries"
-  group     String?  // parent group e.g. "Bill", null for standalones
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String    @db.ObjectId
+  name      String    // full stored value e.g. "Bill - Electricity", "Groceries"
+  group     String?   // parent group e.g. "Bill", null for standalones
+  sortOrder Int       @default(0)
+  deletedAt DateTime? // soft delete — null means active
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([userId])
 }

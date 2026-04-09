@@ -7,7 +7,8 @@ export interface Expense {
   description: string;
   amount: number;
   currency: string;
-  category: ExpenseCategory;
+  category: ExpenseCategory;   // denormalized name (always present)
+  categoryId?: string | null;  // FK → UserCategory
   subCategory?: string;
   merchantName?: string;
   source: "manual" | "csv-upload";

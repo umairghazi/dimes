@@ -24,6 +24,7 @@ import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { CategorySelect } from "@/components/shared/CategorySelect";
+import { useCategories } from "@/hooks/useCategories";
 
 const INCOME_SOURCES = ["Paycheck", "Salary", "Bonus", "Interest", "Freelance", "Rebates", "Other"];
 import { expensesApi } from "@/api/expenses.api";
@@ -44,40 +45,63 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const { currency } = usePreferencesStore();
+  const { tree } = useCategories();
   const [mode, setMode] = useState<"expense" | "income">("expense");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(today());
-  const [category, setCategory] = useState("Groceries");
+  const [categoryId, setCategoryId] = useState("");
   const [incomeSource, setIncomeSource] = useState("Paycheck");
-  const [suggestedCategory, setSuggestedCategory] = useState<string | null>(null);
+  // AI suggestion stores the name string (AI returns names)
+  const [suggestedCategoryId, setSuggestedCategoryId] = useState<string | null>(null);
+  const [suggestedCategoryName, setSuggestedCategoryName] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Reset on open
+  // Default categoryId to first available category when tree loads or dialog opens
   useEffect(() => {
     if (open) {
       setMode("expense");
       setAmount("");
       setDescription("");
       setDate(today());
-      setCategory("Groceries");
       setIncomeSource("Paycheck");
-      setSuggestedCategory(null);
+      setSuggestedCategoryId(null);
+      setSuggestedCategoryName(null);
+      // Pick first available category as default
+      const firstCat = tree.flatMap((g) => g.items)[0];
+      setCategoryId(firstCat?.id ?? "");
     }
-  }, [open]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // When tree first loads after dialog is already open, set default if not set yet
+  useEffect(() => {
+    if (categoryId === "" && tree.length > 0) {
+      const firstCat = tree.flatMap((g) => g.items)[0];
+      if (firstCat) setCategoryId(firstCat.id);
+    }
+  }, [tree]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Real-time AI category suggestion debounced 400ms (expense mode only)
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    if (mode === "income" || description.length < 3) { setSuggestedCategory(null); return; }
+    if (mode === "income" || description.length < 3) {
+      setSuggestedCategoryId(null);
+      setSuggestedCategoryName(null);
+      return;
+    }
 
     debounceTimer.current = setTimeout(async () => {
       try {
         const result = await queryApi.nl(`categorize: ${description}`, "ask");
         if (result.parsedTransaction?.category) {
-          setSuggestedCategory(result.parsedTransaction.category);
+          const name = result.parsedTransaction.category as string;
+          const match = tree.flatMap((g) => g.items).find((c) => c.name === name);
+          if (match) {
+            setSuggestedCategoryId(match.id);
+            setSuggestedCategoryName(match.name);
+          }
         }
       } catch {
         // silently ignore
@@ -85,23 +109,36 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
     }, 400);
 
     return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
-  }, [description, mode]);
+  }, [description, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = async () => {
     if (!amount || !description) return;
     setSaving(true);
     try {
-      await expensesApi.create({
-        amount: parseFloat(amount),
-        description,
-        date,
-        category: (mode === "income" ? "Income" : category) as import("@/types/expense.types").ExpenseCategory,
-        ...(mode === "income" ? { subCategory: incomeSource } : {}),
-        currency,
-        source: "manual",
-        isRecurring: false,
-        tags: [],
-      });
+      if (mode === "income") {
+        await expensesApi.create({
+          amount: parseFloat(amount),
+          description,
+          date,
+          category: "Income",
+          subCategory: incomeSource,
+          currency,
+          source: "manual",
+          isRecurring: false,
+          tags: [],
+        });
+      } else {
+        await expensesApi.create({
+          amount: parseFloat(amount),
+          description,
+          date,
+          categoryId,
+          currency,
+          source: "manual",
+          isRecurring: false,
+          tags: [],
+        });
+      }
       onSaved?.();
       onClose();
     } catch {
@@ -155,15 +192,15 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
         fullWidth
         placeholder="e.g. Coffee at Starbucks"
       />
-      {suggestedCategory && suggestedCategory !== category && (
+      {suggestedCategoryId && suggestedCategoryId !== categoryId && suggestedCategoryName && (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Typography variant="caption" color="text.secondary">AI suggests:</Typography>
           <Chip
-            label={suggestedCategory}
+            label={suggestedCategoryName}
             size="small"
             color="primary"
             variant="outlined"
-            onClick={() => setCategory(suggestedCategory)}
+            onClick={() => setCategoryId(suggestedCategoryId)}
           />
         </Box>
       )}
@@ -172,8 +209,8 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
           <InputLabel>Category</InputLabel>
           <CategorySelect
             label="Category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value as string)}
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value as string)}
           />
         </FormControl>
       ) : (

@@ -12,7 +12,7 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRY: z.string().default("7d"),
   ENCRYPTION_MASTER_KEY: z.string().optional(),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  CLIENT_ORIGIN: z.string().default("http://localhost:5173"),
+  CLIENT_ORIGIN: z.string().default("http://localhost:5173,http://localhost:8081,http://localhost:19006"),
   AI_PROVIDER: z
     .enum(["anthropic", "openai", "google", "bedrock", "local"])
     .default("anthropic"),

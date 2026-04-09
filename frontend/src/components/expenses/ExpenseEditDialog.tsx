@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import { CategorySelect } from "@/components/shared/CategorySelect";
+import { useCategories } from "@/hooks/useCategories";
 import { Expense } from "@/types/expense.types";
 import { expensesApi } from "@/api/expenses.api";
 
@@ -23,10 +24,11 @@ interface ExpenseEditDialogProps {
 }
 
 export function ExpenseEditDialog({ expense, onClose, onSaved }: ExpenseEditDialogProps) {
+  const { tree } = useCategories();
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -34,9 +36,14 @@ export function ExpenseEditDialog({ expense, onClose, onSaved }: ExpenseEditDial
       setDescription(expense.description);
       setAmount(String(expense.amount));
       setDate(expense.date.split("T")[0]);
-      setCategory(expense.category);
+      // Prefer stored categoryId; fall back to resolving by name
+      setCategoryId(
+        expense.categoryId ??
+          tree.flatMap((g) => g.items).find((c) => c.name === expense.category)?.id ??
+          ""
+      );
     }
-  }, [expense]);
+  }, [expense, tree]);
 
   const handleSave = async () => {
     if (!expense || !description.trim() || !amount || !date) return;
@@ -46,7 +53,7 @@ export function ExpenseEditDialog({ expense, onClose, onSaved }: ExpenseEditDial
         description: description.trim(),
         amount: parseFloat(amount),
         date,
-        category,
+        categoryId,
       });
       onSaved();
       onClose();
@@ -96,8 +103,8 @@ export function ExpenseEditDialog({ expense, onClose, onSaved }: ExpenseEditDial
             <InputLabel>Category</InputLabel>
             <CategorySelect
               label="Category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value as string)}
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value as string)}
             />
           </FormControl>
         </Box>

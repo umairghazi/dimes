@@ -53,6 +53,7 @@ export function FilterBar() {
           value={filters.category ?? ""}
           onChange={(e) => setFilter("category", (e.target.value as string) || undefined)}
           includeAll
+          valueBy="name"
         />
       </FormControl>
 

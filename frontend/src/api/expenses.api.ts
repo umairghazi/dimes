@@ -1,6 +1,11 @@
 import { apiClient } from "./client";
 import { Expense, ExpenseFilters, PaginatedExpenses } from "@/types/expense.types";
 
+type CreateExpensePayload = Omit<Expense, "id" | "userId" | "createdAt" | "updatedAt" | "category" | "categoryId"> & {
+  categoryId?: string | null;
+  category?: string;
+};
+
 export const expensesApi = {
   list: (params: ExpenseFilters & { page?: number; limit?: number }) =>
     apiClient.get<PaginatedExpenses>("/expenses", { params }).then((r) => r.data),
@@ -8,10 +13,10 @@ export const expensesApi = {
   getById: (id: string) =>
     apiClient.get<Expense>(`/expenses/${id}`).then((r) => r.data),
 
-  create: (data: Omit<Expense, "id" | "userId" | "createdAt" | "updatedAt">) =>
+  create: (data: CreateExpensePayload) =>
     apiClient.post<Expense>("/expenses", data).then((r) => r.data),
 
-  update: (id: string, data: Partial<Expense>) =>
+  update: (id: string, data: Partial<Expense> & { categoryId?: string | null }) =>
     apiClient.patch<Expense>(`/expenses/${id}`, data).then((r) => r.data),
 
   delete: (id: string) =>

@@ -20,6 +20,7 @@ export interface Expense {
   amount: number;
   currency: string;
   category: string;
+  categoryId?: string | null;
   subCategory?: string | null;
   merchantName?: string | null;
   source: string;
@@ -50,6 +51,7 @@ export interface UserCategory {
   name: string;
   group: string | null;
   sortOrder: number;
+  deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

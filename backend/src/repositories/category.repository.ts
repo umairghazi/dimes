@@ -12,11 +12,22 @@ export class CategoryRepository extends BaseMongoRepository<UserCategory> {
   async findByUserId(userId: string): Promise<UserCategory[]> {
     try {
       return (await prisma.userCategory.findMany({
-        where: { userId },
+        where: { userId, OR: [{ deletedAt: null }, { deletedAt: { isSet: false } }] },
         orderBy: [{ group: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
       })) as UserCategory[];
     } catch (err) {
       throw new RepositoryError("Failed to findByUserId", "findByUserId", err);
+    }
+  }
+
+  async findAllByUserId(userId: string): Promise<UserCategory[]> {
+    try {
+      return (await prisma.userCategory.findMany({
+        where: { userId },
+        orderBy: [{ group: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
+      })) as UserCategory[];
+    } catch (err) {
+      throw new RepositoryError("Failed to findAllByUserId", "findAllByUserId", err);
     }
   }
 

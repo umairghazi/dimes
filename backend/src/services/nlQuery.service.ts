@@ -19,7 +19,7 @@ export class NLQueryService {
 
   constructor(private readonly nlQueryRepo: NLQueryRepository) {
     this.analyticsService = new AnalyticsService(new ExpenseRepository(), new BudgetRepository());
-    this.categoryService = new CategoryService(new CategoryRepository());
+    this.categoryService = new CategoryService(new CategoryRepository(), new ExpenseRepository());
   }
 
   async query(input: string, context: UserContext, mode: "ask" | "add"): Promise<QueryResult> {

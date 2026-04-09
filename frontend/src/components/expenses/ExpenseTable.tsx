@@ -95,6 +95,7 @@ export function ExpenseTable({
                       <CategoryEditCell
                         expenseId={expense.id}
                         category={expense.category}
+                        categoryId={expense.categoryId}
                         onUpdated={onUpdate}
                       />
                     </TableCell>
@@ -127,14 +128,16 @@ export function ExpenseTable({
           </TableBody>
         </Table>
       </TableContainer>
-      <TablePagination
-        component="div"
-        count={totalPages * 20}
-        page={page - 1}
-        rowsPerPage={20}
-        onPageChange={(_, newPage) => onPageChange(newPage + 1)}
-        rowsPerPageOptions={[20]}
-      />
+      <Box sx={{ display: "flex", justifyContent: "center", py: 1 }}>
+        <TablePagination
+          component="div"
+          count={totalPages * 20}
+          page={page - 1}
+          rowsPerPage={20}
+          onPageChange={(_, newPage) => onPageChange(newPage + 1)}
+          rowsPerPageOptions={[20]}
+        />
+      </Box>
       <ExpenseEditDialog
         expense={editTarget}
         onClose={() => setEditTarget(null)}

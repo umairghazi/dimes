@@ -2,23 +2,36 @@ import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { ExpenseService } from "../services/expense.service";
 import { ExpenseRepository } from "../repositories/expense.repository";
+import { CategoryRepository } from "../repositories/category.repository";
 import { AppError } from "../errors/AppError";
-const expenseService = new ExpenseService(new ExpenseRepository());
+const expenseService = new ExpenseService(new ExpenseRepository(), new CategoryRepository());
 
 const createSchema = z.object({
   date: z.string(),
   description: z.string().min(1),
   amount: z.number().positive(),
   currency: z.string().default("USD"),
-  category: z.string().min(1),
+  categoryId: z.string().optional(),
+  category: z.string().optional(),
   subCategory: z.string().optional(),
   merchantName: z.string().optional(),
   source: z.enum(["manual", "csv-upload"]).default("manual"),
   isRecurring: z.boolean().optional(),
   tags: z.array(z.string()).optional(),
-});
+}).refine((d) => d.categoryId || d.category, { message: "categoryId or category is required" });
 
-const updateSchema = createSchema.partial().omit({ source: true });
+const updateSchema = z.object({
+  date: z.string().optional(),
+  description: z.string().min(1).optional(),
+  amount: z.number().positive().optional(),
+  currency: z.string().optional(),
+  categoryId: z.string().optional(),
+  category: z.string().optional(),
+  subCategory: z.string().optional(),
+  merchantName: z.string().optional(),
+  isRecurring: z.boolean().optional(),
+  tags: z.array(z.string()).optional(),
+});
 
 const filterSchema = z.object({
   category: z.string().optional(),

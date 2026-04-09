@@ -14,20 +14,26 @@ import { expensesApi } from "@/api/expenses.api";
 
 interface CategoryEditCellProps {
   expenseId: string;
-  category: string;
+  category: string;      // display name (always present)
+  categoryId?: string | null;
   onUpdated: () => void;
 }
 
-export function CategoryEditCell({ expenseId, category, onUpdated }: CategoryEditCellProps) {
+export function CategoryEditCell({ expenseId, category, categoryId, onUpdated }: CategoryEditCellProps) {
   const { tree } = useCategories();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const handleChange = async (newCategory: string) => {
-    if (newCategory === category) { setEditing(false); return; }
+  // Resolve current select value: prefer categoryId, fall back to finding by name
+  const currentValue = categoryId ?? (
+    tree.flatMap((g) => g.items).find((c) => c.name === category)?.id ?? ""
+  );
+
+  const handleChange = async (newCategoryId: string) => {
+    if (newCategoryId === currentValue) { setEditing(false); return; }
     setSaving(true);
     try {
-      await expensesApi.update(expenseId, { category: newCategory });
+      await expensesApi.update(expenseId, { categoryId: newCategoryId });
       onUpdated();
     } finally {
       setSaving(false);
@@ -42,7 +48,7 @@ export function CategoryEditCell({ expenseId, category, onUpdated }: CategoryEdi
   if (editing) {
     return (
       <Select
-        value={category}
+        value={currentValue}
         onChange={(e) => void handleChange(e.target.value)}
         onClose={() => setEditing(false)}
         size="small"
@@ -55,13 +61,13 @@ export function CategoryEditCell({ expenseId, category, onUpdated }: CategoryEdi
             ? [
                 <ListSubheader key={`hdr-${group.group}`}>{group.group}</ListSubheader>,
                 ...group.items.map((cat) => (
-                  <MenuItem key={cat.id} value={cat.name} sx={{ pl: 3, fontSize: "0.8125rem" }}>
+                  <MenuItem key={cat.id} value={cat.id} sx={{ pl: 3, fontSize: "0.8125rem" }}>
                     {cat.name.replace(`${group.group} - `, "")}
                   </MenuItem>
                 )),
               ]
             : group.items.map((cat) => (
-                <MenuItem key={cat.id} value={cat.name} sx={{ fontSize: "0.8125rem" }}>
+                <MenuItem key={cat.id} value={cat.id} sx={{ fontSize: "0.8125rem" }}>
                   {cat.name}
                 </MenuItem>
               ))

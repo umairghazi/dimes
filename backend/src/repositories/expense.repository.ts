@@ -86,6 +86,14 @@ export class ExpenseRepository extends BaseMongoRepository<Expense> {
     }
   }
 
+  async updateByCategoryId(categoryId: string, data: { category: string }): Promise<void> {
+    try {
+      await prisma.expense.updateMany({ where: { categoryId }, data });
+    } catch (err) {
+      throw new RepositoryError("Failed to updateByCategoryId", "updateByCategoryId", err);
+    }
+  }
+
   async aggregateByCategory(
     userId: string,
     from: Date,

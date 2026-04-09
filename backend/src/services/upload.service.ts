@@ -154,21 +154,28 @@ export class UploadService {
     const rows = await this.getStagingRows(userId, batchId);
     if (rows.length === 0) throw new AppError("Batch not found or empty", 404, "NOT_FOUND");
 
+    // Build name → id map for category resolution
+    const userCategories = await this.categoryRepo.findByUserId(userId);
+    const nameToId = new Map(userCategories.map((c) => [c.name, c.id]));
+
     await Promise.all(
-      rows.map((row) =>
-        this.expenseRepo.create({
+      rows.map((row) => {
+        const categoryName = row.userCorrectedCategory ?? row.aiSuggestedCategory;
+        const categoryId = nameToId.get(categoryName) ?? null;
+        return this.expenseRepo.create({
           userId,
           date: row.date,
           description: row.description,
           amount: row.amount,
           currency: "USD",
-          category: row.userCorrectedCategory ?? row.aiSuggestedCategory,
+          category: categoryName,
+          categoryId,
           source: "csv-upload",
           isRecurring: false,
           tags: [],
           originalDescription: row.description,
-        }),
-      ),
+        });
+      }),
     );
 
     await this.stagingRepo.deleteByBatchId(batchId);

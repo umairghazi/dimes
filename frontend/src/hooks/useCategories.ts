@@ -29,12 +29,12 @@ function buildTree(categories: UserCategory[]): CategoryGroup[] {
   return groups;
 }
 
-export function useCategories() {
+export function useCategories({ includeDeleted = false } = {}) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ["categories"],
-    queryFn: categoriesApi.getAll,
+    queryKey: ["categories", includeDeleted],
+    queryFn: includeDeleted ? categoriesApi.getAllIncludingDeleted : categoriesApi.getAll,
     staleTime: Infinity,
   });
 
@@ -60,6 +60,11 @@ export function useCategories() {
     onSuccess: invalidate,
   });
 
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) => categoriesApi.restore(id),
+    onSuccess: invalidate,
+  });
+
   const addCategory = (name: string, group?: string) =>
     addMutation.mutateAsync({ name, group });
 
@@ -67,6 +72,8 @@ export function useCategories() {
     updateMutation.mutateAsync({ id, data });
 
   const deleteCategory = (id: string) => deleteMutation.mutateAsync(id);
+
+  const restoreCategory = (id: string) => restoreMutation.mutateAsync(id);
 
   return {
     categories,
@@ -76,6 +83,7 @@ export function useCategories() {
     addCategory,
     updateCategory,
     deleteCategory,
+    restoreCategory,
     reload: invalidate,
   };
 }
