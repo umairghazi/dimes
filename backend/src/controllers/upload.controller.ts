@@ -6,7 +6,6 @@ import { UploadService } from "../services/upload.service";
 import { StagingRepository } from "../repositories/staging.repository";
 import { ExpenseRepository } from "../repositories/expense.repository";
 import { ClassificationRepository } from "../repositories/classification.repository";
-import { CategoryService } from "../services/category.service";
 import { CategoryRepository } from "../repositories/category.repository";
 import { AppError } from "../errors/AppError";
 import { jobStore } from "../services/jobStore";
@@ -16,7 +15,7 @@ const uploadService = new UploadService(
   new StagingRepository(),
   new ExpenseRepository(),
   new ClassificationRepository(),
-  new CategoryService(new CategoryRepository()),
+  new CategoryRepository(),
 );
 
 export const upload = multer({

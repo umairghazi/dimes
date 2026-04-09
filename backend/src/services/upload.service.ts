@@ -4,7 +4,7 @@ import { StagingExpense } from "../types/prisma.types";
 import { StagingRepository } from "../repositories/staging.repository";
 import { ExpenseRepository } from "../repositories/expense.repository";
 import { ClassificationRepository } from "../repositories/classification.repository";
-import { CategoryService } from "./category.service";
+import { CategoryRepository } from "../repositories/category.repository";
 import { AppError } from "../errors/AppError";
 import { isAIAvailable } from "../ai/AIProviderFactory";
 import { jobStore } from "./jobStore";
@@ -23,7 +23,7 @@ export class UploadService {
     private readonly stagingRepo: StagingRepository,
     private readonly expenseRepo: ExpenseRepository,
     private readonly classificationRepo: ClassificationRepository,
-    private readonly categoryService: CategoryService,
+    private readonly categoryRepo: CategoryRepository,
   ) {}
 
   async processCSV(
@@ -69,7 +69,8 @@ export class UploadService {
 
     jobStore.create(jobId, batchId, rawTransactions.length);
 
-    const userCategories = await this.categoryService.getCategoryNames(userId);
+    const categories = await this.categoryRepo.findByUserId(userId);
+    const userCategories = categories.map((c) => c.name);
 
     if (userCategories.length === 0 || !isAIAvailable()) {
       // Nothing to classify — mark job done immediately
