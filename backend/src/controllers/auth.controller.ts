@@ -4,16 +4,17 @@ import { AuthService } from "../services/auth.service";
 import { UserRepository } from "../repositories/user.repository";
 
 const registerSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(1),
 });
 
-const authService = new AuthService(new UserRepository());
+const userRepo = new UserRepository()
+const authService = new AuthService(userRepo);
 
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
