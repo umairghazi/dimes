@@ -13,7 +13,6 @@ import {
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import BarChartIcon from "@mui/icons-material/BarChart";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import SettingsIcon from "@mui/icons-material/Settings";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
@@ -26,7 +25,6 @@ const NAV_ITEMS = [
   { label: "Expenses", icon: <ReceiptLongIcon fontSize="small" />, path: "/expenses" },
   { label: "Upload", icon: <UploadFileIcon fontSize="small" />, path: "/upload" },
   { label: "Categories", icon: <AccountBalanceWalletIcon fontSize="small" />, path: "/categories" },
-  { label: "Analytics", icon: <BarChartIcon fontSize="small" />, path: "/analytics" },
 ];
 
 interface SidebarProps {

@@ -9,14 +9,14 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import AddIcon from "@mui/icons-material/Add";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import BarChartIcon from "@mui/icons-material/BarChart";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { tokens } from "@/styles/theme/tokens";
 
 interface BottomNavProps {
   onAddClick: () => void;
 }
 
-const TAB_PATHS = ["/", "/expenses", null, "/categories", "/analytics"];
+const TAB_PATHS = ["/", "/expenses", null, "/categories", "/upload"];
 
 export function BottomNav({ onAddClick }: BottomNavProps) {
   const navigate = useNavigate();
@@ -54,7 +54,7 @@ export function BottomNav({ onAddClick }: BottomNavProps) {
           sx={{ pointerEvents: "none", opacity: 0 }}
         />
         <BottomNavigationAction label="Categories" icon={<AccountBalanceWalletIcon />} />
-        <BottomNavigationAction label="Analytics" icon={<BarChartIcon />} />
+        <BottomNavigationAction label="Upload" icon={<UploadFileIcon />} />
       </BottomNavigation>
 
       {/* FAB overlapping the center slot */}

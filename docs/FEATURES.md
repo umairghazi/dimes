@@ -15,8 +15,8 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | Categories — CRUD with parent groups | ✅ | |
 | Budgets — merged into Categories page, inline budget per category | ✅ | Per-month limit with progress bar |
 | Budget carry-forward | ✅ | Repeat toggle on each category card; auto-rolls over on page load via `POST /budgets/rollover` |
-| Analytics — monthly summary, 6-month trend, donut, bar chart | ✅ | Month picker (prev/next) controls all analytics data |
-| Budget vs Actual table | ✅ | On Analytics page; planned/actual/diff per category with totals row; toggle to hide $0 rows |
+| Analytics — monthly summary, 6-month trend, donut, bar chart | ✅ | Merged into Dashboard; month picker controls all data |
+| Budget vs Actual table | ✅ | On Dashboard; planned/actual/diff per category with totals row; toggle to hide $0 rows |
 | NL query bar — ask and add modes | ✅ | |
 | Dashboard — stat cards, donut, trend, NL bar | ✅ | |
 | Settings — theme (dark/light), currency preference | ✅ | |
@@ -45,7 +45,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | Income tracking | ⬜ | Analytics separates income but there's no way to record it. QuickAdd and CSV only capture debits |
 | Budget progress on Dashboard | ⬜ | Budget vs Actual exists on Analytics page; a summary widget on Dashboard would surface it faster |
 | Recurring transactions UI | ⬜ | `isRecurring` flag in data model, `getRecurringTransactions` on backend — nothing in UI |
-| Description text search in Expenses filter | ⬜ | FilterBar only filters by category and date range |
+| Description text search in Expenses filter | ✅ | Case-insensitive contains search on description; debounced 300ms in FilterBar |
 | AI insights | ✅ | Card at top of Analytics page; manual trigger only (Generate button), resets on month change |
 
 ---

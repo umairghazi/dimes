@@ -24,6 +24,7 @@ export interface ExpenseFilters {
   dateTo?: string;
   source?: string;
   isRecurring?: boolean;
+  search?: string;
 }
 
 export interface PaginatedExpenses {

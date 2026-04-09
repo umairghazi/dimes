@@ -26,6 +26,7 @@ const filterSchema = z.object({
   dateTo: z.string().optional(),
   source: z.string().optional(),
   isRecurring: z.string().optional(),
+  search: z.string().optional(),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(250).default(20),
 });
@@ -38,7 +39,7 @@ function requireUser(req: Request): { id: string; email: string } {
 export async function listExpenses(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);
-    const { page, limit, category, dateFrom, dateTo, source, isRecurring } = filterSchema.parse(req.query);
+    const { page, limit, category, dateFrom, dateTo, source, isRecurring, search } = filterSchema.parse(req.query);
     const result = await expenseService.getExpenses(
       user.id,
       {
@@ -47,6 +48,7 @@ export async function listExpenses(req: Request, res: Response, next: NextFuncti
         dateTo: dateTo ? new Date(dateTo) : undefined,
         source,
         isRecurring: isRecurring === undefined ? undefined : isRecurring === "true",
+        search,
       },
       page,
       limit,

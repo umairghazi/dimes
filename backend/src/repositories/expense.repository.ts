@@ -50,6 +50,9 @@ export class ExpenseRepository extends BaseMongoRepository<Expense> {
         if (filters.dateFrom) (where.date as Record<string, unknown>).gte = filters.dateFrom;
         if (filters.dateTo) (where.date as Record<string, unknown>).lte = filters.dateTo;
       }
+      if (filters.search) {
+        where.description = { contains: filters.search, mode: "insensitive" };
+      }
       return await prisma.expense.findMany({
         where: where as never,
         skip,
@@ -71,6 +74,9 @@ export class ExpenseRepository extends BaseMongoRepository<Expense> {
         where.date = {};
         if (filters.dateFrom) (where.date as Record<string, unknown>).gte = filters.dateFrom;
         if (filters.dateTo) (where.date as Record<string, unknown>).lte = filters.dateTo;
+      }
+      if (filters.search) {
+        where.description = { contains: filters.search, mode: "insensitive" };
       }
       return await prisma.expense.count({
         where: where as never,
