@@ -1,10 +1,12 @@
 import { useState, useRef } from "react";
 import { uploadApi } from "@/api/upload.api";
 import { StagingExpense } from "@/types/upload.types";
+import { usePreferencesStore } from "@/store/preferencesStore";
 
 export type UploadStep = "map" | "processing" | "review" | "done";
 
 export function useUpload() {
+  const { currency } = usePreferencesStore();
   const [step, setStep] = useState<UploadStep>("map");
   const [batchId, setBatchId] = useState<string | null>(null);
   const [stagingRows, setStagingRows] = useState<StagingExpense[]>([]);
@@ -71,7 +73,7 @@ export function useUpload() {
     if (!batchId) return;
     setLoading(true);
     try {
-      await uploadApi.confirmBatch(batchId);
+      await uploadApi.confirmBatch(batchId, currency);
       setStep("done");
     } catch {
       setError("Import failed. Please try again.");

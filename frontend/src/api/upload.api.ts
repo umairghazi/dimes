@@ -81,8 +81,8 @@ export const uploadApi = {
       .patch<StagingExpense>(`/upload/${batchId}/staging/${rowId}`, { category })
       .then((r) => r.data),
 
-  confirmBatch: (batchId: string) =>
-    apiClient.post<{ imported: number }>(`/upload/${batchId}/confirm`).then((r) => r.data),
+  confirmBatch: (batchId: string, currency = "USD") =>
+    apiClient.post<{ imported: number }>(`/upload/${batchId}/confirm`, { currency }).then((r) => r.data),
 
   skipStagingRow: (batchId: string, rowId: string) =>
     apiClient.delete(`/upload/${batchId}/staging/${rowId}`),

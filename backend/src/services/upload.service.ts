@@ -150,7 +150,7 @@ export class UploadService {
     return this.stagingRepo.updateById(rowId, { userCorrectedCategory: category }) as Promise<StagingExpense>;
   }
 
-  async confirmBatch(userId: string, batchId: string): Promise<{ imported: number }> {
+  async confirmBatch(userId: string, batchId: string, currency = "USD"): Promise<{ imported: number }> {
     const rows = await this.getStagingRows(userId, batchId);
     if (rows.length === 0) throw new AppError("Batch not found or empty", 404, "NOT_FOUND");
 
@@ -167,8 +167,7 @@ export class UploadService {
           date: row.date,
           description: row.description,
           amount: row.amount,
-          currency: "USD",
-          category: categoryName,
+          currency,
           categoryId,
           source: "csv-upload",
           isRecurring: false,

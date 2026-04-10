@@ -156,7 +156,8 @@ export async function correctCategory(req: Request, res: Response, next: NextFun
 export async function confirmBatch(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);
-    const result = await uploadService.confirmBatch(user.id, req.params.batchId);
+    const currency = typeof req.body?.currency === "string" ? req.body.currency : "USD";
+    const result = await uploadService.confirmBatch(user.id, req.params.batchId, currency);
     res.json(result);
   } catch (err) {
     next(err);
