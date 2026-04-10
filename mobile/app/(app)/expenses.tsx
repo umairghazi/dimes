@@ -84,7 +84,7 @@ function ExpenseRow({
         </View>
       </View>
 
-      <Text style={[styles.rowAmount, { color: colors.textPrimary }]}>{formatCurrency(item.amount)}</Text>
+      <Text style={[styles.rowAmount, { color: item.isIncome ? "#16a34a" : colors.textPrimary }]}>{formatCurrency(item.amount)}</Text>
     </TouchableOpacity>
   );
 }

@@ -45,7 +45,8 @@ export default function AddExpenseScreen() {
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(todayISO());
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [categoryName, setCategoryName] = useState("");
   const [pickerVisible, setPickerVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -59,7 +60,7 @@ export default function AddExpenseScreen() {
     if (!description.trim()) return Alert.alert("Validation", "Description is required");
     const parsed = parseFloat(amount);
     if (isNaN(parsed) || parsed <= 0) return Alert.alert("Validation", "Enter a valid amount");
-    if (!category) return Alert.alert("Validation", "Select a category");
+    if (!categoryId) return Alert.alert("Validation", "Select a category");
     if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return Alert.alert("Validation", "Date must be YYYY-MM-DD");
 
     setSubmitting(true);
@@ -68,7 +69,7 @@ export default function AddExpenseScreen() {
         description: description.trim(),
         amount: parsed,
         date,
-        category,
+        categoryId,
         currency: "USD",
         source: "manual",
         isRecurring: false,
@@ -140,8 +141,8 @@ export default function AddExpenseScreen() {
               style={[inputStyle, styles.pickerRow]}
               onPress={() => setPickerVisible(true)}
             >
-              <Text style={{ fontSize: 15, color: category ? colors.textPrimary : colors.textSecondary, flex: 1 }}>
-                {category || "Select category..."}
+              <Text style={{ fontSize: 15, color: categoryName ? colors.textPrimary : colors.textSecondary, flex: 1 }}>
+                {categoryName || "Select category..."}
               </Text>
               <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -183,7 +184,7 @@ export default function AddExpenseScreen() {
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.catList}
               renderItem={({ item }) => {
-                const selected = category === item.name;
+                const selected = categoryId === item.id;
                 return (
                   <TouchableOpacity
                     style={[
@@ -191,7 +192,7 @@ export default function AddExpenseScreen() {
                       { borderBottomColor: colors.border },
                       selected && { backgroundColor: colors.accentBg },
                     ]}
-                    onPress={() => { setCategory(item.name); setPickerVisible(false); }}
+                    onPress={() => { setCategoryId(item.id); setCategoryName(item.name); setPickerVisible(false); }}
                   >
                     <View style={styles.catRowInner}>
                       <View>
