@@ -50,10 +50,9 @@ export function FilterBar() {
         <InputLabel>Category</InputLabel>
         <CategorySelect
           label="Category"
-          value={filters.category ?? ""}
-          onChange={(e) => setFilter("category", (e.target.value as string) || undefined)}
+          value={filters.categoryId ?? ""}
+          onChange={(e) => setFilter("categoryId", (e.target.value as string) || undefined)}
           includeAll
-          valueBy="name"
         />
       </FormControl>
 

@@ -7,8 +7,8 @@ export interface Expense {
   description: string;
   amount: number;
   currency: string;
-  category: ExpenseCategory;   // denormalized name (always present)
-  categoryId?: string | null;  // FK → UserCategory
+  category: ExpenseCategory;   // resolved name (always present in API response)
+  categoryId?: string | null;
   subCategory?: string;
   merchantName?: string;
   source: "manual" | "csv-upload";
@@ -20,7 +20,7 @@ export interface Expense {
 }
 
 export interface ExpenseFilters {
-  category?: string;
+  categoryId?: string;
   dateFrom?: string;
   dateTo?: string;
   source?: string;

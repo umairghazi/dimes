@@ -11,7 +11,8 @@
       "Bash(node -e \"require\\('@tanstack/react-query'\\)\")",
       "Bash(npx --yes -- node -e \"import\\('@tanstack/react-query'\\).then\\(m => console.log\\(m.version || 'ok'\\)\\)\")",
       "Bash(npx create-expo-app@latest:*)",
-      "Bash(npx expo:*)"
+      "Bash(npx expo:*)",
+      "Bash(xargs cat:*)"
     ]
   }
 }

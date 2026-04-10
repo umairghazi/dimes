@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 interface ExpenseFilters {
-  category?: string;
+  categoryId?: string;
   dateFrom?: string;
   dateTo?: string;
   source?: string;

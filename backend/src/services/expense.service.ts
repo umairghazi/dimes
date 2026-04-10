@@ -10,8 +10,8 @@ export interface CreateExpenseDto {
   description: string;
   amount: number;
   currency: string;
-  categoryId?: string;   // preferred: FK to UserCategory
-  category?: string;     // fallback: used for Income / legacy
+  categoryId?: string | null;
+  isIncome?: boolean;
   subCategory?: string;
   merchantName?: string;
   source: "manual" | "csv-upload";
@@ -25,8 +25,8 @@ export interface UpdateExpenseDto {
   description?: string;
   amount?: number;
   currency?: string;
-  categoryId?: string;
-  category?: string;
+  categoryId?: string | null;
+  isIncome?: boolean;
   subCategory?: string;
   merchantName?: string;
   isRecurring?: boolean;
@@ -41,6 +41,12 @@ export class ExpenseService {
 
   private invalidateAnalytics(userId: string): void {
     cache.delPrefix(`analytics:${userId}:`);
+  }
+
+  private async validateCategory(userId: string, categoryId: string): Promise<void> {
+    const cat = await this.categoryRepo.getById(categoryId);
+    if (!cat || cat.userId !== userId) throw new AppError("Category not found", 404, "NOT_FOUND");
+    if (cat.deletedAt) throw new AppError("Category has been deleted", 400, "CATEGORY_DELETED");
   }
 
   async getExpenses(
@@ -65,27 +71,13 @@ export class ExpenseService {
     return expense;
   }
 
-  private async resolveCategoryFields(
-    userId: string,
-    categoryId?: string,
-    categoryName?: string,
-  ): Promise<{ category: string; categoryId: string | null }> {
-    if (categoryId) {
-      const cat = await this.categoryRepo.getById(categoryId);
-      if (!cat || cat.userId !== userId) throw new AppError("Category not found", 404, "NOT_FOUND");
-      return { category: cat.name, categoryId };
-    }
-    if (categoryName) return { category: categoryName, categoryId: null };
-    throw new AppError("categoryId or category is required", 400, "VALIDATION_ERROR");
-  }
-
   async createExpense(userId: string, dto: CreateExpenseDto): Promise<Expense> {
-    const { category, categoryId } = await this.resolveCategoryFields(userId, dto.categoryId, dto.category);
+    if (dto.categoryId) await this.validateCategory(userId, dto.categoryId);
     const result = await this.expenseRepo.create({
       ...dto,
       userId,
-      category,
-      categoryId,
+      categoryId: dto.isIncome ? null : (dto.categoryId ?? null),
+      isIncome: dto.isIncome ?? false,
       date: new Date(dto.date),
       isRecurring: dto.isRecurring ?? false,
       tags: dto.tags ?? [],
@@ -96,14 +88,9 @@ export class ExpenseService {
 
   async updateExpense(userId: string, id: string, dto: UpdateExpenseDto): Promise<Expense> {
     await this.getExpenseById(userId, id); // ownership check
-    let categoryFields: { category?: string; categoryId?: string | null } = {};
-    if (dto.categoryId !== undefined || dto.category !== undefined) {
-      const resolved = await this.resolveCategoryFields(userId, dto.categoryId, dto.category);
-      categoryFields = resolved;
-    }
+    if (dto.categoryId) await this.validateCategory(userId, dto.categoryId);
     const result = await this.expenseRepo.updateById(id, {
       ...dto,
-      ...categoryFields,
       ...(dto.date ? { date: new Date(dto.date) } : {}),
     }) as Expense;
     this.invalidateAnalytics(userId);

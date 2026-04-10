@@ -2,10 +2,9 @@ import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { CategoryService } from "../services/category.service";
 import { CategoryRepository } from "../repositories/category.repository";
-import { ExpenseRepository } from "../repositories/expense.repository";
 import { AppError } from "../errors/AppError";
 
-const categoryService = new CategoryService(new CategoryRepository(), new ExpenseRepository());
+const categoryService = new CategoryService(new CategoryRepository());
 
 const createSchema = z.object({
   name: z.string().min(1),

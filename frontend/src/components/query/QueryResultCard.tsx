@@ -11,6 +11,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { QueryResult } from "@/api/query.api";
 import { expensesApi } from "@/api/expenses.api";
+import { useCategories } from "@/hooks/useCategories";
 
 interface QueryResultCardProps {
   result: QueryResult;
@@ -19,14 +20,17 @@ interface QueryResultCardProps {
 }
 
 export function QueryResultCard({ result, mode, onDismiss }: QueryResultCardProps) {
+  const { categories } = useCategories();
+
   const handleConfirmAdd = async () => {
     if (!result.parsedTransaction) return;
     const t = result.parsedTransaction;
+    const categoryId = categories.find((c) => c.name === t.category)?.id ?? undefined;
     await expensesApi.create({
       amount: Math.abs(t.amount),
       description: t.description,
       date: t.date,
-      category: t.category as import("@/types/expense.types").ExpenseCategory,
+      categoryId,
       currency: "USD",
       source: "manual",
       isRecurring: false,

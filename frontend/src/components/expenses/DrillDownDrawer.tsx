@@ -16,6 +16,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { expensesApi } from "@/api/expenses.api";
+import { useCategories } from "@/hooks/useCategories";
 import { useFilterStore } from "@/store/filterStore";
 import { formatDate } from "@/lib/date";
 
@@ -50,6 +51,12 @@ function formatMonthLabel(month: string): string {
 export function DrillDownDrawer({ open, onClose, drillDown }: Props) {
   const navigate = useNavigate();
   const { clearFilters, setFilter } = useFilterStore();
+  const { categories } = useCategories();
+
+  // Resolve category name → id for filtering
+  const categoryId = drillDown?.category
+    ? (categories.find((c) => c.name === drillDown.category)?.id ?? undefined)
+    : undefined;
 
   const range = drillDown ? monthToRange(drillDown.month) : null;
 
@@ -57,7 +64,7 @@ export function DrillDownDrawer({ open, onClose, drillDown }: Props) {
     queryKey: ["drilldown", drillDown?.category, drillDown?.month],
     queryFn: () =>
       expensesApi.list({
-        category: drillDown!.category,
+        categoryId,
         dateFrom: range!.dateFrom,
         dateTo: range!.dateTo,
         page: 1,
@@ -72,7 +79,7 @@ export function DrillDownDrawer({ open, onClose, drillDown }: Props) {
 
   const handleOpenInExpenses = () => {
     clearFilters();
-    if (drillDown?.category) setFilter("category", drillDown.category);
+    if (categoryId) setFilter("categoryId", categoryId);
     setFilter("dateFrom", range!.dateFrom);
     setFilter("dateTo", range!.dateTo);
     onClose();

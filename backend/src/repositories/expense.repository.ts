@@ -5,7 +5,7 @@ import { RepositoryError } from "../errors/RepositoryError";
 
 export interface ExpenseFilters {
   userId: string;
-  category?: string;
+  categoryId?: string;
   dateFrom?: Date;
   dateTo?: Date;
   source?: string;

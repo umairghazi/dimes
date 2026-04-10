@@ -27,8 +27,8 @@ model Expense {
   description         String
   amount              Float
   currency            String
-  category            String   // denormalized name, kept in sync with UserCategory.name
-  categoryId          String?  @db.ObjectId // FK → UserCategory (null for Income / legacy)
+  categoryId          String?  @db.ObjectId // FK → UserCategory
+  isIncome            Boolean  @default(false)
   subCategory         String?
   merchantName        String?
   source              String   // "manual" | "csv-upload"
@@ -40,7 +40,7 @@ model Expense {
 
   @@index([userId, date])
   @@index([userId, isRecurring])
-  @@index([userId, category])
+  @@index([userId, categoryId])
 }
 
 model StagingExpense {

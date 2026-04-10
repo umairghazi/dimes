@@ -19,7 +19,6 @@ export interface Expense {
   description: string;
   amount: number;
   currency: string;
-  category: string;
   categoryId?: string | null;
   subCategory?: string | null;
   merchantName?: string | null;
