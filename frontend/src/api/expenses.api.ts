@@ -1,9 +1,9 @@
 import { apiClient } from "./client";
 import { Expense, ExpenseFilters, PaginatedExpenses } from "@/types/expense.types";
 
-type CreateExpensePayload = Omit<Expense, "id" | "userId" | "createdAt" | "updatedAt" | "category" | "categoryId"> & {
+type CreateExpensePayload = Omit<Expense, "id" | "userId" | "createdAt" | "updatedAt" | "category" | "categoryId" | "isIncome"> & {
   categoryId?: string | null;
-  category?: string;
+  isIncome?: boolean;
 };
 
 export const expensesApi = {

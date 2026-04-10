@@ -20,6 +20,7 @@ export interface Expense {
   amount: number;
   currency: string;
   categoryId?: string | null;
+  isIncome: boolean;
   subCategory?: string | null;
   merchantName?: string | null;
   source: string;

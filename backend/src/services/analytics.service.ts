@@ -185,7 +185,7 @@ export class AnalyticsService {
     const to = new Date(year, month, 0, 23, 59, 59);
 
     const [incomeData, budgets] = await Promise.all([
-      this.expenseRepo.aggregateBySubCategory(userId, from, to, "Income"),
+      this.expenseRepo.aggregateBySubCategory(userId, from, to, true),
       this.budgetRepo.findByUserAndMonth(userId, monthYear),
     ]);
 

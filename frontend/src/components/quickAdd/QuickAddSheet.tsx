@@ -120,7 +120,7 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
           amount: parseFloat(amount),
           description,
           date,
-          category: "Income",
+          isIncome: true,
           subCategory: incomeSource,
           currency,
           source: "manual",

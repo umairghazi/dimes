@@ -1,14 +1,10 @@
 import { UserCategory } from "../types/prisma.types";
 import { CategoryRepository } from "../repositories/category.repository";
-import { ExpenseRepository } from "../repositories/expense.repository";
 import { AppError } from "../errors/AppError";
 import { cache, TTL } from "../lib/cache";
 
 export class CategoryService {
-  constructor(
-    private readonly categoryRepo: CategoryRepository,
-    private readonly expenseRepo: ExpenseRepository,
-  ) {}
+  constructor(private readonly categoryRepo: CategoryRepository) {}
 
   async getCategories(userId: string): Promise<UserCategory[]> {
     const cacheKey = `categories:${userId}`;
@@ -63,12 +59,6 @@ export class CategoryService {
 
     const updates: Partial<UserCategory> = { name: newFullName, group: newGroup };
     const result = await this.categoryRepo.updateById(id, updates as Record<string, unknown>);
-
-    // Cascade name change to all expenses referencing this category by ID
-    if (newFullName !== category.name) {
-      await this.expenseRepo.updateByCategoryId(id, { category: newFullName });
-    }
-
     cache.del(`categories:${userId}`);
     return result;
   }

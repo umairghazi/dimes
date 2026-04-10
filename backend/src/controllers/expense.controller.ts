@@ -11,22 +11,22 @@ const createSchema = z.object({
   description: z.string().min(1),
   amount: z.number().positive(),
   currency: z.string().default("USD"),
-  categoryId: z.string().optional(),
-  category: z.string().optional(),
+  categoryId: z.string().nullable().optional(),
+  isIncome: z.boolean().optional(),
   subCategory: z.string().optional(),
   merchantName: z.string().optional(),
   source: z.enum(["manual", "csv-upload"]).default("manual"),
   isRecurring: z.boolean().optional(),
   tags: z.array(z.string()).optional(),
-}).refine((d) => d.categoryId || d.category, { message: "categoryId or category is required" });
+});
 
 const updateSchema = z.object({
   date: z.string().optional(),
   description: z.string().min(1).optional(),
   amount: z.number().positive().optional(),
   currency: z.string().optional(),
-  categoryId: z.string().optional(),
-  category: z.string().optional(),
+  categoryId: z.string().nullable().optional(),
+  isIncome: z.boolean().optional(),
   subCategory: z.string().optional(),
   merchantName: z.string().optional(),
   isRecurring: z.boolean().optional(),
