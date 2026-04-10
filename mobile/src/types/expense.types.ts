@@ -7,7 +7,9 @@ export interface Expense {
   description: string;
   amount: number;
   currency: string;
-  category: ExpenseCategory;
+  category: ExpenseCategory;   // resolved name (always present in API response)
+  categoryId?: string | null;
+  isIncome: boolean;
   subCategory?: string;
   merchantName?: string;
   source: "manual" | "csv-upload";
@@ -19,7 +21,7 @@ export interface Expense {
 }
 
 export interface ExpenseFilters {
-  category?: string;
+  categoryId?: string;
   dateFrom?: string;
   dateTo?: string;
   search?: string;
