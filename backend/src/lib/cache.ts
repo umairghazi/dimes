@@ -37,6 +37,15 @@ class AppCache {
       if (key.startsWith(prefix)) this.store.delete(key);
     }
   }
+
+  /** Clear everything — use when you've mutated the DB directly. */
+  flush(): void {
+    this.store.clear();
+  }
+
+  get size(): number {
+    return this.store.size;
+  }
 }
 
 export const cache = new AppCache();
