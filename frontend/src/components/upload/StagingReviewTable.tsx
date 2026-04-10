@@ -146,6 +146,7 @@ export function StagingReviewTable({
                         onChange={(e) => onCorrect(row.id, e.target.value as string)}
                         sx={{ minWidth: 180 }}
                         displayEmpty
+                        valueBy="name"
                       />
                     </TableCell>
                     <TableCell padding="none">

@@ -95,14 +95,14 @@ export function ExpenseTable({
                       <CategoryEditCell
                         expenseId={expense.id}
                         category={expense.category}
-                        categoryId={expense.categoryId}
+                        categoryId={expense.categoryId ?? null}
                         onUpdated={onUpdate}
                       />
                     </TableCell>
                     <TableCell>
                       <Typography
                         sx={{ fontWeight: 600 }}
-                        color={expense.category === "Income" ? "success.main" : "inherit"}
+                        color={expense.isIncome ? "success.main" : "inherit"}
                       >
                         ${expense.amount.toFixed(2)}
                       </Typography>

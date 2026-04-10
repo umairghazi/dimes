@@ -54,6 +54,7 @@ export function ExpenseCardList({ expenses, loading, onUpdate }: ExpenseCardList
                   <CategoryEditCell
                     expenseId={expense.id}
                     category={expense.category}
+                    categoryId={expense.categoryId ?? null}
                     onUpdated={onUpdate}
                   />
                   <Typography variant="caption" color="text.secondary">
@@ -64,7 +65,7 @@ export function ExpenseCardList({ expenses, loading, onUpdate }: ExpenseCardList
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 <Typography
                   sx={{ fontWeight: 700 }}
-                  color={expense.category === "Income" ? "success.main" : "inherit"}
+                  color={expense.isIncome ? "success.main" : "inherit"}
                 >
                   ${expense.amount.toFixed(2)}
                 </Typography>

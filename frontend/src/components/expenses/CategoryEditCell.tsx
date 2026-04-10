@@ -14,8 +14,8 @@ import { expensesApi } from "@/api/expenses.api";
 
 interface CategoryEditCellProps {
   expenseId: string;
-  category: string;      // display name (always present)
-  categoryId?: string | null;
+  category: string;       // display name (always present in API response)
+  categoryId: string | null;
   onUpdated: () => void;
 }
 
