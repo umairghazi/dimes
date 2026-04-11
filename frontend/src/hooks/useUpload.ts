@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { uploadApi } from "@/api/upload.api";
 import { StagingExpense } from "@/types/upload.types";
 import { usePreferencesStore } from "@/store/preferencesStore";
@@ -7,6 +8,7 @@ export type UploadStep = "map" | "processing" | "review" | "done";
 
 export function useUpload() {
   const { currency } = usePreferencesStore();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState<UploadStep>("map");
   const [batchId, setBatchId] = useState<string | null>(null);
   const [stagingRows, setStagingRows] = useState<StagingExpense[]>([]);
@@ -74,6 +76,8 @@ export function useUpload() {
     setLoading(true);
     try {
       await uploadApi.confirmBatch(batchId, currency);
+      void queryClient.invalidateQueries({ queryKey: ["analytics"] });
+      void queryClient.invalidateQueries({ queryKey: ["expenses"] });
       setStep("done");
     } catch {
       setError("Import failed. Please try again.");

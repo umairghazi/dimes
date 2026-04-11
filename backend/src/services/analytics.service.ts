@@ -43,7 +43,7 @@ export class AnalyticsService {
   ) {}
 
   async getMonthlySummary(userId: string, monthYear: string): Promise<MonthlySummary> {
-    const cacheKey = `analytics:summary:${userId}:${monthYear}`;
+    const cacheKey = `analytics:${userId}:summary:${monthYear}`;
     const cached = cache.get<MonthlySummary>(cacheKey);
     if (cached) return cached;
 
@@ -88,7 +88,7 @@ export class AnalyticsService {
   }
 
   async getTrends(userId: string, months: number = 6): Promise<MonthlySummary[]> {
-    const cacheKey = `analytics:trends:${userId}:${months}`;
+    const cacheKey = `analytics:${userId}:trends:${months}`;
     const cached = cache.get<MonthlySummary[]>(cacheKey);
     if (cached) return cached;
 
@@ -132,7 +132,7 @@ export class AnalyticsService {
   }
 
   async getBudgetComparison(userId: string, monthYear: string): Promise<BudgetComparison> {
-    const cacheKey = `analytics:budget-comparison:${userId}:${monthYear}`;
+    const cacheKey = `analytics:${userId}:budget-comparison:${monthYear}`;
     const cached = cache.get<BudgetComparison>(cacheKey);
     if (cached) return cached;
 
@@ -176,7 +176,7 @@ export class AnalyticsService {
   }
 
   async getIncomeBreakdown(userId: string, monthYear: string): Promise<BudgetComparison> {
-    const cacheKey = `analytics:income-breakdown:${userId}:${monthYear}`;
+    const cacheKey = `analytics:${userId}:income-breakdown:${monthYear}`;
     const cached = cache.get<BudgetComparison>(cacheKey);
     if (cached) return cached;
 
@@ -219,7 +219,7 @@ export class AnalyticsService {
   }
 
   async getRecurringTransactions(userId: string): Promise<unknown[]> {
-    const cacheKey = `analytics:recurring:${userId}`;
+    const cacheKey = `analytics:${userId}:recurring`;
     const cached = cache.get<unknown[]>(cacheKey);
     if (cached) return cached;
 

@@ -51,7 +51,7 @@ export function useExpenses(filters: ExpenseFilters = {}, page = 1, limit = 20) 
     data: query.data ?? null,
     loading: query.isLoading,
     error: query.isError ? "Failed to load expenses" : null,
-    refetch: invalidateExpenses,
+    refetch: invalidateAll,
     createExpense,
     updateExpense,
     deleteExpense,
