@@ -42,6 +42,7 @@ function Field({
 }
 
 export default function AddExpenseScreen() {
+  const [mode, setMode] = useState<"expense" | "income">("expense");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(todayISO());
@@ -69,7 +70,8 @@ export default function AddExpenseScreen() {
         description: description.trim(),
         amount: parsed,
         date,
-        categoryId,
+        type: mode,
+        categoryId: categoryId || null,
         currency: "USD",
         source: "manual",
         isRecurring: false,
@@ -89,6 +91,26 @@ export default function AddExpenseScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+
+        {/* Expense / Income toggle */}
+        <View style={[styles.toggleRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <TouchableOpacity
+            style={[styles.toggleBtn, mode === "expense" && { backgroundColor: colors.accent }]}
+            onPress={() => { setMode("expense"); setCategoryId(""); setCategoryName(""); }}
+          >
+            <Text style={[styles.toggleBtnText, { color: mode === "expense" ? "#fff" : colors.textSecondary }]}>
+              Expense
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleBtn, mode === "income" && { backgroundColor: "#16a34a" }]}
+            onPress={() => { setMode("income"); setCategoryId(""); setCategoryName(""); }}
+          >
+            <Text style={[styles.toggleBtnText, { color: mode === "income" ? "#fff" : colors.textSecondary }]}>
+              Income
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Amount — large prominent input */}
         <TouchableOpacity
@@ -159,7 +181,7 @@ export default function AddExpenseScreen() {
           ) : (
             <>
               <Ionicons name="checkmark" size={18} color="#fff" />
-              <Text style={styles.submitBtnText}>Save Expense</Text>
+              <Text style={styles.submitBtnText}>{mode === "income" ? "Save Income" : "Save Expense"}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -170,7 +192,7 @@ export default function AddExpenseScreen() {
       <Modal visible={pickerVisible} animationType="slide" presentationStyle="pageSheet">
         <View style={[styles.modal, { backgroundColor: colors.bg }]}>
           <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Category</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{mode === "income" ? "Income Category" : "Category"}</Text>
             <TouchableOpacity onPress={() => setPickerVisible(false)} style={styles.modalDone}>
               <Text style={[styles.modalDoneText, { color: colors.accent }]}>Done</Text>
             </TouchableOpacity>
@@ -275,6 +297,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+
+  toggleRow: {
+    flexDirection: "row",
+    borderRadius: tokens.radii.md,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  toggleBtn: {
+    flex: 1,
+    paddingVertical: tokens.spacing.sm,
+    alignItems: "center",
+  },
+  toggleBtnText: { fontSize: 14, fontWeight: "600" },
 
   submitBtn: {
     backgroundColor: tokens.colors.accent,

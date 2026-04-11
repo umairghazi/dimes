@@ -16,7 +16,6 @@ import { useAuthStore } from "@/store/authStore";
 import { usePreferencesStore, CURRENCIES } from "@/store/preferencesStore";
 import { authApi } from "@/api/auth.api";
 import { useNavigate } from "react-router-dom";
-import { CategoryManager } from "@/components/settings/CategoryManager";
 
 export function Settings() {
   const { mode, toggleTheme } = useThemeStore();
@@ -69,12 +68,6 @@ export function Settings() {
               <ToggleButton key={c} value={c} sx={{ px: 2 }}>{c}</ToggleButton>
             ))}
           </ToggleButtonGroup>
-        </CardContent>
-      </Card>
-
-      <Card sx={{ mb: 2 }}>
-        <CardContent>
-          <CategoryManager />
         </CardContent>
       </Card>
 
