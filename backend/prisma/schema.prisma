@@ -28,7 +28,7 @@ model Expense {
   amount              Float
   currency            String
   categoryId          String?  @db.ObjectId // FK → UserCategory
-  isIncome            Boolean  @default(false)
+  type                String   @default("expense") // "expense" | "income"
   subCategory         String?
   merchantName        String?
   source              String   // "manual" | "csv-upload"
@@ -53,6 +53,7 @@ model StagingExpense {
   aiSuggestedCategory   String
   aiConfidence          Float
   userCorrectedCategory String?
+  classificationSource  String?  @default("ai") // "ai" | "history"
   status                String   @default("pending") // pending | confirmed | rejected
   createdAt             DateTime @default(now())
 }

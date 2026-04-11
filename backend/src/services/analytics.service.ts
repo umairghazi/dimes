@@ -58,14 +58,13 @@ export class AnalyticsService {
 
     const budgetMap = new Map(budgets.map((b) => [b.category, b]));
 
-    const totalSpend = categories
-      .filter((c) => c.category !== "Income")
-      .reduce((sum, c) => sum + c.total, 0);
+    const expenseCategories = categories.filter((c) => c.type === "expense");
+    const totalSpend = expenseCategories.reduce((sum, c) => sum + c.total, 0);
     const totalIncome = categories
-      .filter((c) => c.category === "Income")
+      .filter((c) => c.type === "income")
       .reduce((sum, c) => sum + c.total, 0);
 
-    const byCategory = categories.map((c) => {
+    const byCategory = expenseCategories.map((c) => {
       const budget = budgetMap.get(c.category);
       return {
         category: c.category,
@@ -145,17 +144,13 @@ export class AnalyticsService {
       this.budgetRepo.findByUserAndMonth(userId, monthYear),
     ]);
 
-    const spendMap = new Map(spendData.map((c) => [c.category, c.total]));
+    const expenseSpend = spendData.filter((c) => c.type === "expense");
+    const spendMap = new Map(expenseSpend.map((c) => [c.category, c.total]));
     const budgetMap = new Map(budgets.map((b) => [b.category, b.limitAmount]));
 
     const allCategories = new Set([...budgetMap.keys(), ...spendMap.keys()]);
 
-    // Exclude income entries — those are handled by getIncomeBreakdown
-    const expenseCategories = Array.from(allCategories).filter(
-      (c) => c !== "Income" && !c.startsWith("Income - "),
-    );
-
-    const rows: BudgetComparisonRow[] = expenseCategories
+    const rows: BudgetComparisonRow[] = Array.from(allCategories)
       .sort()
       .map((category) => {
         const planned = budgetMap.get(category) ?? 0;
@@ -185,16 +180,14 @@ export class AnalyticsService {
     const to = new Date(year, month, 0, 23, 59, 59);
 
     const [incomeData, budgets] = await Promise.all([
-      this.expenseRepo.aggregateBySubCategory(userId, from, to, true),
+      this.expenseRepo.aggregateByCategory(userId, from, to),
       this.budgetRepo.findByUserAndMonth(userId, monthYear),
     ]);
 
-    // Income budgets are stored as "Income - Paycheck", "Income - Bonus", etc.
-    const incomeBudgets = budgets.filter((b) => b.category.startsWith("Income - "));
-    const budgetMap = new Map(
-      incomeBudgets.map((b) => [b.category.replace("Income - ", ""), b.limitAmount]),
-    );
-    const actualMap = new Map(incomeData.map((c) => [c.subCategory, c.total]));
+    const incomeCategories = incomeData.filter((c) => c.type === "income");
+    const incomeBudgets = budgets.filter((b) => b.category.startsWith("Income"));
+    const budgetMap = new Map(incomeBudgets.map((b) => [b.category, b.limitAmount]));
+    const actualMap = new Map(incomeCategories.map((c) => [c.category, c.total]));
 
     const allSources = new Set([...budgetMap.keys(), ...actualMap.keys()]);
     const rows: BudgetComparisonRow[] = Array.from(allSources)
@@ -202,7 +195,6 @@ export class AnalyticsService {
       .map((source) => {
         const planned = budgetMap.get(source) ?? 0;
         const actual = actualMap.get(source) ?? 0;
-        // For income: positive diff = earned more than planned (good)
         return { category: source, planned, actual, diff: actual - planned };
       });
 

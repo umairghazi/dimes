@@ -104,7 +104,8 @@ export function StagingReviewTable({
                 const effectiveCategory = row.userCorrectedCategory ?? row.aiSuggestedCategory;
                 const needsCategory = !effectiveCategory;
                 const confidence = row.aiConfidence;
-                const isLowConfidence = aiAvailable && confidence > 0 && confidence < 0.85;
+                const isHistory = row.classificationSource === "history";
+                const isLowConfidence = aiAvailable && !isHistory && confidence > 0 && confidence < 0.85;
 
                 return (
                   <TableRow
@@ -127,16 +128,36 @@ export function StagingReviewTable({
                     <TableCell>${row.amount.toFixed(2)}</TableCell>
                     {aiAvailable && (
                       <TableCell>
-                        <Chip label={row.aiSuggestedCategory} size="small" variant="outlined" />
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                          <Chip label={row.aiSuggestedCategory} size="small" variant="outlined" />
+                          <Chip
+                            label={isHistory ? "History" : "AI"}
+                            size="small"
+                            color={isHistory ? "info" : "secondary"}
+                            variant="filled"
+                            sx={{ fontSize: "0.65rem", height: 18, "& .MuiChip-label": { px: 0.75 } }}
+                          />
+                        </Box>
                       </TableCell>
                     )}
                     {aiAvailable && (
                       <TableCell>
-                        <Chip
-                          label={`${(confidence * 100).toFixed(0)}%`}
-                          size="small"
-                          color={confidence >= 0.85 ? "success" : confidence >= 0.6 ? "warning" : "error"}
-                        />
+                        {isHistory ? (
+                          <Tooltip title="Matched from your expense history">
+                            <Chip
+                              label={`${(confidence * 100).toFixed(0)}%`}
+                              size="small"
+                              color="info"
+                              variant="outlined"
+                            />
+                          </Tooltip>
+                        ) : (
+                          <Chip
+                            label={`${(confidence * 100).toFixed(0)}%`}
+                            size="small"
+                            color={confidence >= 0.85 ? "success" : confidence >= 0.6 ? "warning" : "error"}
+                          />
+                        )}
                       </TableCell>
                     )}
                     <TableCell>

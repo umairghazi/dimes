@@ -10,6 +10,7 @@ export interface ClassifiedTransaction extends RawTransaction {
   merchantName?: string;
   isRecurring: boolean;
   confidence: number;
+  classificationSource?: "history" | "ai";
 }
 
 export interface UserContext {

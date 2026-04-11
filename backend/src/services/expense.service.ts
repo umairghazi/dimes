@@ -11,7 +11,7 @@ export interface CreateExpenseDto {
   amount: number;
   currency: string;
   categoryId?: string | null;
-  isIncome?: boolean;
+  type?: "expense" | "income";
   subCategory?: string;
   merchantName?: string;
   source: "manual" | "csv-upload";
@@ -26,7 +26,7 @@ export interface UpdateExpenseDto {
   amount?: number;
   currency?: string;
   categoryId?: string | null;
-  isIncome?: boolean;
+  type?: "expense" | "income";
   subCategory?: string;
   merchantName?: string;
   isRecurring?: boolean;
@@ -76,8 +76,8 @@ export class ExpenseService {
     const result = await this.expenseRepo.create({
       ...dto,
       userId,
-      categoryId: dto.isIncome ? null : (dto.categoryId ?? null),
-      isIncome: dto.isIncome ?? false,
+      categoryId: dto.categoryId ?? null,
+      type: dto.type ?? "expense",
       date: new Date(dto.date),
       isRecurring: dto.isRecurring ?? false,
       tags: dto.tags ?? [],

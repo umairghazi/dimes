@@ -102,7 +102,7 @@ export function ExpenseTable({
                     <TableCell>
                       <Typography
                         sx={{ fontWeight: 600 }}
-                        color={expense.isIncome ? "success.main" : "inherit"}
+                        color={expense.type === "income" ? "success.main" : "inherit"}
                       >
                         ${expense.amount.toFixed(2)}
                       </Typography>

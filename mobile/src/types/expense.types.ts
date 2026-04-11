@@ -9,7 +9,7 @@ export interface Expense {
   currency: string;
   category: ExpenseCategory;   // resolved name (always present in API response)
   categoryId?: string | null;
-  isIncome: boolean;
+  type: "expense" | "income";
   subCategory?: string;
   merchantName?: string;
   source: "manual" | "csv-upload";

@@ -10,8 +10,6 @@ import {
   Button,
   FormControl,
   InputLabel,
-  Select,
-  MenuItem,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
@@ -26,7 +24,6 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { CategorySelect } from "@/components/shared/CategorySelect";
 import { useCategories } from "@/hooks/useCategories";
 
-const INCOME_SOURCES = ["Paycheck", "Salary", "Bonus", "Interest", "Freelance", "Rebates", "Other"];
 import { expensesApi } from "@/api/expenses.api";
 import { usePreferencesStore } from "@/store/preferencesStore";
 import { queryApi } from "@/api/query.api";
@@ -51,7 +48,6 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(today());
   const [categoryId, setCategoryId] = useState("");
-  const [incomeSource, setIncomeSource] = useState("Paycheck");
   // AI suggestion stores the name string (AI returns names)
   const [suggestedCategoryId, setSuggestedCategoryId] = useState<string | null>(null);
   const [suggestedCategoryName, setSuggestedCategoryName] = useState<string | null>(null);
@@ -66,7 +62,6 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
       setAmount("");
       setDescription("");
       setDate(today());
-      setIncomeSource("Paycheck");
       setSuggestedCategoryId(null);
       setSuggestedCategoryName(null);
       // Pick first available category as default
@@ -115,30 +110,17 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
     if (!amount || !description) return;
     setSaving(true);
     try {
-      if (mode === "income") {
-        await expensesApi.create({
-          amount: parseFloat(amount),
-          description,
-          date,
-          isIncome: true,
-          subCategory: incomeSource,
-          currency,
-          source: "manual",
-          isRecurring: false,
-          tags: [],
-        });
-      } else {
-        await expensesApi.create({
-          amount: parseFloat(amount),
-          description,
-          date,
-          categoryId,
-          currency,
-          source: "manual",
-          isRecurring: false,
-          tags: [],
-        });
-      }
+      await expensesApi.create({
+        amount: parseFloat(amount),
+        description,
+        date,
+        type: mode,
+        categoryId: categoryId || null,
+        currency,
+        source: "manual",
+        isRecurring: false,
+        tags: [],
+      });
       onSaved?.();
       onClose();
     } catch {
@@ -204,29 +186,14 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
           />
         </Box>
       )}
-      {mode === "expense" ? (
-        <FormControl fullWidth>
-          <InputLabel>Category</InputLabel>
-          <CategorySelect
-            label="Category"
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value as string)}
-          />
-        </FormControl>
-      ) : (
-        <FormControl fullWidth>
-          <InputLabel>Income Source</InputLabel>
-          <Select
-            label="Income Source"
-            value={incomeSource}
-            onChange={(e) => setIncomeSource(e.target.value)}
-          >
-            {INCOME_SOURCES.map((s) => (
-              <MenuItem key={s} value={s}>{s}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      )}
+      <FormControl fullWidth>
+        <InputLabel>{mode === "income" ? "Income Category" : "Category"}</InputLabel>
+        <CategorySelect
+          label={mode === "income" ? "Income Category" : "Category"}
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value as string)}
+        />
+      </FormControl>
       <TextField
         label="Date"
         type="date"

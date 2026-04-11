@@ -20,7 +20,7 @@ export interface Expense {
   amount: number;
   currency: string;
   categoryId?: string | null;
-  isIncome: boolean;
+  type: string; // "expense" | "income"
   subCategory?: string | null;
   merchantName?: string | null;
   source: string;
@@ -41,6 +41,7 @@ export interface StagingExpense {
   aiSuggestedCategory: string;
   aiConfidence: number;
   userCorrectedCategory?: string | null;
+  classificationSource?: string | null;
   status: string;
   createdAt: Date;
 }

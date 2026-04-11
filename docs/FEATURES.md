@@ -9,7 +9,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | Feature | Status | Notes |
 | --- | --- | --- |
 | Auth — login, register, logout, token refresh | ✅ | httpOnly refresh cookie + access token in memory |
-| Expenses — list, filter, create, edit, delete, paginate | ✅ | |
+| Expenses — list, filter, create, edit, delete, paginate | ✅ | Category stored as `categoryId` FK; name resolved at read time; `type: "expense"\|"income"` replaces `isIncome` boolean; income has proper categories |
 | CSV upload — column mapping, staging review, confirm/discard | ✅ | |
 | Async AI classification via SSE | ✅ | Progress bar during classification |
 | Categories — CRUD with parent groups | ✅ | |
@@ -42,7 +42,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 
 | Feature | Status | Notes |
 | --- | --- | --- |
-| Income tracking | ✅ | QuickAdd has Expense/Income toggle; income stored as category="Income" + subCategory=source (Paycheck, Bonus, etc.); Dashboard shows two-panel Income vs Expenses view with planned/actual bars + tables + net savings |
+| Income tracking | ✅ | QuickAdd has Expense/Income toggle; income stored via `type: "income"` with real `categoryId` from UserCategory (no magic strings, no subCategory workaround); Dashboard shows two-panel Income vs Expenses view |
 | Budget progress on Dashboard | ⬜ | Budget vs Actual exists on Analytics page; a summary widget on Dashboard would surface it faster |
 | Recurring transactions UI | ⬜ | `isRecurring` flag in data model, `getRecurringTransactions` on backend — nothing in UI |
 | Description text search in Expenses filter | ✅ | Case-insensitive contains search on description; debounced 300ms in FilterBar |
@@ -55,7 +55,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | Feature | Status | Notes |
 | --- | --- | --- |
 | CSV export | ⬜ | Export filtered expenses as CSV |
-| History-based classification (reduce AI costs) | ⬜ | See plan below |
+| History-based classification (reduce AI costs) | ✅ | Two-tier: history pre-match (free, instant) → AI fallback only for unknowns; confidence 95%/80% by match count; "History"/"AI" badges in staging review |
 
 ---
 

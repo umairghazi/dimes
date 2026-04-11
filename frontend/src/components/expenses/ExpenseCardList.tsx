@@ -65,7 +65,7 @@ export function ExpenseCardList({ expenses, loading, onUpdate }: ExpenseCardList
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 <Typography
                   sx={{ fontWeight: 700 }}
-                  color={expense.isIncome ? "success.main" : "inherit"}
+                  color={expense.type === "income" ? "success.main" : "inherit"}
                 >
                   ${expense.amount.toFixed(2)}
                 </Typography>

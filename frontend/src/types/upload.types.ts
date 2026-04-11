@@ -8,6 +8,7 @@ export interface StagingExpense {
   aiSuggestedCategory: string;
   aiConfidence: number;
   userCorrectedCategory?: string;
+  classificationSource?: "history" | "ai";
   status: "pending" | "confirmed" | "rejected";
   createdAt: string;
 }

@@ -6,7 +6,6 @@ import { ExpenseRepository } from "../repositories/expense.repository";
 import { ClassificationRepository } from "../repositories/classification.repository";
 import { CategoryRepository } from "../repositories/category.repository";
 import { AppError } from "../errors/AppError";
-import { isAIAvailable } from "../ai/AIProviderFactory";
 import { jobStore } from "./jobStore";
 import { cache } from "../lib/cache";
 
@@ -71,13 +70,14 @@ export class UploadService {
 
     const categories = await this.categoryRepo.findByUserId(userId);
     const userCategories = categories.map((c) => c.name);
+    const idToName = new Map(categories.map((c) => [c.id, c.name]));
 
-    if (userCategories.length === 0 || !isAIAvailable()) {
+    if (userCategories.length === 0) {
       // Nothing to classify — mark job done immediately
       jobStore.complete(jobId, false);
     } else {
-      // Fire-and-forget background classification
-      void this.runClassification(jobId, batchId, userId, rawTransactions, userCategories);
+      // Fire-and-forget background classification (history lookup + AI fallback)
+      void this.runClassification(jobId, batchId, userId, rawTransactions, userCategories, idToName);
     }
 
     return { batchId, jobId, count: rawTransactions.length };
@@ -89,34 +89,33 @@ export class UploadService {
     userId: string,
     rawTransactions: { date: string; amount: number; description: string }[],
     userCategories: string[],
+    idToName: Map<string, string>,
   ): Promise<void> {
-    const batchSize = 50;
-    let classified = 0;
-
     try {
-      for (let i = 0; i < rawTransactions.length; i += batchSize) {
-        const batch = rawTransactions.slice(i, i + batchSize);
-        const results = await this.classificationRepo.classify(batch, userCategories);
+      // Build history context from user's confirmed expenses
+      const historyEntries = await this.expenseRepo.getClassificationHistory(userId);
+      const history = { entries: historyEntries, idToName };
 
-        // Update each staging row with AI result
-        const stagingRows = await this.stagingRepo.findByBatchId(batchId);
-        await Promise.all(
-          results.map((result) => {
-            const row = stagingRows.find(
-              (r) => r.description === result.description && r.amount === result.amount,
-            );
-            if (!row) return Promise.resolve();
-            return this.stagingRepo.updateById(row.id, {
-              aiSuggestedCategory: result.category,
-              aiConfidence: result.confidence,
-            });
-          }),
-        );
+      // Classify all transactions in one shot (history pre-filters, AI handles the rest)
+      const results = await this.classificationRepo.classify(rawTransactions, userCategories, history);
 
-        classified += results.length;
-        jobStore.update(jobId, classified);
-      }
+      // Update each staging row with results
+      const stagingRows = await this.stagingRepo.findByBatchId(batchId);
+      await Promise.all(
+        results.map((result) => {
+          const row = stagingRows.find(
+            (r) => r.description === result.description && r.amount === result.amount,
+          );
+          if (!row) return Promise.resolve();
+          return this.stagingRepo.updateById(row.id, {
+            aiSuggestedCategory: result.category,
+            aiConfidence: result.confidence,
+            classificationSource: result.classificationSource ?? "ai",
+          });
+        }),
+      );
 
+      jobStore.update(jobId, results.length);
       jobStore.complete(jobId, true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Classification failed";
