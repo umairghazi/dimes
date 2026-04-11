@@ -29,7 +29,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 
 | Feature | Status | Notes |
 | --- | --- | --- |
-| Remove dead `CategoryManager` from Settings page | ⬜ | Superseded by the Categories page |
+| Remove dead `CategoryManager` from Settings page | ✅ | Deleted — superseded by the Categories page |
 | Fix expense pagination count | ⬜ | `count={totalPages * 20}` is approximate; use actual `total` from API |
 | Apply currency preference to all `$` displays | ⬜ | Preference is stored but most displays are hardcoded |
 | Backend caching — in-memory TTL cache + MongoDB indexes | ✅ | Analytics (1hr TTL), budgets (4hr), categories (8hr), recurring (4hr); invalidated on writes; 5 DB indexes added; getTrends parallelized |
@@ -56,6 +56,11 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | --- | --- | --- |
 | CSV export | ⬜ | Export filtered expenses as CSV |
 | History-based classification (reduce AI costs) | ✅ | Two-tier: history pre-match (free, instant) → AI fallback only for unknowns; confidence 95%/80% by match count; "History"/"AI" badges in staging review |
+| Duplicate detection on CSV import | ⬜ | Pre-confirm warning when imported rows match existing expenses (same userId + date + amount + description); prevents silent data doubling on re-upload |
+| Mobile filter parity | ⬜ | Mobile expenses screen only has text search; needs category + date range filters to match web |
+| Budget alert surfacing | ⬜ | `alertThreshold` is stored and compared in `getBudgetProgress` but never shown in UI; add banner/badge on Dashboard when a budget is near or over threshold |
+| Orphaned expense re-categorization | ⬜ | Deleting a category silently turns its expenses to "Uncategorized"; add a bulk re-assign flow at delete time |
+| AI insights auto-trigger | ⬜ | Insights are manual-trigger only; cache per `userId+monthYear` so closed months auto-load without re-generating |
 
 ---
 
