@@ -6,6 +6,7 @@ import { Expenses } from "@/pages/Expenses/Expenses";
 import { Upload } from "@/pages/Upload/Upload";
 import { Settings } from "@/pages/Settings/Settings";
 import { Categories } from "@/pages/Categories/Categories";
+import { Analytics } from "@/pages/Analytics/Analytics";
 import { Login } from "@/pages/Auth/Login";
 import { Register } from "@/pages/Auth/Register";
 
@@ -27,6 +28,7 @@ export function AppRouter() {
           <Route path="upload" element={<Upload />} />
           <Route path="budgets" element={<Navigate to="/categories" replace />} />
           <Route path="categories" element={<Categories />} />
+          <Route path="analytics" element={<Analytics />} />
           <Route path="settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

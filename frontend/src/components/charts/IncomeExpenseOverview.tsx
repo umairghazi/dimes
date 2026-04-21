@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Box,
   Grid,
@@ -10,6 +11,8 @@ import {
   TableRow,
   Skeleton,
   LinearProgress,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import { BudgetComparison } from "@/types/analytics.types";
 
@@ -76,18 +79,29 @@ interface PanelProps {
 }
 
 function Panel({ title, titleColor, data, positiveIsGood, onCategoryClick }: PanelProps) {
+  const [hideEmpty, setHideEmpty] = useState(false);
+
   if (!data) return null;
 
   const maxBarValue = Math.max(data.totals.planned, data.totals.actual, 1);
+  const rows = hideEmpty
+    ? data.rows.filter((r) => r.planned > 0 || r.actual > 0)
+    : data.rows;
 
   return (
     <Box>
-      <Typography
-        variant="h6"
-        sx={{ fontWeight: 700, color: titleColor, mb: 2, letterSpacing: "-0.01em" }}
-      >
-        {title}
-      </Typography>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: titleColor, letterSpacing: "-0.01em" }}>
+          {title}
+        </Typography>
+        <FormControlLabel
+          control={
+            <Switch size="small" checked={hideEmpty} onChange={(e) => setHideEmpty(e.target.checked)} />
+          }
+          label={<Typography variant="caption">Hide $0</Typography>}
+          sx={{ mr: 0 }}
+        />
+      </Box>
 
       <Box sx={{ mb: 2.5 }}>
         <SummaryBar label="Planned" value={data.totals.planned} maxValue={maxBarValue} color={titleColor} />
@@ -118,7 +132,7 @@ function Panel({ title, titleColor, data, positiveIsGood, onCategoryClick }: Pan
               <DiffCell value={data.totals.diff} positiveIsGood={positiveIsGood} />
             </TableRow>
 
-            {data.rows.map((row) => (
+            {rows.map((row) => (
               <TableRow
                 key={row.category}
                 hover

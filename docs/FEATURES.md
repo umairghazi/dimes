@@ -15,7 +15,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | Categories — CRUD with parent groups | ✅ | |
 | Budgets — merged into Categories page, inline budget per category | ✅ | Per-month limit with progress bar |
 | Budget carry-forward | ✅ | Repeat toggle on each category card; auto-rolls over on page load via `POST /budgets/rollover` |
-| Analytics — monthly summary, 6-month trend, donut, bar chart | ✅ | Merged into Dashboard; month picker controls all data |
+| Analytics — monthly summary, 6-month trend, donut, bar chart | ✅ | Dedicated Analytics page (Insights + Budget tabs); month state shared via Zustand so Dashboard and Analytics stay in sync |
 | Budget vs Actual table | ✅ | On Dashboard; planned/actual/diff per category with totals row; toggle to hide $0 rows |
 | NL query bar — ask and add modes | ✅ | |
 | Dashboard — stat cards, donut, trend, NL bar | ✅ | |
@@ -44,6 +44,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | --- | --- | --- |
 | Income tracking | ✅ | QuickAdd has Expense/Income toggle; income stored via `type: "income"` with real `categoryId` from UserCategory (no magic strings, no subCategory workaround); Dashboard shows two-panel Income vs Expenses view |
 | Budget progress on Dashboard | ⬜ | Budget vs Actual exists on Analytics page; a summary widget on Dashboard would surface it faster |
+| Budget Rebalancer | ✅ | When over budget in any category, shows proportional cut suggestions across categories with remaining slack; current month only |
 | Recurring transactions UI | ⬜ | `isRecurring` flag in data model, `getRecurringTransactions` on backend — nothing in UI |
 | Description text search in Expenses filter | ✅ | Case-insensitive contains search on description; debounced 300ms in FilterBar |
 | AI insights | ✅ | Card at top of Analytics page; manual trigger only (Generate button), resets on month change |

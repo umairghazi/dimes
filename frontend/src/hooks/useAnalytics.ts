@@ -2,16 +2,13 @@ import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { analyticsApi } from "@/api/analytics.api";
 import { MonthlySummary, BudgetComparison } from "@/types/analytics.types";
-
-function currentMonthYear(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
+import { useAnalyticsStore, isCurrentMonthYear } from "@/store/analyticsStore";
 
 const ANALYTICS_STALE = 5 * 60 * 1000; // 5 min
 
 export function useAnalytics() {
-  const [month, setMonth] = useState(currentMonthYear);
+  const { month, prevMonth, nextMonth } = useAnalyticsStore();
+  const isCurrentMonth = isCurrentMonthYear(month);
 
   const [insight, setInsight] = useState<string | null>(null);
   const [insightLoading, setInsightLoading] = useState(false);
@@ -60,28 +57,17 @@ export function useAnalytics() {
     }
   }, [month]);
 
-  const prevMonth = useCallback(() => {
-    setMonth((m) => {
-      const [y, mo] = m.split("-").map(Number);
-      const d = new Date(y, mo - 2, 1);
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    });
-  }, []);
-
-  const nextMonth = useCallback(() => {
-    setMonth((m) => {
-      const [y, mo] = m.split("-").map(Number);
-      const d = new Date(y, mo, 1);
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    });
-  }, []);
-
-  const isCurrentMonth = month === currentMonthYear();
-
   const loading =
-    summaryQuery.isLoading || trendsQuery.isLoading || comparisonQuery.isLoading || incomeBreakdownQuery.isLoading;
+    summaryQuery.isLoading ||
+    trendsQuery.isLoading ||
+    comparisonQuery.isLoading ||
+    incomeBreakdownQuery.isLoading;
+
   const error =
-    summaryQuery.isError || trendsQuery.isError || comparisonQuery.isError || incomeBreakdownQuery.isError
+    summaryQuery.isError ||
+    trendsQuery.isError ||
+    comparisonQuery.isError ||
+    incomeBreakdownQuery.isError
       ? "Failed to load analytics"
       : null;
 
