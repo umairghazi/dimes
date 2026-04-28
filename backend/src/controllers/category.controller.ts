@@ -48,7 +48,7 @@ export async function getAllCategories(req: Request, res: Response, next: NextFu
 export async function restoreCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);
-    const category = await categoryService.restoreCategory(user.id, req.params.id);
+    const category = await categoryService.restoreCategory(user.id, req.params.id as string);
     res.json(category);
   } catch (err) {
     next(err);
@@ -70,7 +70,7 @@ export async function updateCategory(req: Request, res: Response, next: NextFunc
   try {
     const user = requireUser(req);
     const data = updateSchema.parse(req.body);
-    const category = await categoryService.updateCategory(user.id, req.params.id, data);
+    const category = await categoryService.updateCategory(user.id, req.params.id as string, data);
     res.json(category);
   } catch (err) {
     next(err);
@@ -80,7 +80,7 @@ export async function updateCategory(req: Request, res: Response, next: NextFunc
 export async function deleteCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);
-    await categoryService.deleteCategory(user.id, req.params.id);
+    await categoryService.deleteCategory(user.id, req.params.id as string);
     res.status(204).send();
   } catch (err) {
     next(err);

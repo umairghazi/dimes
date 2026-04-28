@@ -54,7 +54,7 @@ export async function updateBudget(req: Request, res: Response, next: NextFuncti
   try {
     const user = requireUser(req);
     const dto = updateSchema.parse(req.body);
-    const budget = await budgetService.updateBudget(user.id, req.params.id, dto);
+    const budget = await budgetService.updateBudget(user.id, req.params.id as string, dto);
     res.json(budget);
   } catch (err) {
     next(err);
@@ -64,7 +64,7 @@ export async function updateBudget(req: Request, res: Response, next: NextFuncti
 export async function deleteBudget(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);
-    await budgetService.deleteBudget(user.id, req.params.id);
+    await budgetService.deleteBudget(user.id, req.params.id as string);
     res.status(204).send();
   } catch (err) {
     next(err);

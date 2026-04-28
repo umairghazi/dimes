@@ -96,7 +96,7 @@ export function streamJob(req: Request, res: Response): void {
     return;
   }
 
-  const { jobId } = req.params;
+  const { jobId } = req.params as Record<string, string>;
   const job = jobStore.get(jobId);
   if (!job) { res.status(404).end(); return; }
 
@@ -147,7 +147,7 @@ export function streamJob(req: Request, res: Response): void {
 export async function getStagingRows(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);
-    const rows = await uploadService.getStagingRows(user.id, req.params.batchId);
+    const rows = await uploadService.getStagingRows(user.id, req.params.batchId as string);
     res.json(rows);
   } catch (err) {
     next(err);
@@ -158,7 +158,7 @@ export async function correctCategory(req: Request, res: Response, next: NextFun
   try {
     const user = requireUser(req);
     const patch = correctSchema.parse(req.body);
-    const row = await uploadService.patchStagingRow(user.id, req.params.batchId, req.params.id, patch);
+    const row = await uploadService.patchStagingRow(user.id, req.params.batchId as string, req.params.id as string, patch);
     res.json(row);
   } catch (err) {
     next(err);
@@ -169,7 +169,7 @@ export async function splitStagingRow(req: Request, res: Response, next: NextFun
   try {
     const user = requireUser(req);
     const { splits } = splitSchema.parse(req.body);
-    const rows = await uploadService.splitStagingRow(user.id, req.params.batchId, req.params.id, splits);
+    const rows = await uploadService.splitStagingRow(user.id, req.params.batchId as string, req.params.id as string, splits);
     res.status(201).json(rows);
   } catch (err) {
     next(err);
@@ -180,7 +180,7 @@ export async function confirmBatch(req: Request, res: Response, next: NextFuncti
   try {
     const user = requireUser(req);
     const currency = typeof req.body?.currency === "string" ? req.body.currency : "USD";
-    const result = await uploadService.confirmBatch(user.id, req.params.batchId, currency);
+    const result = await uploadService.confirmBatch(user.id, req.params.batchId as string, currency);
     res.json(result);
   } catch (err) {
     next(err);
@@ -190,7 +190,7 @@ export async function confirmBatch(req: Request, res: Response, next: NextFuncti
 export async function skipStagingRow(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);
-    await uploadService.skipStagingRow(user.id, req.params.batchId, req.params.id);
+    await uploadService.skipStagingRow(user.id, req.params.batchId as string, req.params.id);
     res.status(204).send();
   } catch (err) {
     next(err);
@@ -200,7 +200,7 @@ export async function skipStagingRow(req: Request, res: Response, next: NextFunc
 export async function discardBatch(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);
-    await uploadService.discardBatch(user.id, req.params.batchId);
+    await uploadService.discardBatch(user.id, req.params.batchId as string);
     res.status(204).send();
   } catch (err) {
     next(err);

@@ -77,7 +77,7 @@ export async function listExpenses(req: Request, res: Response, next: NextFuncti
 export async function getExpense(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);
-    const expense = await expenseService.getExpenseById(user.id, req.params.id);
+    const expense = await expenseService.getExpenseById(user.id, req.params.id as string);
     res.json(expense);
   } catch (err) {
     next(err);
@@ -99,7 +99,7 @@ export async function updateExpense(req: Request, res: Response, next: NextFunct
   try {
     const user = requireUser(req);
     const dto = updateSchema.parse(req.body);
-    const expense = await expenseService.updateExpense(user.id, req.params.id, dto);
+    const expense = await expenseService.updateExpense(user.id, req.params.id as string, dto);
     res.json(expense);
   } catch (err) {
     next(err);
@@ -109,7 +109,7 @@ export async function updateExpense(req: Request, res: Response, next: NextFunct
 export async function deleteExpense(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);
-    await expenseService.deleteExpense(user.id, req.params.id);
+    await expenseService.deleteExpense(user.id, req.params.id as string);
     res.status(204).send();
   } catch (err) {
     next(err);
