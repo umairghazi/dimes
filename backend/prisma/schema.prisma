@@ -63,6 +63,8 @@ model UserCategory {
   userId    String    @db.ObjectId
   name      String    // full stored value e.g. "Bill - Electricity", "Groceries"
   group     String?   // parent group e.g. "Bill", null for standalones
+  type      String?   // "expense" | "income" — null treated as "expense"
+  isFixed   Boolean   @default(false) // true = fixed cost (mortgage, car, insurance)
   sortOrder Int       @default(0)
   deletedAt DateTime? // soft delete — null means active
   createdAt DateTime  @default(now())

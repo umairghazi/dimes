@@ -11,6 +11,7 @@ export interface ExpenseFilters {
   source?: string;
   isRecurring?: boolean;
   search?: string;
+  type?: string;
 }
 
 type StoredExpense = Omit<Expense, "category"> & { categoryId?: string | null; type: string };
@@ -79,6 +80,7 @@ export class ExpenseRepository extends BaseMongoRepository<Expense> {
     if (filters.categoryId) where.categoryId = filters.categoryId;
     if (filters.source) where.source = filters.source;
     if (filters.isRecurring !== undefined) where.isRecurring = filters.isRecurring;
+    if (filters.type) where.type = filters.type;
     if (filters.dateFrom || filters.dateTo) {
       where.date = {};
       if (filters.dateFrom) (where.date as Record<string, unknown>).gte = filters.dateFrom;
@@ -146,6 +148,35 @@ export class ExpenseRepository extends BaseMongoRepository<Expense> {
     }
   }
 
+  async getMerchantTotals(
+    userId: string,
+    from: Date,
+    to: Date,
+  ): Promise<Array<{ merchant: string; total: number; count: number }>> {
+    try {
+      const expenses = await prisma.expense.findMany({
+        where: { userId, NOT: { type: "income" }, date: { gte: from, lte: to } },
+        select: { description: true, amount: true },
+      });
+
+      const map = new Map<string, { total: number; count: number }>();
+      for (const e of (expenses as { description?: string | null; amount: number }[])) {
+        if (!e.description) continue;
+        const key = ExpenseRepository.normalizeDescription(e.description);
+        if (key.length < 2) continue;
+        const cur = map.get(key) ?? { total: 0, count: 0 };
+        map.set(key, { total: cur.total + e.amount, count: cur.count + 1 });
+      }
+
+      return Array.from(map.entries())
+        .map(([merchant, data]) => ({ merchant, ...data }))
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 15);
+    } catch (err) {
+      throw new RepositoryError("Failed to getMerchantTotals", "getMerchantTotals", err);
+    }
+  }
+
   async aggregateByCategory(
     userId: string,
     from: Date,
@@ -160,9 +191,10 @@ export class ExpenseRepository extends BaseMongoRepository<Expense> {
       // Group by (type, categoryId)
       const map = new Map<string, { type: string; total: number; count: number }>();
       for (const e of (expenses as { categoryId?: string | null; type: string; amount: number }[])) {
-        const key = `${e.type}:${e.categoryId ?? "@@uncategorized"}`;
-        const cur = map.get(key) ?? { type: e.type, total: 0, count: 0 };
-        map.set(key, { type: e.type, total: cur.total + e.amount, count: cur.count + 1 });
+        const resolvedType = e.type ?? "expense";
+        const key = `${resolvedType}:${e.categoryId ?? "@@uncategorized"}`;
+        const cur = map.get(key) ?? { type: resolvedType, total: 0, count: 0 };
+        map.set(key, { type: resolvedType, total: cur.total + e.amount, count: cur.count + 1 });
       }
 
       // Batch-resolve category names

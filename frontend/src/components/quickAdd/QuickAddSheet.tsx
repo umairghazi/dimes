@@ -135,7 +135,7 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
       <ToggleButtonGroup
         value={mode}
         exclusive
-        onChange={(_, v) => { if (v) setMode(v as "expense" | "income"); }}
+        onChange={(_, v) => { if (v) { setMode(v as "expense" | "income"); setCategoryId(""); } }}
         fullWidth
         size="small"
       >
@@ -192,6 +192,7 @@ export function QuickAddSheet({ open, onClose, onSaved }: QuickAddSheetProps) {
           label={mode === "income" ? "Income Category" : "Category"}
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value as string)}
+          categoryType={mode}
         />
       </FormControl>
       <TextField

@@ -10,6 +10,7 @@ import {
   skipStagingRow,
   confirmBatch,
   discardBatch,
+  splitStagingRow,
 } from "../controllers/upload.controller";
 
 const router = Router();
@@ -24,6 +25,7 @@ router.use(authenticate);
 router.post("/csv", uploadLimiter, upload.single("file"), uploadCSV);
 router.get("/:batchId/staging", getStagingRows);
 router.patch("/:batchId/staging/:id", correctCategory);
+router.post("/:batchId/staging/:id/split", splitStagingRow);
 router.delete("/:batchId/staging/:id", skipStagingRow);
 router.post("/:batchId/confirm", confirmBatch);
 router.delete("/:batchId", discardBatch);

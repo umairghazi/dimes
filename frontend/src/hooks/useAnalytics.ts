@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { analyticsApi } from "@/api/analytics.api";
-import { MonthlySummary, BudgetComparison } from "@/types/analytics.types";
+import { MonthlySummary, BudgetComparison, MerchantTotal } from "@/types/analytics.types";
 import { useAnalyticsStore, isCurrentMonthYear } from "@/store/analyticsStore";
 
 const ANALYTICS_STALE = 5 * 60 * 1000; // 5 min
@@ -44,6 +44,12 @@ export function useAnalytics() {
     staleTime: ANALYTICS_STALE,
   });
 
+  const merchantsQuery = useQuery<MerchantTotal[]>({
+    queryKey: ["analytics", "merchants", month],
+    queryFn: () => analyticsApi.getMerchants(month),
+    staleTime: ANALYTICS_STALE,
+  });
+
   const fetchInsight = useCallback(async () => {
     setInsightLoading(true);
     setInsightError(null);
@@ -61,13 +67,15 @@ export function useAnalytics() {
     summaryQuery.isLoading ||
     trendsQuery.isLoading ||
     comparisonQuery.isLoading ||
-    incomeBreakdownQuery.isLoading;
+    incomeBreakdownQuery.isLoading ||
+    merchantsQuery.isLoading;
 
   const error =
     summaryQuery.isError ||
     trendsQuery.isError ||
     comparisonQuery.isError ||
-    incomeBreakdownQuery.isError
+    incomeBreakdownQuery.isError ||
+    merchantsQuery.isError
       ? "Failed to load analytics"
       : null;
 
@@ -79,6 +87,7 @@ export function useAnalytics() {
     incomeBreakdown: incomeBreakdownQuery.data ?? null,
     loading,
     error,
+    merchants: merchantsQuery.data ?? [],
     insight, insightLoading, insightError, refreshInsight: fetchInsight,
   };
 }

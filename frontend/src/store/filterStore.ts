@@ -7,6 +7,7 @@ interface ExpenseFilters {
   source?: string;
   isRecurring?: boolean;
   search?: string;
+  type?: "expense" | "income";
 }
 
 interface FilterState {
@@ -16,8 +17,8 @@ interface FilterState {
 }
 
 export const useFilterStore = create<FilterState>((set) => ({
-  filters: {},
+  filters: { type: "expense" },
   setFilter: (key, value) =>
     set((s) => ({ filters: { ...s.filters, [key]: value } })),
-  clearFilters: () => set({ filters: {} }),
+  clearFilters: () => set({ filters: { type: "expense" } }),
 }));

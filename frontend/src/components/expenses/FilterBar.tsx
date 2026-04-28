@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, TextField, FormControl, InputLabel, Button, InputAdornment } from "@mui/material";
+import { Box, TextField, FormControl, InputLabel, Button, InputAdornment, ToggleButtonGroup, ToggleButton } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { useFilterStore } from "@/store/filterStore";
 import { CategorySelect } from "@/components/shared/CategorySelect";
@@ -7,7 +7,6 @@ import { CategorySelect } from "@/components/shared/CategorySelect";
 export function FilterBar() {
   const { filters, setFilter, clearFilters } = useFilterStore();
 
-  // Local state for search so we can debounce before hitting the store/query
   const [searchInput, setSearchInput] = useState(filters.search ?? "");
 
   useEffect(() => {
@@ -17,7 +16,6 @@ export function FilterBar() {
     return () => clearTimeout(id);
   }, [searchInput]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync local input if filters are cleared externally
   useEffect(() => {
     if (!filters.search) setSearchInput("");
   }, [filters.search]);
@@ -27,8 +25,20 @@ export function FilterBar() {
     clearFilters();
   };
 
+  const typeValue = filters.type ?? "expense";
+
   return (
     <Box sx={{ display: "flex", gap: 1.5, mb: 2, flexWrap: "wrap", alignItems: "center" }}>
+      <ToggleButtonGroup
+        size="small"
+        exclusive
+        value={typeValue}
+        onChange={(_, v) => { if (v) setFilter("type", v as "expense" | "income"); }}
+      >
+        <ToggleButton value="expense">Expenses</ToggleButton>
+        <ToggleButton value="income">Income</ToggleButton>
+      </ToggleButtonGroup>
+
       <TextField
         placeholder="Search description..."
         value={searchInput}
@@ -53,6 +63,7 @@ export function FilterBar() {
           value={filters.categoryId ?? ""}
           onChange={(e) => setFilter("categoryId", (e.target.value as string) || undefined)}
           includeAll
+          categoryType={typeValue}
         />
       </FormControl>
 

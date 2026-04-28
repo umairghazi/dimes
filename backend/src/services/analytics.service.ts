@@ -36,6 +36,14 @@ export interface BudgetComparison {
   rows: BudgetComparisonRow[];
 }
 
+/** Returns UTC-based [from, to] covering the full calendar month, inclusive. */
+function monthBounds(monthYear: string): { from: Date; to: Date } {
+  const [year, month] = monthYear.split("-").map(Number);
+  const from = new Date(Date.UTC(year, month - 1, 1));
+  const to = new Date(Date.UTC(year, month, 1) - 1); // 23:59:59.999 last day, UTC
+  return { from, to };
+}
+
 export class AnalyticsService {
   constructor(
     private readonly expenseRepo: ExpenseRepository,
@@ -47,9 +55,7 @@ export class AnalyticsService {
     const cached = cache.get<MonthlySummary>(cacheKey);
     if (cached) return cached;
 
-    const [year, month] = monthYear.split("-").map(Number);
-    const from = new Date(year, month - 1, 1);
-    const to = new Date(year, month, 0, 23, 59, 59);
+    const { from, to } = monthBounds(monthYear);
 
     const [categories, budgets] = await Promise.all([
       this.expenseRepo.aggregateByCategory(userId, from, to),
@@ -103,8 +109,7 @@ export class AnalyticsService {
 
   async getBudgetProgress(userId: string, monthYear: string): Promise<BudgetProgress[]> {
     const [year, month] = monthYear.split("-").map(Number);
-    const from = new Date(year, month - 1, 1);
-    const to = new Date(year, month, 0, 23, 59, 59);
+    const { from, to } = monthBounds(monthYear);
 
     const [categories, budgets] = await Promise.all([
       this.expenseRepo.aggregateByCategory(userId, from, to),
@@ -135,9 +140,7 @@ export class AnalyticsService {
     const cached = cache.get<BudgetComparison>(cacheKey);
     if (cached) return cached;
 
-    const [year, month] = monthYear.split("-").map(Number);
-    const from = new Date(year, month - 1, 1);
-    const to = new Date(year, month, 0, 23, 59, 59);
+    const { from, to } = monthBounds(monthYear);
 
     const [spendData, budgets] = await Promise.all([
       this.expenseRepo.aggregateByCategory(userId, from, to),
@@ -175,9 +178,7 @@ export class AnalyticsService {
     const cached = cache.get<BudgetComparison>(cacheKey);
     if (cached) return cached;
 
-    const [year, month] = monthYear.split("-").map(Number);
-    const from = new Date(year, month - 1, 1);
-    const to = new Date(year, month, 0, 23, 59, 59);
+    const { from, to } = monthBounds(monthYear);
 
     const [incomeData, budgets] = await Promise.all([
       this.expenseRepo.aggregateByCategory(userId, from, to),
@@ -206,6 +207,17 @@ export class AnalyticsService {
       totals: { planned: totalPlanned, actual: totalActual, diff: totalActual - totalPlanned },
       rows,
     };
+    cache.set(cacheKey, result, TTL.ANALYTICS);
+    return result;
+  }
+
+  async getMerchantBreakdown(userId: string, monthYear: string): Promise<Array<{ merchant: string; total: number; count: number }>> {
+    const cacheKey = `analytics:${userId}:merchants:${monthYear}`;
+    const cached = cache.get<Array<{ merchant: string; total: number; count: number }>>(cacheKey);
+    if (cached) return cached;
+
+    const { from, to } = monthBounds(monthYear);
+    const result = await this.expenseRepo.getMerchantTotals(userId, from, to);
     cache.set(cacheKey, result, TTL.ANALYTICS);
     return result;
   }

@@ -22,8 +22,8 @@ function buildTree(categories: UserCategory[]): CategoryGroup[] {
   groups.sort((a, b) => (a.group ?? "").localeCompare(b.group ?? ""));
 
   const standalones = groupMap.get(null) ?? [];
-  for (const item of standalones) {
-    groups.push({ group: null, items: [item] });
+  if (standalones.length > 0) {
+    groups.push({ group: null, items: standalones });
   }
 
   return groups;
@@ -44,13 +44,13 @@ export function useCategories({ includeDeleted = false } = {}) {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["categories"] });
 
   const addMutation = useMutation({
-    mutationFn: ({ name, group }: { name: string; group?: string }) =>
-      categoriesApi.create({ name, group }),
+    mutationFn: ({ name, group, type, isFixed }: { name: string; group?: string; type?: "expense" | "income"; isFixed?: boolean }) =>
+      categoriesApi.create({ name, group, type, isFixed }),
     onSuccess: invalidate,
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { name?: string; group?: string | null } }) =>
+    mutationFn: ({ id, data }: { id: string; data: { name?: string; group?: string | null; type?: "expense" | "income" | null; isFixed?: boolean } }) =>
       categoriesApi.update(id, data),
     onSuccess: invalidate,
   });
@@ -65,10 +65,10 @@ export function useCategories({ includeDeleted = false } = {}) {
     onSuccess: invalidate,
   });
 
-  const addCategory = (name: string, group?: string) =>
-    addMutation.mutateAsync({ name, group });
+  const addCategory = (name: string, group?: string, type?: "expense" | "income", isFixed?: boolean) =>
+    addMutation.mutateAsync({ name, group, type, isFixed });
 
-  const updateCategory = (id: string, data: { name?: string; group?: string | null }) =>
+  const updateCategory = (id: string, data: { name?: string; group?: string | null; type?: "expense" | "income" | null; isFixed?: boolean }) =>
     updateMutation.mutateAsync({ id, data });
 
   const deleteCategory = (id: string) => deleteMutation.mutateAsync(id);

@@ -9,11 +9,15 @@ const categoryService = new CategoryService(new CategoryRepository());
 const createSchema = z.object({
   name: z.string().min(1),
   group: z.string().optional(),
+  type: z.enum(["expense", "income"]).optional(),
+  isFixed: z.boolean().optional(),
 });
 
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
   group: z.string().nullable().optional(),
+  type: z.enum(["expense", "income"]).nullable().optional(),
+  isFixed: z.boolean().optional(),
 });
 
 function requireUser(req: Request) {

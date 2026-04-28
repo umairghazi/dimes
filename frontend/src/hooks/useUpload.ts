@@ -67,8 +67,26 @@ export function useUpload() {
 
   const correctCategory = async (rowId: string, category: string) => {
     if (!batchId) return;
-    const updated = await uploadApi.correctCategory(batchId, rowId, category);
+    const updated = await uploadApi.patchStagingRow(batchId, rowId, { category });
     setStagingRows((rows) => rows.map((r) => (r.id === rowId ? updated : r)));
+  };
+
+  const editDescription = async (rowId: string, description: string) => {
+    if (!batchId) return;
+    const updated = await uploadApi.patchStagingRow(batchId, rowId, { description });
+    setStagingRows((rows) => rows.map((r) => (r.id === rowId ? updated : r)));
+  };
+
+  const splitRow = async (
+    rowId: string,
+    splits: { description: string; amount: number; category: string }[],
+  ) => {
+    if (!batchId) return;
+    const newRows = await uploadApi.splitStagingRow(batchId, rowId, splits);
+    setStagingRows((rows) => {
+      const without = rows.filter((r) => r.id !== rowId);
+      return [...without, ...newRows];
+    });
   };
 
   const confirm = async () => {
@@ -105,6 +123,6 @@ export function useUpload() {
 
   return {
     step, batchId, stagingRows, loading, error, aiAvailable, progress,
-    uploadCSV, correctCategory, skipRow, confirm, discard, reset,
+    uploadCSV, correctCategory, editDescription, splitRow, skipRow, confirm, discard, reset,
   };
 }

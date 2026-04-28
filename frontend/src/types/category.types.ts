@@ -3,6 +3,8 @@ export interface UserCategory {
   userId: string;
   name: string;
   group: string | null;
+  type: "expense" | "income" | null;
+  isFixed: boolean;
   sortOrder: number;
   deletedAt: string | null;
   createdAt: string;

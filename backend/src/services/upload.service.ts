@@ -140,13 +140,62 @@ export class UploadService {
     await this.stagingRepo.deleteById(rowId);
   }
 
-  async correctCategory(userId: string, batchId: string, rowId: string, category: string): Promise<StagingExpense> {
+  async patchStagingRow(
+    userId: string,
+    batchId: string,
+    rowId: string,
+    patch: { category?: string; description?: string },
+  ): Promise<StagingExpense> {
     const row = await this.stagingRepo.getById(rowId);
     if (!row) throw new AppError("Row not found", 404, "NOT_FOUND");
     if (row.userId !== userId || row.uploadBatchId !== batchId) {
       throw new AppError("Forbidden", 403, "FORBIDDEN");
     }
-    return this.stagingRepo.updateById(rowId, { userCorrectedCategory: category }) as Promise<StagingExpense>;
+    const data: Record<string, unknown> = {};
+    if (patch.category) data.userCorrectedCategory = patch.category;
+    if (patch.description) data.description = patch.description;
+    return this.stagingRepo.updateById(rowId, data) as Promise<StagingExpense>;
+  }
+
+  async splitStagingRow(
+    userId: string,
+    batchId: string,
+    rowId: string,
+    splits: { description: string; amount: number; category: string }[],
+  ): Promise<StagingExpense[]> {
+    const row = await this.stagingRepo.getById(rowId);
+    if (!row) throw new AppError("Row not found", 404, "NOT_FOUND");
+    if (row.userId !== userId || row.uploadBatchId !== batchId) {
+      throw new AppError("Forbidden", 403, "FORBIDDEN");
+    }
+
+    const totalSplit = splits.reduce((sum, s) => sum + s.amount, 0);
+    if (Math.abs(totalSplit - row.amount) > 0.01) {
+      throw new AppError(
+        `Split amounts ($${totalSplit.toFixed(2)}) must equal original amount ($${row.amount.toFixed(2)})`,
+        400,
+        "SPLIT_AMOUNT_MISMATCH",
+      );
+    }
+
+    await this.stagingRepo.deleteById(rowId);
+
+    return Promise.all(
+      splits.map((split) =>
+        this.stagingRepo.create({
+          userId,
+          uploadBatchId: batchId,
+          date: row.date,
+          description: split.description,
+          amount: split.amount,
+          aiSuggestedCategory: split.category,
+          aiConfidence: 1,
+          userCorrectedCategory: split.category,
+          classificationSource: "ai",
+          status: "pending",
+        }),
+      ),
+    );
   }
 
   async confirmBatch(userId: string, batchId: string, currency = "USD"): Promise<{ imported: number }> {

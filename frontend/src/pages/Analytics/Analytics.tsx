@@ -9,12 +9,12 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { TrendLine } from "@/components/charts/TrendLine";
-import { CategoryBarChart } from "@/components/charts/CategoryBarChart";
 import { IncomeExpenseOverview } from "@/components/charts/IncomeExpenseOverview";
 import { BudgetRebalancer } from "@/components/dashboard/BudgetRebalancer";
 import { CategoryBudgetTable } from "@/components/budget/CategoryBudgetTable";
 import { CollapsibleCard } from "@/components/shared/CollapsibleCard";
 import { DrillDownDrawer, DrillDown } from "@/components/expenses/DrillDownDrawer";
+import { SpendingInsights } from "@/components/analytics/SpendingInsights";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 
 function formatMonthLabel(monthYear: string): string {
@@ -25,10 +25,16 @@ function formatMonthLabel(monthYear: string): string {
   });
 }
 
+function getPrevMonthYear(monthYear: string): string {
+  const [year, month] = monthYear.split("-").map(Number);
+  const d = new Date(year, month - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
 export function Analytics() {
   const {
     month, prevMonth, nextMonth, isCurrentMonth,
-    summary, trends, comparison, incomeBreakdown,
+    summary, trends, comparison, incomeBreakdown, merchants,
     loading, error,
     insight, insightLoading, insightError, refreshInsight,
   } = useAnalytics();
@@ -36,6 +42,7 @@ export function Analytics() {
   const spentMap = new Map<string, number>(
     (summary?.byCategory ?? []).map((c) => [c.category, c.amount]),
   );
+  const prevSummary = trends.find((t) => t.period === getPrevMonthYear(month)) ?? null;
   const { isMobile } = useBreakpoint();
 
   const [tab, setTab] = useState(0);
@@ -76,6 +83,21 @@ export function Analytics() {
       {/* ── Insights tab ── */}
       {tab === 0 && (
         <Grid container spacing={2}>
+          {summary && !loading && (
+            <Grid size={12}>
+              <SpendingInsights
+                summary={summary}
+                prevSummary={prevSummary}
+                trends={trends}
+                comparison={comparison}
+                merchants={merchants}
+                isCurrentMonth={isCurrentMonth}
+                monthYear={month}
+                onCategoryClick={(c) => openDrillDown(c)}
+              />
+            </Grid>
+          )}
+
           <Grid size={12}>
             <CollapsibleCard
               storageKey="analytics-insight"

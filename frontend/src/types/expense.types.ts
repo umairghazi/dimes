@@ -27,6 +27,7 @@ export interface ExpenseFilters {
   source?: string;
   isRecurring?: boolean;
   search?: string;
+  type?: "expense" | "income";
 }
 
 export interface PaginatedExpenses {

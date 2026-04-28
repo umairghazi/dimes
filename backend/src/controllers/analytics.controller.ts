@@ -83,6 +83,20 @@ export async function getIncomeBreakdown(req: Request, res: Response, next: Next
   }
 }
 
+export async function getMerchantBreakdown(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = requireUser(req);
+    const { month } = monthSchema.parse(req.query);
+    const now = new Date();
+    const monthYear =
+      month ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const breakdown = await analyticsService.getMerchantBreakdown(user.id, monthYear);
+    res.json(breakdown);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getInsight(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);

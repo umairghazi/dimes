@@ -13,6 +13,7 @@ import {
   Tooltip,
   InputAdornment,
   CircularProgress,
+  Chip,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -22,6 +23,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import RepeatIcon from "@mui/icons-material/Repeat";
+import PushPinIcon from "@mui/icons-material/PushPin";
+import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import { UserCategory, CategoryGroup } from "@/types/category.types";
 import { Budget } from "@/types/budget.types";
 
@@ -34,6 +37,7 @@ interface Props {
   onSetBudget: (categoryName: string, amount: number) => void;
   onClearBudget: (categoryName: string) => void;
   onToggleCarryForward: (categoryName: string) => void;
+  onToggleFixed: (cat: UserCategory) => void;
   onAddInGroup: (group: string) => void;
 }
 
@@ -145,7 +149,7 @@ function BudgetCell({ budget, spent, onSet, onClear, onToggleCarryForward }: Bud
 
 export function CategoryCompactView({
   tree, budgetMap, spentMap,
-  onEdit, onDelete, onSetBudget, onClearBudget, onToggleCarryForward, onAddInGroup,
+  onEdit, onDelete, onSetBudget, onClearBudget, onToggleCarryForward, onToggleFixed, onAddInGroup,
 }: Props) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
@@ -217,7 +221,17 @@ export function CategoryCompactView({
                       sx={{ "& .row-actions": { opacity: 0 }, "&:hover .row-actions": { opacity: 1 } }}
                     >
                       <TableCell sx={{ pl: isGroup ? 3 : 1.5 }}>
-                        <Typography variant="body2">{displayName}</Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                          <Tooltip title={cat.isFixed ? "Fixed cost — click to unmark" : "Mark as fixed cost"}>
+                            <IconButton size="small" onClick={() => onToggleFixed(cat)} sx={{ p: 0.25, color: cat.isFixed ? "primary.main" : "text.disabled", "&:hover": { color: "primary.main" } }}>
+                              {cat.isFixed ? <PushPinIcon sx={{ fontSize: 13 }} /> : <PushPinOutlinedIcon sx={{ fontSize: 13 }} />}
+                            </IconButton>
+                          </Tooltip>
+                          <Typography variant="body2">{displayName}</Typography>
+                          {cat.type === "income" && (
+                            <Chip label="Income" size="small" color="success" variant="outlined" sx={{ height: 16, fontSize: "0.6rem", "& .MuiChip-label": { px: 0.5 } }} />
+                          )}
+                        </Box>
                       </TableCell>
                       <TableCell>
                         <BudgetCell

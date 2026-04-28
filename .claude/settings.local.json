@@ -12,7 +12,9 @@
       "Bash(npx --yes -- node -e \"import\\('@tanstack/react-query'\\).then\\(m => console.log\\(m.version || 'ok'\\)\\)\")",
       "Bash(npx create-expo-app@latest:*)",
       "Bash(npx expo:*)",
-      "Bash(xargs cat:*)"
+      "Bash(xargs cat:*)",
+      "Bash(xargs ls *)",
+      "Bash(grep -n 'aggregateByCategory\\\\|type.*expense\\\\|isIncome\\\\|$group\\\\|$match' /Users/umairghazi/Desktop/projects/dimes/backend/src/repositories/expense.repository.ts)"
     ]
   }
 }

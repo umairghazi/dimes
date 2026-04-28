@@ -38,8 +38,25 @@ const mappingSchema = z.object({
   hasHeader: z.string().transform((v) => v === "true"),
 });
 
-const correctSchema = z.object({
-  category: z.string().min(1),
+const correctSchema = z
+  .object({
+    category: z.string().min(1).optional(),
+    description: z.string().min(1).optional(),
+  })
+  .refine((d) => d.category || d.description, {
+    message: "At least one of category or description is required",
+  });
+
+const splitSchema = z.object({
+  splits: z
+    .array(
+      z.object({
+        description: z.string().min(1),
+        amount: z.number().positive(),
+        category: z.string().min(1),
+      }),
+    )
+    .min(2),
 });
 
 function requireUser(req: Request) {
@@ -140,14 +157,20 @@ export async function getStagingRows(req: Request, res: Response, next: NextFunc
 export async function correctCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);
-    const { category } = correctSchema.parse(req.body);
-    const row = await uploadService.correctCategory(
-      user.id,
-      req.params.batchId,
-      req.params.id,
-      category,
-    );
+    const patch = correctSchema.parse(req.body);
+    const row = await uploadService.patchStagingRow(user.id, req.params.batchId, req.params.id, patch);
     res.json(row);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function splitStagingRow(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = requireUser(req);
+    const { splits } = splitSchema.parse(req.body);
+    const rows = await uploadService.splitStagingRow(user.id, req.params.batchId, req.params.id, splits);
+    res.status(201).json(rows);
   } catch (err) {
     next(err);
   }

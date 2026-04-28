@@ -51,6 +51,8 @@ export interface UserCategory {
   userId: string;
   name: string;
   group: string | null;
+  type: string | null; // "expense" | "income" — null treated as "expense"
+  isFixed: boolean;
   sortOrder: number;
   deletedAt: Date | null;
   createdAt: Date;

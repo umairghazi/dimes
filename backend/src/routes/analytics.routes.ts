@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/auth.middleware";
-import { getSummary, getTrends, getRecurring, getInsight, getBudgetComparison, getIncomeBreakdown } from "../controllers/analytics.controller";
+import { getSummary, getTrends, getRecurring, getInsight, getBudgetComparison, getIncomeBreakdown, getMerchantBreakdown } from "../controllers/analytics.controller";
 
 const router = Router();
 
@@ -12,5 +12,6 @@ router.get("/recurring", getRecurring);
 router.get("/insight", getInsight);
 router.get("/budget-comparison", getBudgetComparison);
 router.get("/income-breakdown", getIncomeBreakdown);
+router.get("/merchants", getMerchantBreakdown);
 
 export default router;

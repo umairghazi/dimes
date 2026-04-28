@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { formatDate } from "@/lib/date";
 import {
   Box,
@@ -14,15 +15,20 @@ import {
   Tooltip,
   Typography,
   Alert,
+  Input,
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
+import CallSplitIcon from "@mui/icons-material/CallSplit";
 import { StagingExpense } from "@/types/upload.types";
 import { CategorySelect } from "@/components/shared/CategorySelect";
+import { SplitTransactionDialog } from "./SplitTransactionDialog";
 
 interface StagingReviewTableProps {
   rows: StagingExpense[];
   onCorrect: (rowId: string, category: string) => void;
+  onEditDescription: (rowId: string, description: string) => void;
+  onSplit: (rowId: string, splits: { description: string; amount: number; category: string }[]) => void;
   onSkip: (rowId: string) => void;
   onConfirm: () => void;
   onDiscard: () => void;
@@ -33,18 +39,42 @@ interface StagingReviewTableProps {
 export function StagingReviewTable({
   rows,
   onCorrect,
+  onEditDescription,
+  onSplit,
   onSkip,
   onConfirm,
   onDiscard,
   loading,
   aiAvailable = true,
 }: StagingReviewTableProps) {
-  // A row needs attention only when it has no category at all
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [splitRow, setSplitRow] = useState<StagingExpense | null>(null);
+
   const uncategorizedCount = rows.filter(
     (r) => !(r.userCorrectedCategory ?? r.aiSuggestedCategory),
   ).length;
 
   const canConfirm = !loading && uncategorizedCount === 0;
+
+  const startEdit = (row: StagingExpense) => {
+    setEditingId(row.id);
+    setEditValue(row.description);
+  };
+
+  const commitEdit = (rowId: string) => {
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== rows.find((r) => r.id === rowId)?.description) {
+      onEditDescription(rowId, trimmed);
+    }
+    setEditingId(null);
+  };
+
+  const handleSplitConfirm = (splits: { description: string; amount: number; category: string }[]) => {
+    if (!splitRow) return;
+    onSplit(splitRow.id, splits);
+    setSplitRow(null);
+  };
 
   return (
     <Box>
@@ -106,6 +136,7 @@ export function StagingReviewTable({
                 const confidence = row.aiConfidence;
                 const isHistory = row.classificationSource === "history";
                 const isLowConfidence = aiAvailable && !isHistory && confidence > 0 && confidence < 0.85;
+                const isEditingDesc = editingId === row.id;
 
                 return (
                   <TableRow
@@ -121,9 +152,39 @@ export function StagingReviewTable({
                   >
                     <TableCell>{formatDate(row.date)}</TableCell>
                     <TableCell sx={{ maxWidth: 200 }}>
-                      <Typography variant="body2" noWrap title={row.description}>
-                        {row.description}
-                      </Typography>
+                      {isEditingDesc ? (
+                        <Input
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onBlur={() => commitEdit(row.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") commitEdit(row.id);
+                            if (e.key === "Escape") setEditingId(null);
+                          }}
+                          autoFocus
+                          size="small"
+                          fullWidth
+                          sx={{ fontSize: "0.875rem" }}
+                        />
+                      ) : (
+                        <Tooltip title="Click to edit description">
+                          <Typography
+                            variant="body2"
+                            noWrap
+                            onClick={() => startEdit(row)}
+                            sx={{
+                              cursor: "text",
+                              borderBottom: "1px dashed",
+                              borderColor: "divider",
+                              display: "inline-block",
+                              maxWidth: "100%",
+                              "&:hover": { borderColor: "primary.main", color: "primary.main" },
+                            }}
+                          >
+                            {row.description}
+                          </Typography>
+                        </Tooltip>
+                      )}
                     </TableCell>
                     <TableCell>${row.amount.toFixed(2)}</TableCell>
                     {aiAvailable && (
@@ -171,11 +232,18 @@ export function StagingReviewTable({
                       />
                     </TableCell>
                     <TableCell padding="none">
-                      <Tooltip title="Skip this row">
-                        <IconButton size="small" onClick={() => onSkip(row.id)} color="default">
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                      <Box sx={{ display: "flex" }}>
+                        <Tooltip title="Split into multiple transactions">
+                          <IconButton size="small" onClick={() => setSplitRow(row)} color="default">
+                            <CallSplitIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Skip this row">
+                          <IconButton size="small" onClick={() => onSkip(row.id)} color="default">
+                            <DeleteOutlineIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 );
@@ -184,6 +252,13 @@ export function StagingReviewTable({
           </Table>
         </TableContainer>
       </Paper>
+
+      <SplitTransactionDialog
+        open={splitRow !== null}
+        row={splitRow}
+        onClose={() => setSplitRow(null)}
+        onConfirm={handleSplitConfirm}
+      />
     </Box>
   );
 }

@@ -20,6 +20,7 @@ import {
   Skeleton,
   ToggleButtonGroup,
   ToggleButton,
+  Chip,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -65,6 +66,7 @@ export function Categories() {
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newGroup, setNewGroup] = useState("");
+  const [newType, setNewType] = useState<"expense" | "income">("expense");
   const [saving, setSaving] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
 
@@ -72,6 +74,7 @@ export function Categories() {
   const [editTarget, setEditTarget] = useState<UserCategory | null>(null);
   const [editName, setEditName] = useState("");
   const [editGroup, setEditGroup] = useState("");
+  const [editType, setEditType] = useState<"expense" | "income">("expense");
   const [editSaving, setEditSaving] = useState(false);
 
   // ── delete confirm dialog ──
@@ -88,9 +91,10 @@ export function Categories() {
     setSaving(true);
     setAddError(null);
     try {
-      await addCategory(name, newGroup.trim() || undefined);
+      await addCategory(name, newGroup.trim() || undefined, newType);
       setNewName("");
       setNewGroup("");
+      setNewType("expense");
       setAddOpen(false);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Failed to create category";
@@ -104,6 +108,7 @@ export function Categories() {
     setEditTarget(cat);
     setEditName(cat.group ? cat.name.replace(`${cat.group} - `, "") : cat.name);
     setEditGroup(cat.group ?? "");
+    setEditType((cat.type as "expense" | "income") ?? "expense");
   };
 
   const handleEdit = async () => {
@@ -113,6 +118,7 @@ export function Categories() {
       await updateCategory(editTarget.id, {
         name: editName.trim(),
         group: editGroup.trim() || null,
+        type: editType,
       });
       setEditTarget(null);
     } finally {
@@ -150,6 +156,10 @@ export function Categories() {
   const handleToggleCarryForward = async (categoryName: string) => {
     const existing = budgetMap.get(categoryName);
     if (existing) await updateBudget(existing.id, { carryForward: !existing.carryForward });
+  };
+
+  const handleToggleFixed = async (cat: UserCategory) => {
+    await updateCategory(cat.id, { isFixed: !cat.isFixed });
   };
 
   const loading = catLoading || budgetLoading;
@@ -221,6 +231,7 @@ export function Categories() {
           onSetBudget={(name, amount) => void handleSetBudget(name, amount)}
           onClearBudget={(name) => void handleClearBudget(name)}
           onToggleCarryForward={(name) => void handleToggleCarryForward(name)}
+          onToggleFixed={(cat) => void handleToggleFixed(cat)}
           onAddInGroup={(group) => { setNewGroup(group); setAddOpen(true); }}
         />
       ) : (
@@ -262,13 +273,23 @@ export function Categories() {
         <DialogTitle>Add Category</DialogTitle>
         <DialogContent sx={{ pt: "16px !important", display: "flex", flexDirection: "column", gap: 2 }}>
           {addError && <Alert severity="error">{addError}</Alert>}
+          <ToggleButtonGroup
+            value={newType}
+            exclusive
+            onChange={(_, v) => { if (v) setNewType(v as "expense" | "income"); }}
+            fullWidth
+            size="small"
+          >
+            <ToggleButton value="expense">Expense</ToggleButton>
+            <ToggleButton value="income">Income</ToggleButton>
+          </ToggleButtonGroup>
           <TextField
             label="Category name"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             autoFocus
             fullWidth
-            placeholder="e.g. Groceries"
+            placeholder={newType === "income" ? "e.g. Salary, Freelance" : "e.g. Groceries"}
             onKeyDown={(e) => { if (e.key === "Enter") void handleAdd(); }}
           />
           <Autocomplete
@@ -298,6 +319,16 @@ export function Categories() {
       <Dialog open={!!editTarget} onClose={() => setEditTarget(null)} maxWidth="xs" fullWidth>
         <DialogTitle>Edit Category</DialogTitle>
         <DialogContent sx={{ pt: "16px !important", display: "flex", flexDirection: "column", gap: 2 }}>
+          <ToggleButtonGroup
+            value={editType}
+            exclusive
+            onChange={(_, v) => { if (v) setEditType(v as "expense" | "income"); }}
+            fullWidth
+            size="small"
+          >
+            <ToggleButton value="expense">Expense</ToggleButton>
+            <ToggleButton value="income">Income</ToggleButton>
+          </ToggleButtonGroup>
           <TextField
             label="Category name"
             value={editName}
@@ -386,11 +417,16 @@ function CategoryCard({ cat, budget, spent, onEdit, onDelete, onSetBudget, onCle
         {/* Header */}
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
           <Box sx={{ minWidth: 0, flex: 1 }}>
-            {cat.group && (
-              <Typography variant="overline" color="text.secondary" sx={{ display: "block", lineHeight: 1.4 }}>
-                {cat.group}
-              </Typography>
-            )}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+              {cat.group && (
+                <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.4 }}>
+                  {cat.group}
+                </Typography>
+              )}
+              {cat.type === "income" && (
+                <Chip label="Income" size="small" color="success" variant="outlined" sx={{ height: 18, fontSize: "0.65rem", "& .MuiChip-label": { px: 0.75 } }} />
+              )}
+            </Box>
             <Typography variant="h6" sx={{ fontWeight: 600 }} noWrap>
               {cat.group ? cat.name.replace(`${cat.group} - `, "") : cat.name}
             </Typography>

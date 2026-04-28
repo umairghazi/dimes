@@ -61,6 +61,8 @@ export function Upload() {
         <StagingReviewTable
           rows={upload.stagingRows}
           onCorrect={upload.correctCategory}
+          onEditDescription={(id, desc) => void upload.editDescription(id, desc)}
+          onSplit={(id, splits) => void upload.splitRow(id, splits)}
           onSkip={upload.skipRow}
           onConfirm={() => void upload.confirm()}
           onDiscard={() => void upload.discard()}

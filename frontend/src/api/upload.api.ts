@@ -76,9 +76,18 @@ export const uploadApi = {
   getStagingRows: (batchId: string) =>
     apiClient.get<StagingExpense[]>(`/upload/${batchId}/staging`).then((r) => r.data),
 
-  correctCategory: (batchId: string, rowId: string, category: string) =>
+  patchStagingRow: (batchId: string, rowId: string, patch: { category?: string; description?: string }) =>
     apiClient
-      .patch<StagingExpense>(`/upload/${batchId}/staging/${rowId}`, { category })
+      .patch<StagingExpense>(`/upload/${batchId}/staging/${rowId}`, patch)
+      .then((r) => r.data),
+
+  splitStagingRow: (
+    batchId: string,
+    rowId: string,
+    splits: { description: string; amount: number; category: string }[],
+  ) =>
+    apiClient
+      .post<StagingExpense[]>(`/upload/${batchId}/staging/${rowId}/split`, { splits })
       .then((r) => r.data),
 
   confirmBatch: (batchId: string, currency = "USD") =>

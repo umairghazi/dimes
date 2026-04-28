@@ -10,12 +10,12 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | --- | --- | --- |
 | Auth — login, register, logout, token refresh | ✅ | httpOnly refresh cookie + access token in memory |
 | Expenses — list, filter, create, edit, delete, paginate | ✅ | Category stored as `categoryId` FK; name resolved at read time; `type: "expense"\|"income"` replaces `isIncome` boolean; income has proper categories |
-| CSV upload — column mapping, staging review, confirm/discard | ✅ | |
+| CSV upload — column mapping, staging review, confirm/discard | ✅ | Inline description editing + transaction splitting added to staging review |
 | Async AI classification via SSE | ✅ | Progress bar during classification |
 | Categories — CRUD with parent groups | ✅ | |
 | Budgets — merged into Categories page, inline budget per category | ✅ | Per-month limit with progress bar |
 | Budget carry-forward | ✅ | Repeat toggle on each category card; auto-rolls over on page load via `POST /budgets/rollover` |
-| Analytics — monthly summary, 6-month trend, donut, bar chart | ✅ | Dedicated Analytics page (Insights + Budget tabs); month state shared via Zustand so Dashboard and Analytics stay in sync |
+| Analytics — monthly summary, 6-month trend, donut, bar chart | ✅ | Dedicated Analytics page (Insights + Budget tabs); month state shared via Zustand so Dashboard and Analytics stay in sync; all date range calculations use UTC (`monthBounds()` helper) to match how transactions are stored |
 | Budget vs Actual table | ✅ | On Dashboard; planned/actual/diff per category with totals row; toggle to hide $0 rows |
 | NL query bar — ask and add modes | ✅ | |
 | Dashboard — stat cards, donut, trend, NL bar | ✅ | |
@@ -42,12 +42,17 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 
 | Feature | Status | Notes |
 | --- | --- | --- |
-| Income tracking | ✅ | QuickAdd has Expense/Income toggle; income stored via `type: "income"` with real `categoryId` from UserCategory (no magic strings, no subCategory workaround); Dashboard shows two-panel Income vs Expenses view |
+| Income tracking | ✅ | QuickAdd has Expense/Income toggle; income stored via `type: "income"` with real `categoryId` from UserCategory; `UserCategory.type` field ("expense"\|"income"\|null) now separates income vs expense categories; CategorySelect filters by mode; Expenses page defaults to expense-only view with Expenses/Income toggle in FilterBar |
 | Budget progress on Dashboard | ⬜ | Budget vs Actual exists on Analytics page; a summary widget on Dashboard would surface it faster |
 | Budget Rebalancer | ✅ | When over budget in any category, shows proportional cut suggestions across categories with remaining slack; current month only |
 | Recurring transactions UI | ⬜ | `isRecurring` flag in data model, `getRecurringTransactions` on backend — nothing in UI |
 | Description text search in Expenses filter | ✅ | Case-insensitive contains search on description; debounced 300ms in FilterBar |
 | AI insights | ✅ | Card at top of Analytics page; manual trigger only (Generate button), resets on month change |
+| Spending insights — Pareto, MoM deltas, savings rate | ✅ | Insights tab: stat cards (spend/savings rate/income), Pareto card (80% rule with stacked bar), MoM category changes with trend arrows; all clickable → drill-down drawer |
+| Top merchants | ✅ | Ranked by total spend with bar gauges and transaction count; descriptions normalized (strip store numbers/punctuation) |
+| Spending pace | ✅ | Current month only: daily average, projected month-end total, projected savings/shortfall vs income; warning border when over budget |
+| Budget recommendations | ✅ | Current month only: 3-month average per category, surfaces unbudgeted categories sorted by spend; one-click "Set $X" creates budget and removes suggestion; rounded up to nearest $25 |
+| Fixed vs Variable split | ✅ | Pin icon on each category in compact view marks it as fixed; Analytics Insights tab shows fixed/variable totals with split bar; variable categories ranked by spend with "−10% = $X" savings chips and a "trim top 3" summary |
 
 ---
 
