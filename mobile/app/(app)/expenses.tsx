@@ -91,10 +91,11 @@ function ExpenseRow({
 
 export default function ExpensesScreen() {
   const [search, setSearch] = useState("");
+  const [type, setType] = useState<"expense" | "income">("expense");
   const [page, setPage] = useState(1);
   const { colors, shadow } = useTheme();
 
-  const filters: ExpenseFilters = {};
+  const filters: ExpenseFilters = { type };
   if (search) filters.search = search;
 
   const { data, loading, error, refetch, deleteExpense } = useExpenses(filters, page);
@@ -105,13 +106,13 @@ export default function ExpensesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
-      {/* Search bar */}
+      {/* Search bar + type toggle */}
       <View style={[styles.searchWrap, { borderBottomColor: colors.border }]}>
         <View style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Ionicons name="search-outline" size={16} color={colors.textSecondary} style={styles.searchIcon} />
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary }]}
-            placeholder="Search expenses..."
+            placeholder="Search..."
             placeholderTextColor={colors.textSecondary}
             value={search}
             onChangeText={(v) => { setSearch(v); setPage(1); }}
@@ -122,6 +123,20 @@ export default function ExpensesScreen() {
               <Ionicons name="close-circle" size={16} color={colors.textSecondary} />
             </TouchableOpacity>
           ) : null}
+        </View>
+        <View style={[styles.typeToggle, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <TouchableOpacity
+            style={[styles.typeBtn, type === "expense" && { backgroundColor: colors.accent }]}
+            onPress={() => { setType("expense"); setPage(1); }}
+          >
+            <Text style={[styles.typeBtnText, { color: type === "expense" ? "#fff" : colors.textSecondary }]}>Expenses</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.typeBtn, type === "income" && { backgroundColor: "#16a34a" }]}
+            onPress={() => { setType("income"); setPage(1); }}
+          >
+            <Text style={[styles.typeBtnText, { color: type === "income" ? "#fff" : colors.textSecondary }]}>Income</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -185,8 +200,22 @@ const styles = StyleSheet.create({
 
   searchWrap: {
     padding: tokens.spacing.md,
+    paddingBottom: tokens.spacing.sm,
     borderBottomWidth: 1,
+    gap: tokens.spacing.sm,
   },
+  typeToggle: {
+    flexDirection: "row",
+    borderRadius: tokens.radii.md,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  typeBtn: {
+    flex: 1,
+    paddingVertical: 7,
+    alignItems: "center",
+  },
+  typeBtnText: { fontSize: 13, fontWeight: "600" },
   searchBox: {
     flexDirection: "row",
     alignItems: "center",

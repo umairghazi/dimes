@@ -36,3 +36,9 @@ export interface BudgetComparison {
   totals: { planned: number; actual: number; diff: number };
   rows: BudgetComparisonRow[];
 }
+
+export interface MerchantTotal {
+  merchant: string;
+  total: number;
+  count: number;
+}

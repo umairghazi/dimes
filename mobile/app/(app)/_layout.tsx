@@ -88,6 +88,14 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="analytics"
+        options={{
+          headerTitle: () => <HeaderTitle page="Analytics" textColor={colors.textPrimary} />,
+          tabBarIcon: ({ color, size }) => <TabIcon name="bar-chart-outline" color={color} size={size} />,
+          tabBarLabel: "Analytics",
+        }}
+      />
+      <Tabs.Screen
         name="add"
         options={{
           headerTitle: () => <HeaderTitle page="Add Expense" textColor={colors.textPrimary} />,

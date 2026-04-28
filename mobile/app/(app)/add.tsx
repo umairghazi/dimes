@@ -55,6 +55,10 @@ export default function AddExpenseScreen() {
   const { categories, loading: catsLoading } = useCategories();
   const { colors, shadow } = useTheme();
 
+  const filteredCategories = categories.filter(
+    (c) => (c.type ?? "expense") === mode,
+  );
+
   const inputStyle = [styles.input, { borderColor: colors.border, backgroundColor: colors.surface, color: colors.textPrimary }];
 
   async function handleSubmit() {
@@ -202,7 +206,7 @@ export default function AddExpenseScreen() {
             <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} />
           ) : (
             <FlatList
-              data={categories}
+              data={filteredCategories}
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.catList}
               renderItem={({ item }) => {

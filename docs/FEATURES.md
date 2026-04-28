@@ -63,7 +63,8 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | CSV export | ⬜ | Export filtered expenses as CSV |
 | History-based classification (reduce AI costs) | ✅ | Two-tier: history pre-match (free, instant) → AI fallback only for unknowns; confidence 95%/80% by match count; "History"/"AI" badges in staging review |
 | Duplicate detection on CSV import | ⬜ | Pre-confirm warning when imported rows match existing expenses (same userId + date + amount + description); prevents silent data doubling on re-upload |
-| Mobile filter parity | ⬜ | Mobile expenses screen only has text search; needs category + date range filters to match web |
+| Mobile Analytics tab | ✅ | Full Analytics tab: stat cards (spend/income/savings rate), spending pace, 80/20 Pareto, MoM changes, top merchants, fixed vs variable split |
+| Mobile filter parity | 🚧 | Expense/Income toggle added (defaults to expenses); text search remains; category + date range filters still missing |
 | Budget alert surfacing | ⬜ | `alertThreshold` is stored and compared in `getBudgetProgress` but never shown in UI; add banner/badge on Dashboard when a budget is near or over threshold |
 | Orphaned expense re-categorization | ⬜ | Deleting a category silently turns its expenses to "Uncategorized"; add a bulk re-assign flow at delete time |
 | AI insights auto-trigger | ⬜ | Insights are manual-trigger only; cache per `userId+monthYear` so closed months auto-load without re-generating |

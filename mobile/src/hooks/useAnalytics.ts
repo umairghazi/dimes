@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { analyticsApi } from "@/api/analytics.api";
-import { MonthlySummary, BudgetComparison } from "@/types/analytics.types";
+import { MonthlySummary, BudgetComparison, MerchantTotal } from "@/types/analytics.types";
 
 function currentMonthYear(): string {
   const now = new Date();
@@ -20,6 +20,18 @@ export function useAnalytics() {
   const comparisonQuery = useQuery<BudgetComparison>({
     queryKey: ["analytics", "budget-comparison", month],
     queryFn: () => analyticsApi.getBudgetComparison(month),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const trendsQuery = useQuery<MonthlySummary[]>({
+    queryKey: ["analytics", "trends"],
+    queryFn: analyticsApi.getTrends,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const merchantsQuery = useQuery<MerchantTotal[]>({
+    queryKey: ["analytics", "merchants", month],
+    queryFn: () => analyticsApi.getMerchants(month),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -46,11 +58,15 @@ export function useAnalytics() {
     isCurrentMonth: month === currentMonthYear(),
     summary: summaryQuery.data ?? null,
     comparison: comparisonQuery.data ?? null,
+    trends: trendsQuery.data ?? [],
+    merchants: merchantsQuery.data ?? [],
     loading: summaryQuery.isLoading || comparisonQuery.isLoading,
     error: summaryQuery.isError || comparisonQuery.isError ? "Failed to load analytics" : null,
     refetch: () => {
       summaryQuery.refetch();
       comparisonQuery.refetch();
+      trendsQuery.refetch();
+      merchantsQuery.refetch();
     },
   };
 }

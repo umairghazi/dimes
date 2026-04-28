@@ -25,6 +25,7 @@ export interface ExpenseFilters {
   dateFrom?: string;
   dateTo?: string;
   search?: string;
+  type?: "expense" | "income";
 }
 
 export interface PaginatedExpenses {
