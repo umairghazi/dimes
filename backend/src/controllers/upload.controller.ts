@@ -190,7 +190,7 @@ export async function confirmBatch(req: Request, res: Response, next: NextFuncti
 export async function skipStagingRow(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);
-    await uploadService.skipStagingRow(user.id, req.params.batchId as string, req.params.id);
+    await uploadService.skipStagingRow(user.id, req.params.batchId as string, req.params.id as string);
     res.status(204).send();
   } catch (err) {
     next(err);
