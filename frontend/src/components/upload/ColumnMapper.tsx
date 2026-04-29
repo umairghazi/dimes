@@ -106,7 +106,7 @@ export function ColumnMapper({ onSubmit, loading }: ColumnMapperProps) {
       header: false,
       skipEmptyLines: true,
       preview: PREVIEW_ROWS + 1,
-      complete: ({ data }) => {
+      complete: ({ data }: Papa.ParseResult<string[]>) => {
         setRawRows(data as string[][]);
         const colCount = Math.max(...(data as string[][]).map((r) => r.length));
         const cols: string[][] = Array.from({ length: colCount }, (_, ci) =>
