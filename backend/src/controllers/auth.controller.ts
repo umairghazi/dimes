@@ -23,7 +23,7 @@ export async function register(req: Request, res: Response, next: NextFunction):
     res.cookie("refreshToken", result.tokens.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(201).json({ user: result.user, accessToken: result.tokens.accessToken, refreshToken: result.tokens.refreshToken });
@@ -39,7 +39,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
     res.cookie("refreshToken", result.tokens.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.json({ user: result.user, accessToken: result.tokens.accessToken, refreshToken: result.tokens.refreshToken });
@@ -59,7 +59,7 @@ export async function refresh(req: Request, res: Response, next: NextFunction): 
     res.cookie("refreshToken", tokens.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.json({ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
@@ -69,6 +69,10 @@ export async function refresh(req: Request, res: Response, next: NextFunction): 
 }
 
 export function logout(_req: Request, res: Response): void {
-  res.clearCookie("refreshToken");
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  });
   res.json({ message: "Logged out" });
 }

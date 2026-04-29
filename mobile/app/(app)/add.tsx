@@ -61,6 +61,14 @@ export default function AddExpenseScreen() {
 
   const inputStyle = [styles.input, { borderColor: colors.border, backgroundColor: colors.surface, color: colors.textPrimary }];
 
+  function resetState() {
+    setDescription("")
+    setAmount("")
+    setDate(todayISO())
+    setCategoryId("")
+    setCategoryName("")
+  }
+
   async function handleSubmit() {
     if (!description.trim()) return Alert.alert("Validation", "Description is required");
     const parsed = parseFloat(amount);
@@ -81,6 +89,8 @@ export default function AddExpenseScreen() {
         isRecurring: false,
         tags: [],
       });
+
+      resetState();
       router.replace("/(app)/expenses");
     } catch {
       Alert.alert("Error", "Failed to save expense");

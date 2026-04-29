@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.dimes"
+      "bundleIdentifier": "com.umairghazi.dimes"
     },
     "android": {
       "adaptiveIcon": {
@@ -31,6 +31,18 @@
     "plugins": [
       "expo-router",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6a6924df-88cc-4d79-928a-eb0470ddec48"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6a6924df-88cc-4d79-928a-eb0470ddec48"
+    }
   }
 }
