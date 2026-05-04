@@ -16,6 +16,7 @@ import budgetRoutes from "./routes/budget.routes";
 import analyticsRoutes from "./routes/analytics.routes";
 import queryRoutes from "./routes/query.routes";
 import categoryRoutes from "./routes/category.routes";
+import balanceRoutes from "./routes/balance.routes";
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use("/budgets", budgetRoutes);
 app.use("/analytics", analyticsRoutes);
 app.use("/query", queryRoutes);
 app.use("/categories", categoryRoutes);
+app.use("/balance", balanceRoutes);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 app.use(errorMiddleware as any);

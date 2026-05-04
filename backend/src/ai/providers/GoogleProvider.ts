@@ -11,6 +11,7 @@ import {
 import { buildClassificationPrompt } from "../prompts/classification.prompt";
 import { buildIntentParsingPrompt, buildNLTransactionPrompt } from "../prompts/intentParsing.prompt";
 import { buildInsightPrompt } from "../prompts/insights.prompt";
+import { buildParseTransactionsPrompt } from "../prompts/parseTransactions.prompt";
 
 export class GoogleProvider implements IAIProvider {
   private readonly client: GoogleGenerativeAI;
@@ -48,5 +49,11 @@ export class GoogleProvider implements IAIProvider {
 
   async generateInsight(data: AnalyticsData): Promise<string> {
     return this.complete(buildInsightPrompt(data));
+  }
+
+  async parseTransactions(rawText: string): Promise<Array<{ date: string; description: string; amount: number }>> {
+    const raw = await this.complete(buildParseTransactionsPrompt(rawText));
+    const cleaned = raw.replace(/```(?:json)?/g, "").trim();
+    return JSON.parse(cleaned) as Array<{ date: string; description: string; amount: number }>;
   }
 }

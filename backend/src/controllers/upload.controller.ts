@@ -59,9 +59,24 @@ const splitSchema = z.object({
     .min(2),
 });
 
+const pasteSchema = z.object({
+  rawText: z.string().min(10),
+});
+
 function requireUser(req: Request) {
   if (!req.user) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
   return req.user;
+}
+
+export async function pasteRows(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = requireUser(req);
+    const { rawText } = pasteSchema.parse(req.body);
+    const result = await uploadService.parsePasteWithAI(user.id, rawText);
+    res.status(201).json(result);
+  } catch (err) {
+    next(err);
+  }
 }
 
 export async function uploadCSV(req: Request, res: Response, next: NextFunction): Promise<void> {

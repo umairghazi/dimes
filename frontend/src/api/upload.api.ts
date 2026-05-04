@@ -97,4 +97,9 @@ export const uploadApi = {
     apiClient.delete(`/upload/${batchId}/staging/${rowId}`),
 
   discardBatch: (batchId: string) => apiClient.delete(`/upload/${batchId}`),
+
+  pasteRows: (rawText: string) =>
+    apiClient
+      .post<{ batchId: string; jobId: string; count: number }>("/upload/paste", { rawText })
+      .then((r) => r.data),
 };

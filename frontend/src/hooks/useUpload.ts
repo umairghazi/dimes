@@ -59,6 +59,37 @@ export function useUpload() {
     }
   };
 
+  const pasteRows = async (rawText: string) => {
+    setLoading(true);
+    setError(null);
+    setProgress(null);
+    try {
+      const { batchId: id, jobId, count } = await uploadApi.pasteRows(rawText);
+      setBatchId(id);
+      setProgress({ classified: 0, total: count });
+      setStep("processing");
+
+      sseCleanup.current = uploadApi.streamJob(
+        jobId,
+        (e) => setProgress({ classified: e.classified, total: e.total }),
+        async (e) => {
+          setAiAvailable(e.aiAvailable);
+          const rows = await uploadApi.getStagingRows(id);
+          setStagingRows(rows);
+          setStep("review");
+        },
+        (msg) => {
+          setError(msg);
+          setStep("map");
+        },
+      );
+    } catch {
+      setError("Import failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const skipRow = async (rowId: string) => {
     if (!batchId) return;
     await uploadApi.skipStagingRow(batchId, rowId);
@@ -123,6 +154,6 @@ export function useUpload() {
 
   return {
     step, batchId, stagingRows, loading, error, aiAvailable, progress,
-    uploadCSV, correctCategory, editDescription, splitRow, skipRow, confirm, discard, reset,
+    uploadCSV, pasteRows, correctCategory, editDescription, splitRow, skipRow, confirm, discard, reset,
   };
 }

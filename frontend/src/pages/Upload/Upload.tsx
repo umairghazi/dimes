@@ -1,12 +1,15 @@
-import { Box, Typography, Alert, Stepper, Step, StepLabel, LinearProgress } from "@mui/material";
+import { useState } from "react";
+import { Box, Typography, Alert, Stepper, Step, StepLabel, LinearProgress, Tabs, Tab } from "@mui/material";
 import { useUpload } from "@/hooks/useUpload";
 import { ColumnMapper } from "@/components/upload/ColumnMapper";
+import { PasteImporter } from "@/components/upload/PasteImporter";
 import { StagingReviewTable } from "@/components/upload/StagingReviewTable";
 
-const STEPS = ["Pick Columns", "Classifying", "Review & Correct", "Done"];
+const STEPS = ["Import", "Classifying", "Review & Correct", "Done"];
 
 export function Upload() {
   const upload = useUpload();
+  const [mode, setMode] = useState<"csv" | "paste">("paste");
 
   const activeStep =
     upload.step === "map" ? 0
@@ -19,7 +22,7 @@ export function Upload() {
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1000, mx: "auto" }}>
-      <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>Import CSV</Typography>
+      <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>Import Transactions</Typography>
 
       <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
         {STEPS.map((label) => (
@@ -32,7 +35,26 @@ export function Upload() {
       {upload.error && <Alert severity="error" sx={{ mb: 2 }}>{upload.error}</Alert>}
 
       {upload.step === "map" && (
-        <ColumnMapper onSubmit={upload.uploadCSV} loading={upload.loading} />
+        <>
+          <Tabs
+            value={mode}
+            onChange={(_, v: "csv" | "paste") => setMode(v)}
+            sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}
+          >
+            <Tab label="Paste from bank" value="paste" />
+            <Tab label="Upload CSV" value="csv" />
+          </Tabs>
+
+          {mode === "paste" && (
+            <PasteImporter
+              onSubmit={(text) => void upload.pasteRows(text)}
+              loading={upload.loading}
+            />
+          )}
+          {mode === "csv" && (
+            <ColumnMapper onSubmit={upload.uploadCSV} loading={upload.loading} />
+          )}
+        </>
       )}
 
       {upload.step === "processing" && (

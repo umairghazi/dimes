@@ -59,6 +59,17 @@ export interface UserCategory {
   updatedAt: Date;
 }
 
+export interface MonthlyBalance {
+  id: string;
+  userId: string;
+  monthYear: string;
+  startingBalance: number;
+  endingBalance: number | null;
+  currency: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Budget {
   id: string;
   userId: string;

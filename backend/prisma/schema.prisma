@@ -88,3 +88,17 @@ model Budget {
 
   @@index([userId, monthYear])
 }
+
+model MonthlyBalance {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String   @db.ObjectId
+  monthYear        String   // e.g. "2026-04"
+  startingBalance  Float
+  endingBalance    Float?   // optional: actual bank balance at month end (for reconciliation)
+  currency         String   @default("CAD")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([userId, monthYear])
+  @@index([userId])
+}

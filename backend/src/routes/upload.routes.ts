@@ -4,6 +4,7 @@ import { uploadRateLimiter } from "../middleware/rateLimiter.middleware";
 import {
   upload,
   uploadCSV,
+  pasteRows,
   streamJob,
   getStagingRows,
   correctCategory,
@@ -23,6 +24,7 @@ router.get("/jobs/:jobId/stream", streamJob as unknown as RequestHandler);
 router.use(authenticate);
 
 router.post("/csv", uploadLimiter, upload.single("file"), uploadCSV);
+router.post("/paste", uploadLimiter, pasteRows as unknown as RequestHandler);
 router.get("/:batchId/staging", getStagingRows);
 router.patch("/:batchId/staging/:id", correctCategory);
 router.post("/:batchId/staging/:id/split", splitStagingRow);

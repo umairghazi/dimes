@@ -8,6 +8,7 @@ import { CategoryRepository } from "../repositories/category.repository";
 import { AppError } from "../errors/AppError";
 import { jobStore } from "./jobStore";
 import { cache } from "../lib/cache";
+import { getAIProvider, isAIAvailable } from "../ai/AIProviderFactory";
 
 export interface ColumnMapping {
   dateIndex: number;
@@ -47,6 +48,40 @@ export class UploadService {
       }))
       .filter((t) => t.date && !isNaN(t.amount) && t.amount > 0);
 
+    return this.stageAndClassify(userId, rawTransactions);
+  }
+
+  async processParsedRows(
+    userId: string,
+    rows: { date: string; amount: number; description: string }[],
+  ): Promise<{ batchId: string; jobId: string; count: number }> {
+    const valid = rows.filter((t) => t.date && !isNaN(t.amount) && t.amount > 0);
+    if (valid.length === 0) {
+      throw new AppError("No valid transactions to import", 400, "NO_TRANSACTIONS");
+    }
+    return this.stageAndClassify(userId, valid);
+  }
+
+  async parsePasteWithAI(
+    userId: string,
+    rawText: string,
+  ): Promise<{ batchId: string; jobId: string; count: number }> {
+    if (!isAIAvailable()) {
+      throw new AppError("AI provider is not configured", 503, "AI_UNAVAILABLE");
+    }
+    const provider = getAIProvider();
+    const parsed = await provider.parseTransactions(rawText);
+    const valid = parsed.filter((t) => t.date && !isNaN(t.amount) && t.amount > 0);
+    if (valid.length === 0) {
+      throw new AppError("No expense transactions found in the pasted text", 400, "NO_TRANSACTIONS");
+    }
+    return this.stageAndClassify(userId, valid);
+  }
+
+  private async stageAndClassify(
+    userId: string,
+    rawTransactions: { date: string; amount: number; description: string }[],
+  ): Promise<{ batchId: string; jobId: string; count: number }> {
     const batchId = uuidv4();
     const jobId = uuidv4();
 

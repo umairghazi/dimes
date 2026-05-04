@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Box, Card, CardContent, Typography, Grid, LinearProgress, Chip, Button, CircularProgress } from "@mui/material";
+import { Box, Card, CardContent, Typography, LinearProgress, Chip, Button, CircularProgress, Grid } from "@mui/material";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import StorefrontIcon from "@mui/icons-material/Storefront";
@@ -7,19 +7,6 @@ import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import { useQueryClient } from "@tanstack/react-query";
 import { MonthlySummary, CategorySummary, MerchantTotal, BudgetComparison } from "@/types/analytics.types";
 import { useBudgets } from "@/hooks/useBudgets";
-import { useCategories } from "@/hooks/useCategories";
-import { FixedVariableCard } from "./FixedVariableCard";
-
-interface Props {
-  summary: MonthlySummary;
-  prevSummary: MonthlySummary | null;
-  trends: MonthlySummary[];
-  comparison: BudgetComparison | null;
-  merchants: MerchantTotal[];
-  isCurrentMonth: boolean;
-  monthYear: string;
-  onCategoryClick: (category: string) => void;
-}
 
 const COLORS = [
   "#6366f1", "#f59e0b", "#10b981", "#ef4444", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6",
@@ -29,27 +16,7 @@ function fmt(n: number) {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
-function StatCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
-  return (
-    <Card variant="outlined" sx={{ height: "100%" }}>
-      <CardContent sx={{ pb: "16px !important" }}>
-        <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 600 }}>
-          {label}
-        </Typography>
-        <Typography variant="h4" sx={{ fontWeight: 800, color: color ?? "text.primary", mt: 0.5, fontVariantNumeric: "tabular-nums" }}>
-          {value}
-        </Typography>
-        {sub && (
-          <Typography variant="caption" color="text.secondary">
-            {sub}
-          </Typography>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function ParetoCard({ categories, totalSpend, onCategoryClick }: {
+export function ParetoCard({ categories, totalSpend, onCategoryClick }: {
   categories: CategorySummary[];
   totalSpend: number;
   onCategoryClick: (c: string) => void;
@@ -69,7 +36,7 @@ function ParetoCard({ categories, totalSpend, onCategoryClick }: {
   }, [sorted, totalSpend]);
 
   return (
-    <Card variant="outlined">
+    <Card variant="outlined" sx={{ height: "100%" }}>
       <CardContent>
         <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>Where your money went</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -80,7 +47,6 @@ function ParetoCard({ categories, totalSpend, onCategoryClick }: {
           of spending
         </Typography>
 
-        {/* Stacked bar */}
         <Box sx={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", mb: 2.5 }}>
           {sorted.map((cat, i) => (
             <Box
@@ -97,9 +63,8 @@ function ParetoCard({ categories, totalSpend, onCategoryClick }: {
           ))}
         </Box>
 
-        {/* Category rows */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
-          {sorted.slice(0, 7).map((cat, i) => {
+          {sorted.slice(0, 8).map((cat, i) => {
             const pct = (cat.amount / totalSpend) * 100;
             return (
               <Box
@@ -124,9 +89,9 @@ function ParetoCard({ categories, totalSpend, onCategoryClick }: {
               </Box>
             );
           })}
-          {sorted.length > 7 && (
+          {sorted.length > 8 && (
             <Typography variant="caption" color="text.secondary" sx={{ pl: 2.5 }}>
-              +{sorted.length - 7} more categories
+              +{sorted.length - 8} more categories
             </Typography>
           )}
         </Box>
@@ -135,7 +100,7 @@ function ParetoCard({ categories, totalSpend, onCategoryClick }: {
   );
 }
 
-function MoMCard({ current, previous, onCategoryClick }: {
+export function MoMCard({ current, previous, onCategoryClick }: {
   current: MonthlySummary;
   previous: MonthlySummary;
   onCategoryClick: (c: string) => void;
@@ -193,13 +158,13 @@ function MoMCard({ current, previous, onCategoryClick }: {
   );
 }
 
-function TopMerchantsCard({ merchants, totalSpend }: { merchants: MerchantTotal[]; totalSpend: number }) {
+export function TopMerchantsCard({ merchants, totalSpend }: { merchants: MerchantTotal[]; totalSpend: number }) {
   if (merchants.length === 0) return null;
   const top = merchants.slice(0, 8);
   const maxTotal = top[0]?.total ?? 1;
 
   return (
-    <Card variant="outlined">
+    <Card variant="outlined" sx={{ height: "100%" }}>
       <CardContent>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
           <StorefrontIcon fontSize="small" color="action" />
@@ -236,7 +201,7 @@ function TopMerchantsCard({ merchants, totalSpend }: { merchants: MerchantTotal[
   );
 }
 
-function SpendingPaceCard({ summary, monthYear }: { summary: MonthlySummary; monthYear: string }) {
+export function SpendingPaceCard({ summary, monthYear }: { summary: MonthlySummary; monthYear: string }) {
   const [year, month] = monthYear.split("-").map(Number);
   const today = new Date();
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -248,8 +213,7 @@ function SpendingPaceCard({ summary, monthYear }: { summary: MonthlySummary; mon
   const dailyRate = summary.totalSpend / daysElapsed;
   const projected = dailyRate * daysInMonth;
   const projectedSavings = summary.totalIncome > 0 ? summary.totalIncome - projected : null;
-  const overage = summary.totalIncome > 0 ? projected - summary.totalIncome : null;
-  const onTrack = overage === null || overage <= 0;
+  const onTrack = projectedSavings === null || projectedSavings >= 0;
 
   return (
     <Card variant="outlined" sx={{ borderColor: onTrack ? "divider" : "warning.main", borderWidth: onTrack ? 1 : 2 }}>
@@ -283,7 +247,7 @@ function SpendingPaceCard({ summary, monthYear }: { summary: MonthlySummary; mon
           {projectedSavings !== null && (
             <Grid size={{ xs: 6, sm: 3 }}>
               <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 600 }}>
-                {onTrack ? "Projected savings" : "Projected shortfall"}
+                {onTrack ? "Proj. savings" : "Proj. shortfall"}
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: onTrack ? "success.main" : "error.main" }}>
                 {fmt(Math.abs(projectedSavings))}
@@ -304,7 +268,7 @@ function SpendingPaceCard({ summary, monthYear }: { summary: MonthlySummary; mon
   );
 }
 
-function BudgetRecommendationsCard({ summary, trends, comparison, monthYear }: {
+export function BudgetRecommendationsCard({ summary, trends, comparison, monthYear }: {
   summary: MonthlySummary;
   trends: MonthlySummary[];
   comparison: BudgetComparison | null;
@@ -322,10 +286,7 @@ function BudgetRecommendationsCard({ summary, trends, comparison, monthYear }: {
 
   const recommendations = useMemo(() => {
     if (!comparison) return [];
-
     const budgeted = new Set(comparison.rows.filter((r) => r.planned > 0).map((r) => r.category));
-
-    // Accumulate spend per category across all months (historical + current)
     const allMonths = [...completedMonths, summary];
     const totals = new Map<string, { total: number; count: number }>();
     for (const m of allMonths) {
@@ -335,7 +296,6 @@ function BudgetRecommendationsCard({ summary, trends, comparison, monthYear }: {
         totals.set(c.category, { total: cur.total + c.amount, count: cur.count + 1 });
       }
     }
-
     return Array.from(totals.entries())
       .map(([category, { total, count }]) => {
         const avg = total / count;
@@ -367,7 +327,7 @@ function BudgetRecommendationsCard({ summary, trends, comparison, monthYear }: {
           <Typography variant="h6" sx={{ fontWeight: 700 }}>Budget suggestions</Typography>
         </Box>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Based on your last {completedMonths.length} months — categories with no budget set
+          Based on your last {completedMonths.length} months — unbudgeted categories
         </Typography>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
           {recommendations.map((r) => (
@@ -383,76 +343,12 @@ function BudgetRecommendationsCard({ summary, trends, comparison, monthYear }: {
                 onClick={() => void accept(r.category, r.suggested)}
                 sx={{ minWidth: 90, fontVariantNumeric: "tabular-nums" }}
               >
-                {saving === r.category
-                  ? <CircularProgress size={14} />
-                  : `Set ${fmt(r.suggested)}`}
+                {saving === r.category ? <CircularProgress size={14} /> : `Set ${fmt(r.suggested)}`}
               </Button>
             </Box>
           ))}
         </Box>
       </CardContent>
     </Card>
-  );
-}
-
-export function SpendingInsights({ summary, prevSummary, trends, comparison, merchants, isCurrentMonth, monthYear, onCategoryClick }: Props) {
-  const { categories } = useCategories();
-  const savingsRate = summary.totalIncome > 0 ? (summary.netSavings / summary.totalIncome) * 100 : null;
-  const savingsColor =
-    savingsRate === null ? undefined
-    : savingsRate >= 20 ? "success.main"
-    : savingsRate >= 0 ? "warning.main"
-    : "error.main";
-
-  return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <StatCard
-            label="Total Spent"
-            value={fmt(summary.totalSpend)}
-            sub={`across ${summary.byCategory.length} categories`}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <StatCard
-            label="Savings Rate"
-            value={savingsRate !== null ? `${savingsRate.toFixed(0)}%` : "—"}
-            sub={savingsRate !== null ? `${fmt(summary.netSavings)} saved` : "No income recorded"}
-            color={savingsColor}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <StatCard
-            label="Total Income"
-            value={fmt(summary.totalIncome)}
-          />
-        </Grid>
-      </Grid>
-
-      {isCurrentMonth && (
-        <SpendingPaceCard summary={summary} monthYear={monthYear} />
-      )}
-
-      {isCurrentMonth && (
-        <BudgetRecommendationsCard summary={summary} trends={trends} comparison={comparison} monthYear={monthYear} />
-      )}
-
-      {summary.byCategory.length > 0 && summary.totalSpend > 0 && (
-        <ParetoCard
-          categories={summary.byCategory}
-          totalSpend={summary.totalSpend}
-          onCategoryClick={onCategoryClick}
-        />
-      )}
-
-      {prevSummary && (
-        <MoMCard current={summary} previous={prevSummary} onCategoryClick={onCategoryClick} />
-      )}
-
-      <FixedVariableCard summary={summary} categories={categories} onCategoryClick={onCategoryClick} />
-
-      <TopMerchantsCard merchants={merchants} totalSpend={summary.totalSpend} />
-    </Box>
   );
 }

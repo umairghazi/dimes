@@ -11,11 +11,12 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | Auth — login, register, logout, token refresh | ✅ | httpOnly refresh cookie + access token in memory |
 | Expenses — list, filter, create, edit, delete, paginate | ✅ | Category stored as `categoryId` FK; name resolved at read time; `type: "expense"\|"income"` replaces `isIncome` boolean; income has proper categories |
 | CSV upload — column mapping, staging review, confirm/discard | ✅ | Inline description editing + transaction splitting added to staging review |
+| Paste from bank — heuristic TSV/CSV parser, staging review | ✅ | Detects headers by keyword, handles debit/credit columns or signed amount, skips credit/income rows with count shown; feeds into same staging + classify pipeline |
 | Async AI classification via SSE | ✅ | Progress bar during classification |
 | Categories — CRUD with parent groups | ✅ | |
 | Budgets — merged into Categories page, inline budget per category | ✅ | Per-month limit with progress bar |
 | Budget carry-forward | ✅ | Repeat toggle on each category card; auto-rolls over on page load via `POST /budgets/rollover` |
-| Analytics — monthly summary, 6-month trend, donut, bar chart | ✅ | Dedicated Analytics page (Insights + Budget tabs); month state shared via Zustand so Dashboard and Analytics stay in sync; all date range calculations use UTC (`monthBounds()` helper) to match how transactions are stored |
+| Analytics — monthly summary, 6-month trend, donut, bar chart | ✅ | Single scrolling page (no tabs); 4 sections: Monthly Statement (BalanceStrip), Where it went (Pareto/MoM/Merchants/Fixed-Variable), Budget (recommendations + table + rebalancer collapsed), Over time (trend + AI insight collapsed); SpendingPaceCard moved to Dashboard (current month only) |
 | Budget vs Actual table | ✅ | On Dashboard; planned/actual/diff per category with totals row; toggle to hide $0 rows |
 | NL query bar — ask and add modes | ✅ | |
 | Dashboard — stat cards, donut, trend, NL bar | ✅ | |
@@ -60,6 +61,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 
 | Feature | Status | Notes |
 | --- | --- | --- |
+| Monthly balance reconciliation | ✅ | `MonthlyBalance` model; user enters starting balance (and optional actual ending balance); computed ending = start + income − spent; shows savings two ways (income-based vs bank-change); discrepancy warning when they diverge; editable any time via Analytics Insights tab |
 | CSV export | ⬜ | Export filtered expenses as CSV |
 | History-based classification (reduce AI costs) | ✅ | Two-tier: history pre-match (free, instant) → AI fallback only for unknowns; confidence 95%/80% by match count; "History"/"AI" badges in staging review |
 | Duplicate detection on CSV import | ⬜ | Pre-confirm warning when imported rows match existing expenses (same userId + date + amount + description); prevents silent data doubling on re-upload |

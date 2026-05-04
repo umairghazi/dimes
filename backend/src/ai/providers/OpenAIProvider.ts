@@ -11,6 +11,7 @@ import {
 import { buildClassificationPrompt } from "../prompts/classification.prompt";
 import { buildIntentParsingPrompt, buildNLTransactionPrompt } from "../prompts/intentParsing.prompt";
 import { buildInsightPrompt } from "../prompts/insights.prompt";
+import { buildParseTransactionsPrompt } from "../prompts/parseTransactions.prompt";
 
 export class OpenAIProvider implements IAIProvider {
   protected readonly client: OpenAI;
@@ -52,5 +53,12 @@ export class OpenAIProvider implements IAIProvider {
   async generateInsight(data: AnalyticsData): Promise<string> {
     const prompt = buildInsightPrompt(data);
     return this.complete(prompt);
+  }
+
+  async parseTransactions(rawText: string): Promise<Array<{ date: string; description: string; amount: number }>> {
+    const prompt = buildParseTransactionsPrompt(rawText);
+    const raw = await this.complete(prompt);
+    const cleaned = raw.replace(/```(?:json)?/g, "").trim();
+    return JSON.parse(cleaned) as Array<{ date: string; description: string; amount: number }>;
   }
 }

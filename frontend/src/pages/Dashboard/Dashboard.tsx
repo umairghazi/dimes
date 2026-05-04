@@ -15,6 +15,7 @@ import { CategoryBarChart } from "@/components/charts/CategoryBarChart";
 import { NLQueryBar } from "@/components/query/NLQueryBar";
 import { CollapsibleCard } from "@/components/shared/CollapsibleCard";
 import { DrillDownDrawer, DrillDown } from "@/components/expenses/DrillDownDrawer";
+import { SpendingPaceCard } from "@/components/analytics/SpendingInsights";
 import { tokens } from "@/styles/theme/tokens";
 
 function formatMonthLabel(monthYear: string): string {
@@ -108,6 +109,13 @@ export function Dashboard() {
               </>
             )}
       </Grid>
+
+      {/* Spending pace — current month only */}
+      {isCurrentMonth && summary && !loading && (
+        <Box sx={{ mb: 2 }}>
+          <SpendingPaceCard summary={summary} monthYear={month} />
+        </Box>
+      )}
 
       {/* Spending donut */}
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
