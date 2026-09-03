@@ -12,9 +12,11 @@ import {
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import TableRowsIcon from "@mui/icons-material/TableRows";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import BarChartIcon from "@mui/icons-material/BarChart";
+import SummarizeIcon from "@mui/icons-material/Summarize";
 import SettingsIcon from "@mui/icons-material/Settings";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
@@ -23,6 +25,8 @@ import { useThemeStore } from "@/store/themeStore";
 
 const NAV_ITEMS = [
   { label: "Dashboard", icon: <DashboardIcon fontSize="small" />, path: "/" },
+  { label: "Summary", icon: <SummarizeIcon fontSize="small" />, path: "/summary" },
+  { label: "Ledger", icon: <TableRowsIcon fontSize="small" />, path: "/ledger" },
   { label: "Expenses", icon: <ReceiptLongIcon fontSize="small" />, path: "/expenses" },
   { label: "Analytics", icon: <BarChartIcon fontSize="small" />, path: "/analytics" },
   { label: "Upload", icon: <UploadFileIcon fontSize="small" />, path: "/upload" },
