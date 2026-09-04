@@ -1,4 +1,4 @@
-import Papa from "papaparse";
+import { google } from "googleapis";
 import { env } from "../config/env";
 import { AppError } from "../errors/AppError";
 import {
@@ -10,19 +10,15 @@ import {
 } from "./FinanceDataSource";
 import { filterFinanceTransactions } from "./filterFinanceTransactions";
 
-type SheetRow = Record<string, string | undefined>;
+type SheetRow = Record<string, string>;
 
 function normalizeHeader(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
 }
 
-function getCell(row: SheetRow, names: string[]): string {
-  const normalized = new Map(
-    Object.entries(row).map(([key, value]) => [normalizeHeader(key), value ?? ""]),
-  );
-
+function cell(row: SheetRow, names: string[]): string {
   for (const name of names) {
-    const value = normalized.get(normalizeHeader(name));
+    const value = row[normalizeHeader(name)];
     if (value) return value.trim();
   }
   return "";
@@ -45,67 +41,97 @@ function parseDate(value: string): string | null {
 }
 
 function inferType(row: SheetRow): FinanceTransactionType {
-  const explicit = getCell(row, ["type", "transaction type"]);
+  const explicit = cell(row, ["type", "transaction type"]);
   if (explicit.toLowerCase() === "income") return "income";
   if (explicit.toLowerCase() === "expense") return "expense";
 
-  const section = getCell(row, ["section", "table"]);
+  const section = cell(row, ["section", "table"]);
   if (section.toLowerCase() === "income") return "income";
 
   return "expense";
 }
 
-function csvUrl(): string | null {
-  if (env.GOOGLE_SHEETS_TRANSACTIONS_CSV_URL) return env.GOOGLE_SHEETS_TRANSACTIONS_CSV_URL;
-  if (!env.GOOGLE_SHEETS_SPREADSHEET_ID) return null;
+function configured(): boolean {
+  return Boolean(
+    env.GOOGLE_SHEETS_SPREADSHEET_ID &&
+      env.GOOGLE_SHEETS_SERVICE_ACCOUNT_EMAIL &&
+      env.GOOGLE_SHEETS_PRIVATE_KEY,
+  );
+}
 
-  const sheetName = encodeURIComponent(env.GOOGLE_SHEETS_TRANSACTIONS_TAB);
-  return `https://docs.google.com/spreadsheets/d/${env.GOOGLE_SHEETS_SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${sheetName}`;
+function privateKey(): string {
+  return (env.GOOGLE_SHEETS_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
+}
+
+function configuredRange(): string {
+  return `${env.GOOGLE_SHEETS_TRANSACTIONS_TAB}!${env.GOOGLE_SHEETS_TRANSACTIONS_RANGE}`;
+}
+
+function toRows(values: string[][]): SheetRow[] {
+  const [headers, ...body] = values;
+  if (!headers || headers.length === 0) return [];
+
+  const normalizedHeaders = headers.map((header) => normalizeHeader(header));
+  return body.map((rawRow) => {
+    const row: SheetRow = {};
+    normalizedHeaders.forEach((header, index) => {
+      row[header] = rawRow[index] ?? "";
+    });
+    return row;
+  });
 }
 
 export class GoogleSheetsFinanceDataSource implements FinanceDataSource {
   status(): FinanceDataSourceStatus {
     return {
       provider: "google-sheets",
-      configured: csvUrl() !== null,
+      configured: configured(),
       readOnly: true,
       details: {
+        authMode: env.GOOGLE_SHEETS_AUTH_MODE,
+        spreadsheetId: env.GOOGLE_SHEETS_SPREADSHEET_ID ?? null,
         transactionsTab: env.GOOGLE_SHEETS_TRANSACTIONS_TAB,
-        hasCsvUrl: Boolean(env.GOOGLE_SHEETS_TRANSACTIONS_CSV_URL),
-        hasSpreadsheetId: Boolean(env.GOOGLE_SHEETS_SPREADSHEET_ID),
+        transactionsRange: env.GOOGLE_SHEETS_TRANSACTIONS_RANGE,
+        hasServiceAccountEmail: Boolean(env.GOOGLE_SHEETS_SERVICE_ACCOUNT_EMAIL),
+        hasPrivateKey: Boolean(env.GOOGLE_SHEETS_PRIVATE_KEY),
       },
     };
   }
 
   async listTransactions(_userId: string, filters: FinanceTransactionFilters = {}): Promise<FinanceTransaction[]> {
-    const url = csvUrl();
-    if (!url) {
+    if (!configured()) {
       throw new AppError("Google Sheets data source is not configured", 503, "DATA_SOURCE_NOT_CONFIGURED");
     }
 
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new AppError(`Google Sheets fetch failed with ${response.status}`, 502, "GOOGLE_SHEETS_FETCH_FAILED");
-    }
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: env.GOOGLE_SHEETS_SERVICE_ACCOUNT_EMAIL,
+        private_key: privateKey(),
+      },
+      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    });
 
-    const csv = await response.text();
-    const parsed = Papa.parse<SheetRow>(csv, { header: true, skipEmptyLines: true });
-    if (parsed.errors.length > 0) {
-      throw new AppError(`Google Sheets CSV parse failed: ${parsed.errors[0].message}`, 502, "GOOGLE_SHEETS_PARSE_FAILED");
-    }
+    const sheets = google.sheets({ version: "v4", auth });
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: env.GOOGLE_SHEETS_SPREADSHEET_ID,
+      range: configuredRange(),
+      valueRenderOption: "FORMATTED_VALUE",
+      dateTimeRenderOption: "FORMATTED_STRING",
+    });
 
-    const rows = parsed.data
+    const values = (response.data.values ?? []) as string[][];
+    const rows = toRows(values)
       .map((row, index): FinanceTransaction | null => {
-        const date = parseDate(getCell(row, ["date", "transaction date"]));
-        const description = getCell(row, ["description", "merchant", "name"]);
-        const amount = parseAmount(getCell(row, ["amount", "debit", "credit"]));
-        const category = getCell(row, ["category"]) || "Uncategorized";
-        const mainCategory = getCell(row, ["main category", "maincategory"]) || category.split(" - ")[0] || category;
+        const date = parseDate(cell(row, ["date", "transaction date"]));
+        const description = cell(row, ["description", "merchant", "name"]);
+        const amount = parseAmount(cell(row, ["amount", "debit", "credit"]));
+        const category = cell(row, ["category"]) || "Uncategorized";
+        const mainCategory = cell(row, ["main category", "maincategory"]) || category.split(" - ")[0] || category;
 
         if (!date || !description || amount <= 0) return null;
 
         return {
-          id: getCell(row, ["id", "transaction id"]) || `sheet-row-${index + 2}`,
+          id: cell(row, ["id", "transaction id"]) || `sheet-row-${index + 2}`,
           date,
           description,
           amount,
