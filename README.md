@@ -69,17 +69,6 @@ GOOGLE_AI_MODEL=gemini-1.5-pro
 
 AWS_REGION=
 AWS_BEDROCK_MODEL_ID=
-
-# Finance data source
-DATA_SOURCE_PROVIDER=db          # db | google-sheets
-
-# Private Google Sheets data source (service account)
-GOOGLE_SHEETS_AUTH_MODE=service-account
-GOOGLE_SHEETS_SPREADSHEET_ID=
-GOOGLE_SHEETS_TRANSACTIONS_TAB=Transactions
-GOOGLE_SHEETS_TRANSACTIONS_RANGE=A:Z
-GOOGLE_SHEETS_SERVICE_ACCOUNT_EMAIL=
-GOOGLE_SHEETS_PRIVATE_KEY=
 ```
 
 ### Frontend (`frontend/.env`)
