@@ -10,27 +10,20 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import TableRowsIcon from "@mui/icons-material/TableRows";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
-import BarChartIcon from "@mui/icons-material/BarChart";
 import SummarizeIcon from "@mui/icons-material/Summarize";
-import SettingsIcon from "@mui/icons-material/Settings";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
+import LogoutIcon from "@mui/icons-material/Logout";
+import { supabase } from "@/lib/supabase/client";
 import { tokens } from "@/styles/theme/tokens";
 import { useThemeStore } from "@/store/themeStore";
+import { useAuthStore } from "@/store/authStore";
 
 const NAV_ITEMS = [
-  { label: "Dashboard", icon: <DashboardIcon fontSize="small" />, path: "/" },
-  { label: "Summary", icon: <SummarizeIcon fontSize="small" />, path: "/summary" },
+  { label: "Summary", icon: <SummarizeIcon fontSize="small" />, path: "/" },
   { label: "Ledger", icon: <TableRowsIcon fontSize="small" />, path: "/ledger" },
-  { label: "Expenses", icon: <ReceiptLongIcon fontSize="small" />, path: "/expenses" },
-  { label: "Analytics", icon: <BarChartIcon fontSize="small" />, path: "/analytics" },
-  { label: "Upload", icon: <UploadFileIcon fontSize="small" />, path: "/upload" },
-  { label: "Categories", icon: <AccountBalanceWalletIcon fontSize="small" />, path: "/categories" },
 ];
 
 interface SidebarProps {
@@ -41,7 +34,14 @@ export function Sidebar({ rail = false }: SidebarProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { mode, toggleTheme } = useThemeStore();
+  const setSession = useAuthStore((s) => s.setSession);
   const width = rail ? tokens.sidebar.railWidth : tokens.sidebar.width;
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    navigate("/login");
+  };
 
   return (
     <Box
@@ -141,23 +141,12 @@ export function Sidebar({ rail = false }: SidebarProps) {
 
       {/* Bottom */}
       <Box sx={{ px: rail ? 0.5 : 1.5, py: 1.5 }}>
-        <Tooltip title={rail ? "Settings" : ""} placement="right">
-          <ListItemButton
-            onClick={() => navigate("/settings")}
-            sx={{ borderRadius: "8px", minHeight: 40, justifyContent: rail ? "center" : "flex-start", px: rail ? 1 : 1.5 }}
-          >
-            <ListItemIcon sx={{ minWidth: rail ? 0 : 36, color: "text.secondary" }}>
-              <SettingsIcon fontSize="small" />
-            </ListItemIcon>
-            {!rail && (
-              <ListItemText primary="Settings" slotProps={{ primary: { style: { fontSize: "0.875rem", fontWeight: 500 } } }} />
-            )}
-          </ListItemButton>
-        </Tooltip>
-
         <Box sx={{ display: "flex", justifyContent: rail ? "center" : "flex-end", mt: 0.5, px: 0.5 }}>
           <IconButton onClick={toggleTheme} size="small" sx={{ color: "text.secondary" }}>
             {mode === "dark" ? <Brightness7Icon fontSize="small" /> : <Brightness4Icon fontSize="small" />}
+          </IconButton>
+          <IconButton onClick={() => void signOut()} size="small" sx={{ color: "text.secondary" }}>
+            <LogoutIcon fontSize="small" />
           </IconButton>
         </Box>
       </Box>

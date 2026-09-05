@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/AppError";
-import { RepositoryError } from "../errors/RepositoryError";
 import { ZodError } from "zod";
 import { logger } from "../config/logger";
 
@@ -27,12 +26,6 @@ export function errorMiddleware(
       error: err.message,
       code: err.code,
     });
-    return;
-  }
-
-  if (err instanceof RepositoryError) {
-    logger.error({ err: err.cause, operation: err.operation }, "Repository error");
-    res.status(500).json({ error: "Database operation failed" });
     return;
   }
 

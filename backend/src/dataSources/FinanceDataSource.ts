@@ -1,4 +1,4 @@
-export type FinanceProviderName = "db" | "google-sheets";
+export type FinanceProviderName = "google-sheets";
 export type FinanceTransactionType = "expense" | "income";
 
 export interface FinanceTransaction {

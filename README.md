@@ -2,110 +2,93 @@
 
 Track your dimes. Every one counts.
 
-A full-stack personal finance tracker with AI-powered categorization, budget tracking, and natural language queries.
+Dimes is now a lightweight interface over a private Google Sheet. Supabase handles app authentication, and the Google Sheet is the finance data source.
 
 ## Stack
 
-- **Frontend** - React 19, MUI v6, Zustand, Recharts, Vite (PWA)
-- **Backend** - Node.js, Express, Prisma, MongoDB
-- **AI** - Pluggable provider: Anthropic, OpenAI, Google, AWS Bedrock, or local (Ollama, LMStudio)
+- **Frontend** - React 19, MUI, Zustand, TanStack Query, Vite
+- **Backend** - Node.js, Express, Supabase Auth verification
+- **Finance data** - Private Google Sheets via service-account access
 
-## Getting started
+## Data Model
 
-### Prerequisites
+The backend reads the configured `Transactions` tab and normalizes rows into:
 
-- Node.js 18+
-- MongoDB Atlas cluster (or local MongoDB)
-
-### Setup
-
-```bash
-# Install all dependencies (workspaces hoisted to root)
-npm install
-
-# Configure backend environment
-cp backend/.env.example backend/.env
-# Edit backend/.env - set MONGO_URI and at least one AI provider key
+```ts
+{
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  category: string;
+  mainCategory: string;
+  type: "expense" | "income";
+}
 ```
 
-### Run
+Expected sheet headers:
+
+```text
+Date | Description | Amount | Category | Main Category | Type | ID
+```
+
+`Type` should be `expense` or `income`. If omitted, rows are treated as expenses.
+
+## Setup
 
 ```bash
-# Start both frontend and backend in parallel
+npm install
+```
+
+Create a Google Cloud service account, enable the Google Sheets API, and share the private spreadsheet with the service account email.
+
+### Backend Env
+
+`backend/.env`
+
+```env
+PORT=3000
+CLIENT_ORIGIN=http://localhost:5173
+
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+
+DATA_SOURCE_PROVIDER=google-sheets
+GOOGLE_SHEETS_AUTH_MODE=service-account
+GOOGLE_SHEETS_SPREADSHEET_ID=
+GOOGLE_SHEETS_TRANSACTIONS_TAB=Transactions
+GOOGLE_SHEETS_TRANSACTIONS_RANGE=A:Z
+GOOGLE_SHEETS_SERVICE_ACCOUNT_EMAIL=
+GOOGLE_SHEETS_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+```
+
+### Frontend Env
+
+`frontend/.env`
+
+```env
+VITE_API_BASE_URL=http://localhost:3000
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+```
+
+## Run
+
+```bash
 npm run dev
 ```
 
 - Frontend: http://localhost:5173
 - Backend: http://localhost:3000
 
----
+## Routes
 
-## Environment variables
+- `/` - monthly summary calculated from Google Sheets transactions
+- `/ledger` - read-only transaction ledger from Google Sheets
+- `/login` and `/register` - Supabase auth
 
-### Backend (`backend/.env`)
-```
-MONGO_URI=
-JWT_ACCESS_SECRET=
-JWT_REFRESH_SECRET=
-JWT_ACCESS_EXPIRY=15m
-JWT_REFRESH_EXPIRY=7d
-AUTH_PROVIDER=legacy          # legacy | supabase | hybrid
-CLIENT_ORIGIN=http://localhost:5173
+## Backend API
 
-# Pick one AI provider:
-AI_PROVIDER=anthropic          # anthropic | openai | local | google | bedrock
-
-ANTHROPIC_API_KEY=
-ANTHROPIC_MODEL=claude-sonnet-4-6
-
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4o
-
-LOCAL_AI_BASE_URL=http://localhost:11434/v1
-LOCAL_AI_MODEL=llama3
-LOCAL_AI_API_KEY=ollama
-
-GOOGLE_AI_API_KEY=
-GOOGLE_AI_MODEL=gemini-1.5-pro
-
-AWS_REGION=
-AWS_BEDROCK_MODEL_ID=
-
-# Finance data source
-DATA_SOURCE_PROVIDER=db          # db | google-sheets
-
-# Private Google Sheets data source (service account)
-GOOGLE_SHEETS_AUTH_MODE=service-account
-GOOGLE_SHEETS_SPREADSHEET_ID=
-GOOGLE_SHEETS_TRANSACTIONS_TAB=Transactions
-GOOGLE_SHEETS_TRANSACTIONS_RANGE=A:Z
-GOOGLE_SHEETS_SERVICE_ACCOUNT_EMAIL=
-GOOGLE_SHEETS_PRIVATE_KEY=
-
-# Supabase auth/config migration
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-SUPABASE_JWT_SECRET=
-```
-
-### Frontend (`frontend/.env`)
-```
-VITE_API_BASE_URL=http://localhost:3000
-```
-
----
-
-## AI providers
-
-Set `AI_PROVIDER` in `backend/.env` to one of:
-
-| Value | Key required |
-|---|---|
-| `anthropic` | `ANTHROPIC_API_KEY` |
-| `openai` | `OPENAI_API_KEY` |
-| `google` | `GOOGLE_AI_API_KEY` |
-| `bedrock` | AWS credentials in env |
-| `local` | `LOCAL_AI_BASE_URL` (Ollama etc.) |
-
-If no provider is configured, CSV import still works - transactions land as uncategorized and you assign categories manually in the staging review.
+- `GET /health`
+- `GET /finance/status`
+- `GET /finance/transactions?month=YYYY-MM&type=expense`

@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Box, TextField, Button, Typography, Alert } from "@mui/material";
-import { authApi } from "@/api/auth.api";
+import { supabase } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/authStore";
 import { tokens } from "@/styles/theme/tokens";
 
 export function Login() {
   const navigate = useNavigate();
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const setSession = useAuthStore((s) => s.setSession);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -18,8 +18,9 @@ export function Login() {
     setLoading(true);
     setError(null);
     try {
-      const result = await authApi.login(email, password);
-      setAuth(result.user, result.accessToken);
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) throw signInError;
+      setSession(data.session);
       navigate("/");
     } catch {
       setError("Invalid email or password");
@@ -56,7 +57,7 @@ export function Login() {
             Take control of your finances.
           </Typography>
           <Typography sx={{ opacity: 0.8, fontSize: "1.0625rem", lineHeight: 1.7 }}>
-            Track expenses, set budgets, and get AI-powered insights - all in one place.
+            Your Google Sheet, with a cleaner daily finance interface on top.
           </Typography>
         </Box>
         <Typography variant="caption" sx={{ opacity: 0.5 }}>

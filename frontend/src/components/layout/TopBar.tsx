@@ -14,6 +14,7 @@ interface TopBarProps {
 export function TopBar({ onMenuClick, showMenu = false }: TopBarProps) {
   const { mode, toggleTheme } = useThemeStore();
   const user = useAuthStore((s) => s.user);
+  const userInitial = user?.email?.[0]?.toUpperCase() ?? "U";
 
   return (
     <AppBar
@@ -85,7 +86,7 @@ export function TopBar({ onMenuClick, showMenu = false }: TopBarProps) {
                 border: `1.5px solid ${tokens.colors.accentBorder}`,
               }}
             >
-              {user.email[0].toUpperCase()}
+              {userInitial}
             </Avatar>
           )}
         </Box>

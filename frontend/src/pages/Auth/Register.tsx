@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Box, TextField, Button, Typography, Alert } from "@mui/material";
-import { authApi } from "@/api/auth.api";
+import { supabase } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/authStore";
 import { tokens } from "@/styles/theme/tokens";
 
 export function Register() {
   const navigate = useNavigate();
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const setSession = useAuthStore((s) => s.setSession);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -18,8 +18,9 @@ export function Register() {
     setLoading(true);
     setError(null);
     try {
-      const result = await authApi.register(email, password);
-      setAuth(result.user, result.accessToken);
+      const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+      if (signUpError) throw signUpError;
+      setSession(data.session);
       navigate("/");
     } catch {
       setError("Registration failed. Email may already be in use.");
@@ -56,7 +57,7 @@ export function Register() {
             Your finances, finally under control.
           </Typography>
           <Typography sx={{ opacity: 0.8, fontSize: "1.0625rem", lineHeight: 1.7 }}>
-            Join thousands tracking smarter with AI-powered categorization and real-time budget alerts.
+            Connect a private Google Sheet and keep your finance workflow lightweight.
           </Typography>
         </Box>
         <Typography variant="caption" sx={{ opacity: 0.5 }}>

@@ -1,29 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/authStore";
-import { authApi } from "@/api/auth.api";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, accessToken, setAccessToken, clearAuth } = useAuthStore();
-  const [initializing, setInitializing] = useState(!accessToken && !!user);
+  const { user, initialized, setSession, setInitialized } = useAuthStore();
 
   useEffect(() => {
-    // User data restored from localStorage but access token is gone (page reload).
-    // Try to get a fresh access token using the httpOnly refresh cookie.
-    if (user && !accessToken) {
-      authApi
-        .refresh()
-        .then(({ accessToken: newToken }) => setAccessToken(newToken))
-        .catch(() => clearAuth())
-        .finally(() => setInitializing(false));
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setInitialized(true);
+    });
 
-  if (initializing) return null;
-  if (!user || !accessToken) return <Navigate to="/login" replace />;
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setInitialized(true);
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, [setInitialized, setSession]);
+
+  if (!initialized) return null;
+  if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }

@@ -5,13 +5,13 @@ function currentMonthYear(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
-interface AnalyticsStore {
+interface MonthStore {
   month: string;
   prevMonth: () => void;
   nextMonth: () => void;
 }
 
-export const useAnalyticsStore = create<AnalyticsStore>((set) => ({
+export const useMonthStore = create<MonthStore>((set) => ({
   month: currentMonthYear(),
 
   prevMonth: () =>

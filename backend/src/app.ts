@@ -1,22 +1,10 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import { env } from "./config/env";
 import { logger } from "./config/logger";
 import { errorMiddleware } from "./middleware/error.middleware";
-import { authenticate } from "./middleware/auth.middleware";
-import { cache } from "./lib/cache";
-
-import authRoutes from "./routes/auth.routes";
-import expenseRoutes from "./routes/expense.routes";
-import uploadRoutes from "./routes/upload.routes";
-import budgetRoutes from "./routes/budget.routes";
-import analyticsRoutes from "./routes/analytics.routes";
-import queryRoutes from "./routes/query.routes";
-import categoryRoutes from "./routes/category.routes";
-import balanceRoutes from "./routes/balance.routes";
 import financeRoutes from "./routes/finance.routes";
 
 const app = express();
@@ -41,23 +29,8 @@ app.use(
   }),
 );
 app.use(express.json({ limit: "10mb" }));
-app.use(cookieParser());
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
-app.post("/cache/flush", authenticate, (_req, res) => {
-  const before = cache.size;
-  cache.flush();
-  res.json({ flushed: before });
-});
-
-app.use("/auth", authRoutes);
-app.use("/expenses", expenseRoutes);
-app.use("/upload", uploadRoutes);
-app.use("/budgets", budgetRoutes);
-app.use("/analytics", analyticsRoutes);
-app.use("/query", queryRoutes);
-app.use("/categories", categoryRoutes);
-app.use("/balance", balanceRoutes);
 app.use("/finance", financeRoutes);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
