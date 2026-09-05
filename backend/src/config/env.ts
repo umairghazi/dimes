@@ -29,6 +29,14 @@ const envSchema = z.object({
   LOCAL_AI_BASE_URL: z.string().default("http://localhost:11434/v1"),
   LOCAL_AI_MODEL: z.string().default("llama3.2"),
   LOCAL_AI_API_KEY: z.string().default("ollama"),
+  DATA_SOURCE_PROVIDER: z.enum(["db", "google-sheets"]).default("db"),
+  GOOGLE_SHEETS_TRANSACTIONS_CSV_URL: z.string().url().optional(),
+  GOOGLE_SHEETS_SPREADSHEET_ID: z.string().optional(),
+  GOOGLE_SHEETS_TRANSACTIONS_TAB: z.string().default("Transactions"),
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_ANON_KEY: z.string().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  SUPABASE_JWT_SECRET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
