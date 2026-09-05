@@ -25,7 +25,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | Categories compact view | ✅ | Dense table view (collapsible groups, inline budget edit, hover actions); toggle between card/table view, persisted to localStorage |
 | Spreadsheet-style Ledger page | 🚧 | New `/ledger` route with side-by-side Expenses/Income tables, inline edit, delete, blank add rows, multi-row paste from Sheets, row selection, bulk delete, and bulk category update; next step: stronger keyboard navigation |
 | Spreadsheet-style Monthly Summary page | 🚧 | New `/summary` route mirroring the Sheets monthly budget summary: balances, savings, planned-vs-actual progress, editable expense budgets, editable income plans, and diff columns |
-| Finance data source provider foundation | 🚧 | New backend `/finance/status` and `/finance/transactions` routes use a `FinanceDataSource` factory; DB provider remains default, Google Sheets read-only CSV provider can be enabled with env vars |
+| Finance data source provider foundation | 🚧 | New backend `/finance/status` and `/finance/transactions` routes use a `FinanceDataSource` factory; DB provider remains default, private Google Sheets read-only provider uses service-account auth |
 
 ---
 
