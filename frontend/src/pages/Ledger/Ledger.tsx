@@ -11,10 +11,12 @@ import {
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { expensesApi } from "@/api/expenses.api";
+import { financeApi } from "@/api/finance.api";
 import { useCategories } from "@/hooks/useCategories";
 import { useAnalyticsStore, isCurrentMonthYear } from "@/store/analyticsStore";
 import { Expense } from "@/types/expense.types";
-import { LedgerTable } from "@/components/ledger/LedgerTable";
+import { FinanceTransaction } from "@/types/finance.types";
+import { LedgerRow, LedgerTable } from "@/components/ledger/LedgerTable";
 
 function formatMonthLabel(monthYear: string): string {
   const [year, month] = monthYear.split("-").map(Number);
@@ -35,12 +37,35 @@ function monthRange(monthYear: string): { dateFrom: string; dateTo: string; defa
   };
 }
 
-function sortOldestFirst(rows: Expense[]): Expense[] {
+function sortOldestFirst<T extends { date: string; description: string }>(rows: T[]): T[] {
   return [...rows].sort((a, b) => {
     const date = new Date(a.date).getTime() - new Date(b.date).getTime();
     if (date !== 0) return date;
     return a.description.localeCompare(b.description);
   });
+}
+
+function expenseToLedgerRow(row: Expense): LedgerRow {
+  return {
+    id: row.id,
+    date: row.date,
+    description: row.description,
+    amount: row.amount,
+    category: row.category,
+    categoryId: row.categoryId,
+    type: row.type,
+  };
+}
+
+function financeToLedgerRow(row: FinanceTransaction): LedgerRow {
+  return {
+    id: row.id,
+    date: row.date,
+    description: row.description,
+    amount: row.amount,
+    category: row.category,
+    type: row.type,
+  };
 }
 
 export function Ledger() {
@@ -50,14 +75,35 @@ export function Ledger() {
   const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
   const range = useMemo(() => monthRange(month), [month]);
 
+  const financeStatusQuery = useQuery({
+    queryKey: ["finance", "status"],
+    queryFn: financeApi.status,
+  });
+  const financeStatusLoaded = financeStatusQuery.data !== undefined;
+  const useFinanceSource = financeStatusQuery.data?.provider === "google-sheets";
+
   const expensesQuery = useQuery({
     queryKey: ["ledger", "expense", month],
     queryFn: () => expensesApi.list({ type: "expense", dateFrom: range.dateFrom, dateTo: range.dateTo, page: 1, limit: 250 }),
+    enabled: financeStatusLoaded && !useFinanceSource,
   });
 
   const incomeQuery = useQuery({
     queryKey: ["ledger", "income", month],
     queryFn: () => expensesApi.list({ type: "income", dateFrom: range.dateFrom, dateTo: range.dateTo, page: 1, limit: 250 }),
+    enabled: financeStatusLoaded && !useFinanceSource,
+  });
+
+  const financeExpensesQuery = useQuery({
+    queryKey: ["finance", "transactions", "expense", month],
+    queryFn: () => financeApi.transactions({ type: "expense", month }),
+    enabled: useFinanceSource,
+  });
+
+  const financeIncomeQuery = useQuery({
+    queryKey: ["finance", "transactions", "income", month],
+    queryFn: () => financeApi.transactions({ type: "income", month }),
+    enabled: useFinanceSource,
   });
 
   const invalidate = () => {
@@ -82,13 +128,30 @@ export function Ledger() {
     onSuccess: invalidate,
   });
 
-  const loading = expensesQuery.isLoading || incomeQuery.isLoading || categoriesLoading;
-  const error = categoriesError || expensesQuery.isError || incomeQuery.isError
+  const loading =
+    financeStatusQuery.isLoading ||
+    categoriesLoading ||
+    (useFinanceSource
+      ? financeExpensesQuery.isLoading || financeIncomeQuery.isLoading
+      : expensesQuery.isLoading || incomeQuery.isLoading);
+  const error = categoriesError ||
+    financeStatusQuery.isError ||
+    (useFinanceSource
+      ? financeExpensesQuery.isError || financeIncomeQuery.isError
+      : expensesQuery.isError || incomeQuery.isError)
     ? "Failed to load ledger"
     : null;
 
-  const expenseRows = sortOldestFirst(expensesQuery.data?.data ?? []);
-  const incomeRows = sortOldestFirst(incomeQuery.data?.data ?? []);
+  const expenseRows = sortOldestFirst(
+    useFinanceSource
+      ? (financeExpensesQuery.data?.data ?? []).map(financeToLedgerRow)
+      : (expensesQuery.data?.data ?? []).map(expenseToLedgerRow),
+  );
+  const incomeRows = sortOldestFirst(
+    useFinanceSource
+      ? (financeIncomeQuery.data?.data ?? []).map(financeToLedgerRow)
+      : (incomeQuery.data?.data ?? []).map(expenseToLedgerRow),
+  );
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1440, mx: "auto" }}>
@@ -96,7 +159,9 @@ export function Ledger() {
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800 }}>Ledger</Typography>
           <Typography variant="body2" color="text.secondary">
-            Fast monthly entry for expenses and income.
+            {useFinanceSource
+              ? "Private Google Sheets data, shown read-only for now."
+              : "Fast monthly entry for expenses and income."}
           </Typography>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -132,6 +197,7 @@ export function Ledger() {
               rows={expenseRows}
               categories={categories}
               defaultDate={range.defaultDate}
+              readOnly={useFinanceSource}
               onCreate={async (draft) => { await createMutation.mutateAsync({ ...draft, currency: "USD", source: "manual", isRecurring: false, tags: [] }); }}
               onUpdate={async (id, patch) => { await updateMutation.mutateAsync({ id, patch }); }}
               onDelete={async (id) => { await deleteMutation.mutateAsync(id); }}
@@ -144,6 +210,7 @@ export function Ledger() {
               rows={incomeRows}
               categories={categories}
               defaultDate={range.defaultDate}
+              readOnly={useFinanceSource}
               onCreate={async (draft) => { await createMutation.mutateAsync({ ...draft, currency: "USD", source: "manual", isRecurring: false, tags: [] }); }}
               onUpdate={async (id, patch) => { await updateMutation.mutateAsync({ id, patch }); }}
               onDelete={async (id) => { await deleteMutation.mutateAsync(id); }}

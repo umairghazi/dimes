@@ -23,7 +23,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | Settings — theme (dark/light), currency preference | ✅ | |
 | Quick Add — FAB, sheet/dialog for manual expense entry | ✅ | |
 | Categories compact view | ✅ | Dense table view (collapsible groups, inline budget edit, hover actions); toggle between card/table view, persisted to localStorage |
-| Spreadsheet-style Ledger page | 🚧 | New `/ledger` route with side-by-side Expenses/Income tables, inline edit, delete, blank add rows, multi-row paste from Sheets, row selection, bulk delete, and bulk category update; next step: stronger keyboard navigation |
+| Spreadsheet-style Ledger page | 🚧 | New `/ledger` route with side-by-side Expenses/Income tables, inline edit, delete, blank add rows, multi-row paste from Sheets, row selection, bulk delete, and bulk category update; on migration branch it can display Google Sheets finance-provider data read-only |
 | Spreadsheet-style Monthly Summary page | 🚧 | New `/summary` route mirroring the Sheets monthly budget summary: balances, savings, planned-vs-actual progress, editable expense budgets, editable income plans, and diff columns |
 | Finance data source provider foundation | 🚧 | New backend `/finance/status` and `/finance/transactions` routes use a `FinanceDataSource` factory; DB provider remains default, private Google Sheets read-only provider uses service-account auth |
 
@@ -73,7 +73,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | Budget alert surfacing | ⬜ | `alertThreshold` is stored and compared in `getBudgetProgress` but never shown in UI; add banner/badge on Dashboard when a budget is near or over threshold |
 | Orphaned expense re-categorization | ⬜ | Deleting a category silently turns its expenses to "Uncategorized"; add a bulk re-assign flow at delete time |
 | AI insights auto-trigger | ⬜ | Insights are manual-trigger only; cache per `userId+monthYear` so closed months auto-load without re-generating |
-| Supabase migration | 🚧 | Backend can verify Supabase access tokens via `AUTH_PROVIDER=supabase` or `hybrid`; next layers should move frontend login to Supabase, store sheet config in Supabase, then remove Mongo/Prisma auth paths |
+| Supabase migration | 🚧 | Backend can verify Supabase access tokens via `AUTH_PROVIDER=supabase` or `hybrid`; `/ledger` can read from `/finance/transactions` when `DATA_SOURCE_PROVIDER=google-sheets`; next layers should move frontend login to Supabase, store sheet config in Supabase, then add sheet write-back |
 
 ---
 

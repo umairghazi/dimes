@@ -20,10 +20,19 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SellIcon from "@mui/icons-material/Sell";
-import { Expense } from "@/types/expense.types";
 import { UserCategory } from "@/types/category.types";
 
 type LedgerKind = "expense" | "income";
+
+export interface LedgerRow {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  category: string;
+  categoryId?: string | null;
+  type: LedgerKind;
+}
 
 interface DraftRow {
   date: string;
@@ -35,11 +44,12 @@ interface DraftRow {
 interface LedgerTableProps {
   title: string;
   kind: LedgerKind;
-  rows: Expense[];
+  rows: LedgerRow[];
   categories: UserCategory[];
   defaultDate: string;
+  readOnly?: boolean;
   onCreate: (draft: { date: string; description: string; amount: number; categoryId?: string | null; type: LedgerKind }) => Promise<void>;
-  onUpdate: (id: string, patch: Partial<Expense> & { categoryId?: string | null }) => Promise<void>;
+  onUpdate: (id: string, patch: Partial<LedgerRow> & { categoryId?: string | null }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
 
@@ -126,6 +136,7 @@ export function LedgerTable({
   rows,
   categories,
   defaultDate,
+  readOnly = false,
   onCreate,
   onUpdate,
   onDelete,
@@ -174,7 +185,7 @@ export function LedgerTable({
     setSelectedIds(new Set());
   };
 
-  const displayValue = (row: Expense, field: keyof DraftRow): string => {
+  const displayValue = (row: LedgerRow, field: keyof DraftRow): string => {
     const edited = editing[row.id]?.[field];
     if (edited !== undefined) return edited;
     if (field === "date") return toInputDate(row.date);
@@ -190,11 +201,11 @@ export function LedgerTable({
     }));
   };
 
-  const commitCell = async (row: Expense, field: keyof DraftRow) => {
+  const commitCell = async (row: LedgerRow, field: keyof DraftRow) => {
     const next = editing[row.id]?.[field];
     if (next === undefined) return;
 
-    const patch: Partial<Expense> & { categoryId?: string | null } = {};
+    const patch: Partial<LedgerRow> & { categoryId?: string | null } = {};
     if (field === "date" && next !== toInputDate(row.date)) patch.date = next;
     if (field === "description" && next.trim() && next.trim() !== row.description) patch.description = next.trim();
     if (field === "amount") {
@@ -221,7 +232,7 @@ export function LedgerTable({
 
   const handleKeyDown = async (
     event: React.KeyboardEvent<HTMLElement>,
-    row: Expense,
+    row: LedgerRow,
     field: keyof DraftRow,
   ) => {
     if (event.key === "Enter") {
@@ -282,7 +293,11 @@ export function LedgerTable({
         <Typography variant="h6" sx={{ fontWeight: 800, color: kind === "expense" ? "error.main" : "success.main" }}>
           {title}
         </Typography>
-        {selectedCount > 0 ? (
+        {readOnly ? (
+          <Typography variant="caption" color="text.secondary">
+            Read-only source
+          </Typography>
+        ) : selectedCount > 0 ? (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
             <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
               {selectedCount} selected
@@ -323,14 +338,16 @@ export function LedgerTable({
         <Table stickyHeader size="small" sx={{ tableLayout: "fixed" }}>
           <TableHead>
             <TableRow>
-              <TableCell padding="checkbox" sx={{ width: 42 }}>
+              {!readOnly && (
+                <TableCell padding="checkbox" sx={{ width: 42 }}>
                 <Checkbox
                   size="small"
                   checked={allVisibleSelected}
                   indeterminate={selectedCount > 0 && !allVisibleSelected}
                   onChange={(e) => toggleAll(e.target.checked)}
                 />
-              </TableCell>
+                </TableCell>
+              )}
               <TableCell sx={{ width: 118 }}>Date</TableCell>
               {kind === "expense" ? (
                 <>
@@ -351,13 +368,15 @@ export function LedgerTable({
           <TableBody>
             {rows.map((row) => (
               <TableRow key={row.id} hover sx={{ opacity: savingId === row.id ? 0.55 : 1 }}>
-                <TableCell padding="checkbox">
+                {!readOnly && (
+                  <TableCell padding="checkbox">
                   <Checkbox
                     size="small"
                     checked={selectedIds.has(row.id)}
                     onChange={(e) => toggleRow(row.id, e.target.checked)}
                   />
-                </TableCell>
+                  </TableCell>
+                )}
                 <TableCell>
                   <TextField
                     data-ledger-field="date"
@@ -369,6 +388,7 @@ export function LedgerTable({
                     onChange={(e) => setCell(row.id, "date", e.target.value)}
                     onBlur={() => void commitCell(row, "date")}
                     onKeyDown={(e) => void handleKeyDown(e, row, "date")}
+                    disabled={readOnly}
                   />
                 </TableCell>
                 {kind === "expense" ? (
@@ -383,6 +403,7 @@ export function LedgerTable({
                         onChange={(e) => setCell(row.id, "description", e.target.value)}
                         onBlur={() => void commitCell(row, "description")}
                         onKeyDown={(e) => void handleKeyDown(e, row, "description")}
+                        disabled={readOnly}
                       />
                     </TableCell>
                     <TableCell>
@@ -397,6 +418,7 @@ export function LedgerTable({
                         onChange={(e) => setCell(row.id, "amount", e.target.value)}
                         onBlur={() => void commitCell(row, "amount")}
                         onKeyDown={(e) => void handleKeyDown(e, row, "amount")}
+                        disabled={readOnly}
                       />
                     </TableCell>
                   </>
@@ -414,6 +436,7 @@ export function LedgerTable({
                         onChange={(e) => setCell(row.id, "amount", e.target.value)}
                         onBlur={() => void commitCell(row, "amount")}
                         onKeyDown={(e) => void handleKeyDown(e, row, "amount")}
+                        disabled={readOnly}
                       />
                     </TableCell>
                     <TableCell>
@@ -426,12 +449,18 @@ export function LedgerTable({
                         onChange={(e) => setCell(row.id, "description", e.target.value)}
                         onBlur={() => void commitCell(row, "description")}
                         onKeyDown={(e) => void handleKeyDown(e, row, "description")}
+                        disabled={readOnly}
                       />
                     </TableCell>
                   </>
                 )}
                 <TableCell>
-                  <Select
+                  {readOnly ? (
+                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                      {row.category}
+                    </Typography>
+                  ) : (
+                    <Select
                     data-ledger-field="categoryId"
                     size="small"
                     variant="standard"
@@ -449,19 +478,23 @@ export function LedgerTable({
                         {category.name}
                       </MenuItem>
                     ))}
-                  </Select>
+                    </Select>
+                  )}
                 </TableCell>
                 <TableCell align="center">
-                  <Tooltip title="Delete row">
-                    <IconButton size="small" onClick={() => void onDelete(row.id)}>
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                  {!readOnly && (
+                    <Tooltip title="Delete row">
+                      <IconButton size="small" onClick={() => void onDelete(row.id)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
 
-            <TableRow sx={{ bgcolor: "action.hover" }}>
+            {!readOnly && (
+              <TableRow sx={{ bgcolor: "action.hover" }}>
               <TableCell padding="checkbox" />
               <TableCell>
                 <TextField
@@ -558,7 +591,8 @@ export function LedgerTable({
                   </IconButton>
                 </Tooltip>
               </TableCell>
-            </TableRow>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </TableContainer>
