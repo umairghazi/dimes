@@ -3,6 +3,8 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { AppShell } from "@/components/layout/AppShell";
 import { Dashboard } from "@/pages/Dashboard/Dashboard";
 import { Expenses } from "@/pages/Expenses/Expenses";
+import { Ledger } from "@/pages/Ledger/Ledger";
+import { Summary } from "@/pages/Summary/Summary";
 import { Upload } from "@/pages/Upload/Upload";
 import { Settings } from "@/pages/Settings/Settings";
 import { Categories } from "@/pages/Categories/Categories";
@@ -24,6 +26,8 @@ export function AppRouter() {
           }
         >
           <Route index element={<Dashboard />} />
+          <Route path="summary" element={<Summary />} />
+          <Route path="ledger" element={<Ledger />} />
           <Route path="expenses" element={<Expenses />} />
           <Route path="upload" element={<Upload />} />
           <Route path="budgets" element={<Navigate to="/categories" replace />} />
