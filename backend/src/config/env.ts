@@ -10,6 +10,7 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(1, "JWT_REFRESH_SECRET is required"),
   JWT_ACCESS_EXPIRY: z.string().default("15m"),
   JWT_REFRESH_EXPIRY: z.string().default("7d"),
+  AUTH_PROVIDER: z.enum(["legacy", "supabase", "hybrid"]).default("legacy"),
   ENCRYPTION_MASTER_KEY: z.string().optional(),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   CLIENT_ORIGIN: z.string().default("http://localhost:5173,http://localhost:8081,http://localhost:19006"),

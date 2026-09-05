@@ -73,7 +73,7 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | Budget alert surfacing | ⬜ | `alertThreshold` is stored and compared in `getBudgetProgress` but never shown in UI; add banner/badge on Dashboard when a budget is near or over threshold |
 | Orphaned expense re-categorization | ⬜ | Deleting a category silently turns its expenses to "Uncategorized"; add a bulk re-assign flow at delete time |
 | AI insights auto-trigger | ⬜ | Insights are manual-trigger only; cache per `userId+monthYear` so closed months auto-load without re-generating |
-| Supabase migration | 🚧 | Started as stacked work: first layer adds finance data-source abstraction; next layers should add Supabase auth/config, then move sheet connection settings out of env |
+| Supabase migration | 🚧 | Backend can verify Supabase access tokens via `AUTH_PROVIDER=supabase` or `hybrid`; next layers should move frontend login to Supabase, store sheet config in Supabase, then remove Mongo/Prisma auth paths |
 
 ---
 
