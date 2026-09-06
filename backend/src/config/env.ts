@@ -5,7 +5,10 @@ dotenv.config();
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
-  MONGO_URI: z.string().min(1, "MONGO_URI is required"),
+  SUPABASE_URL: z.string().url("SUPABASE_URL is required"),
+  SUPABASE_ANON_KEY: z.string().min(1, "SUPABASE_ANON_KEY is required"),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
+  MONGO_URI: z.string().optional(),
   JWT_ACCESS_SECRET: z.string().min(1, "JWT_ACCESS_SECRET is required"),
   JWT_REFRESH_SECRET: z.string().min(1, "JWT_REFRESH_SECRET is required"),
   JWT_ACCESS_EXPIRY: z.string().default("15m"),
