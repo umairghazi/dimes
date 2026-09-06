@@ -1,14 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { env } from "../config/env";
 import { AppError } from "../errors/AppError";
+import { getSupabaseAdminClient } from "../integrations/supabase/supabaseAdmin.client";
 
-interface AccessTokenPayload {
-  sub: string;
-  email: string;
-}
-
-export function authenticate(req: Request, _res: Response, next: NextFunction): void {
+export async function authenticate(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
     const header = req.headers.authorization;
     if (!header?.startsWith("Bearer ")) {
@@ -16,9 +10,12 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
     }
 
     const token = header.slice(7);
-    const payload = jwt.verify(token, env.JWT_ACCESS_SECRET) as AccessTokenPayload;
+    const { data, error } = await getSupabaseAdminClient().auth.getUser(token);
+    if (error || !data.user) {
+      throw new AppError("Invalid or expired token", 401, "UNAUTHORIZED");
+    }
 
-    req.user = { id: payload.sub, email: payload.email };
+    req.user = { id: data.user.id, email: data.user.email ?? "" };
     next();
   } catch (err) {
     if (err instanceof AppError) return next(err);

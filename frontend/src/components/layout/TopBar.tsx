@@ -85,7 +85,7 @@ export function TopBar({ onMenuClick, showMenu = false }: TopBarProps) {
                 border: `1.5px solid ${tokens.colors.accentBorder}`,
               }}
             >
-              {user.email[0].toUpperCase()}
+              {(user.email?.[0] ?? "D").toUpperCase()}
             </Avatar>
           )}
         </Box>

@@ -44,7 +44,7 @@ export const uploadApi = {
     onDone: (e: JobDoneEvent) => void,
     onError: (msg: string) => void,
   ): (() => void) => {
-    const token = useAuthStore.getState().accessToken ?? "";
+    const token = useAuthStore.getState().session?.access_token ?? "";
     const url = `${BASE_URL}/upload/jobs/${jobId}/stream?token=${encodeURIComponent(token)}`;
     const es = new EventSource(url);
     let completed = false;

@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import { env } from "./config/env";
 import { logger } from "./config/logger";
@@ -9,7 +8,6 @@ import { errorMiddleware } from "./middleware/error.middleware";
 import { authenticate } from "./middleware/auth.middleware";
 import { cache } from "./lib/cache";
 
-import authRoutes from "./routes/auth.routes";
 import expenseRoutes from "./routes/expense.routes";
 import uploadRoutes from "./routes/upload.routes";
 import budgetRoutes from "./routes/budget.routes";
@@ -40,7 +38,6 @@ app.use(
   }),
 );
 app.use(express.json({ limit: "10mb" }));
-app.use(cookieParser());
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 app.post("/cache/flush", authenticate, (_req, res) => {
@@ -49,7 +46,6 @@ app.post("/cache/flush", authenticate, (_req, res) => {
   res.json({ flushed: before });
 });
 
-app.use("/auth", authRoutes);
 app.use("/expenses", expenseRoutes);
 app.use("/upload", uploadRoutes);
 app.use("/budgets", budgetRoutes);

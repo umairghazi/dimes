@@ -14,7 +14,7 @@ import {
 import { useThemeStore } from "@/store/themeStore";
 import { useAuthStore } from "@/store/authStore";
 import { usePreferencesStore, CURRENCIES } from "@/store/preferencesStore";
-import { authApi } from "@/api/auth.api";
+import { supabase } from "@/lib/supabase/client";
 import { useNavigate } from "react-router-dom";
 
 export function Settings() {
@@ -24,7 +24,7 @@ export function Settings() {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await authApi.logout();
+    await supabase.auth.signOut();
     clearAuth();
     navigate("/login");
   };

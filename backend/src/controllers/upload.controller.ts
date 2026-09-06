@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import multer from "multer";
-import jwt from "jsonwebtoken";
 import { UploadService } from "../services/upload.service";
 import { StagingRepository } from "../repositories/staging.repository";
 import { ExpenseRepository } from "../repositories/expense.repository";
@@ -9,7 +8,7 @@ import { ClassificationRepository } from "../repositories/classification.reposit
 import { CategoryRepository } from "../repositories/category.repository";
 import { AppError } from "../errors/AppError";
 import { jobStore } from "../services/jobStore";
-import { env } from "../config/env";
+import { getSupabaseAdminClient } from "../integrations/supabase/supabaseAdmin.client";
 
 const uploadService = new UploadService(
   new StagingRepository(),
@@ -97,15 +96,19 @@ export async function uploadCSV(req: Request, res: Response, next: NextFunction)
   }
 }
 
-export function streamJob(req: Request, res: Response): void {
+export async function streamJob(req: Request, res: Response): Promise<void> {
   // EventSource can't set headers, so accept token via query param for this endpoint only
   const token = req.query.token as string | undefined;
   if (!token) { res.status(401).end(); return; }
 
   let userId: string;
   try {
-    const payload = jwt.verify(token, env.JWT_ACCESS_SECRET) as { sub: string };
-    userId = payload.sub;
+    const { data, error } = await getSupabaseAdminClient().auth.getUser(token);
+    if (error || !data.user) {
+      res.status(401).end();
+      return;
+    }
+    userId = data.user.id;
   } catch {
     res.status(401).end();
     return;
