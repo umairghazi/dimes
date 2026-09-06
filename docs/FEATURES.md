@@ -27,6 +27,8 @@ Status legend: ✅ Done · 🚧 In progress · ⬜ Not started
 | Spreadsheet-style Monthly Summary page | 🚧 | New `/summary` route mirroring the Sheets monthly budget summary: balances, savings, planned-vs-actual progress, editable expense budgets, editable income plans, and diff columns |
 | Supabase database migration | 🚧 | New branch direction: Supabase/Postgres replaces MongoDB; initial SQL schema, RLS policies, backend admin client, env examples, Supabase Auth wiring, and old JWT auth removal added |
 | Supabase finance API | 🚧 | Added `/finance` routes for transactions, categories, and monthly summary backed by Supabase tables |
+| Simplified spreadsheet frontend | 🚧 | App entry now shows Monthly Summary, navigation is reduced to Summary/Ledger, and Ledger reads/writes through the Supabase finance API |
+| Mongo runtime removal | 🚧 | Express runtime now mounts only `/finance` and no longer connects to Prisma/Mongo on startup; old unused files remain for explicit cleanup |
 
 ---
 

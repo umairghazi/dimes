@@ -10,9 +10,8 @@ import {
 } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { expensesApi } from "@/api/expenses.api";
-import { useCategories } from "@/hooks/useCategories";
-import { useAnalyticsStore, isCurrentMonthYear } from "@/store/analyticsStore";
+import { financeApi } from "@/api/finance.api";
+import { useMonthStore, isCurrentMonthYear } from "@/store/monthStore";
 import { Expense } from "@/types/expense.types";
 import { LedgerTable } from "@/components/ledger/LedgerTable";
 
@@ -24,13 +23,11 @@ function formatMonthLabel(monthYear: string): string {
   });
 }
 
-function monthRange(monthYear: string): { dateFrom: string; dateTo: string; defaultDate: string } {
+function monthRange(monthYear: string): { defaultDate: string } {
   const [year, month] = monthYear.split("-").map(Number);
   const end = new Date(year, month, 0);
   const pad = (value: number) => String(value).padStart(2, "0");
   return {
-    dateFrom: `${year}-${pad(month)}-01`,
-    dateTo: `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}`,
     defaultDate: `${year}-${pad(month)}-${pad(Math.min(new Date().getDate(), end.getDate()))}`,
   };
 }
@@ -45,50 +42,53 @@ function sortOldestFirst(rows: Expense[]): Expense[] {
 
 export function Ledger() {
   const queryClient = useQueryClient();
-  const { month, prevMonth, nextMonth } = useAnalyticsStore();
+  const { month, prevMonth, nextMonth } = useMonthStore();
   const isCurrentMonth = isCurrentMonthYear(month);
-  const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
   const range = useMemo(() => monthRange(month), [month]);
 
+  const categoriesQuery = useQuery({
+    queryKey: ["finance", "categories"],
+    queryFn: () => financeApi.categories(),
+  });
+
   const expensesQuery = useQuery({
-    queryKey: ["ledger", "expense", month],
-    queryFn: () => expensesApi.list({ type: "expense", dateFrom: range.dateFrom, dateTo: range.dateTo, page: 1, limit: 250 }),
+    queryKey: ["finance", "transactions", "expense", month],
+    queryFn: () => financeApi.transactions({ type: "expense", month }),
   });
 
   const incomeQuery = useQuery({
-    queryKey: ["ledger", "income", month],
-    queryFn: () => expensesApi.list({ type: "income", dateFrom: range.dateFrom, dateTo: range.dateTo, page: 1, limit: 250 }),
+    queryKey: ["finance", "transactions", "income", month],
+    queryFn: () => financeApi.transactions({ type: "income", month }),
   });
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["ledger"] });
-    queryClient.invalidateQueries({ queryKey: ["expenses"] });
-    queryClient.invalidateQueries({ queryKey: ["analytics"] });
+    queryClient.invalidateQueries({ queryKey: ["finance"] });
   };
 
   const createMutation = useMutation({
-    mutationFn: expensesApi.create,
+    mutationFn: financeApi.createTransaction,
     onSuccess: invalidate,
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, patch }: { id: string; patch: Partial<Expense> & { categoryId?: string | null } }) =>
-      expensesApi.update(id, patch),
+      financeApi.updateTransaction(id, patch),
     onSuccess: invalidate,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: expensesApi.delete,
+    mutationFn: financeApi.deleteTransaction,
     onSuccess: invalidate,
   });
 
-  const loading = expensesQuery.isLoading || incomeQuery.isLoading || categoriesLoading;
-  const error = categoriesError || expensesQuery.isError || incomeQuery.isError
+  const loading = expensesQuery.isLoading || incomeQuery.isLoading || categoriesQuery.isLoading;
+  const error = categoriesQuery.isError || expensesQuery.isError || incomeQuery.isError
     ? "Failed to load ledger"
     : null;
 
   const expenseRows = sortOldestFirst(expensesQuery.data?.data ?? []);
   const incomeRows = sortOldestFirst(incomeQuery.data?.data ?? []);
+  const categories = categoriesQuery.data ?? [];
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1440, mx: "auto" }}>
