@@ -1,9 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { AppError } from "../errors/AppError";
-import { FinanceRepository } from "../repositories/finance.repository";
+import { CategoryService } from "../services/category.service";
+import { MonthlySummaryService } from "../services/monthlySummary.service";
+import { TransactionService } from "../services/transaction.service";
 
-const financeRepo = new FinanceRepository();
+const transactionService = new TransactionService();
+const categoryService = new CategoryService();
+const monthlySummaryService = new MonthlySummaryService();
 
 const monthQuerySchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/).optional(),
@@ -36,7 +40,7 @@ export async function listTransactions(req: Request, res: Response, next: NextFu
   try {
     const user = requireUser(req);
     const filters = monthQuerySchema.parse(req.query);
-    const data = await financeRepo.listTransactions(user.id, filters);
+    const data = await transactionService.list(user.id, filters);
     res.json({ data, total: data.length });
   } catch (err) {
     next(err);
@@ -47,7 +51,7 @@ export async function createTransaction(req: Request, res: Response, next: NextF
   try {
     const user = requireUser(req);
     const data = createTransactionSchema.parse(req.body);
-    const row = await financeRepo.createTransaction(user.id, data);
+    const row = await transactionService.create(user.id, data);
     res.status(201).json(row);
   } catch (err) {
     next(err);
@@ -58,7 +62,7 @@ export async function updateTransaction(req: Request, res: Response, next: NextF
   try {
     const user = requireUser(req);
     const patch = updateTransactionSchema.parse(req.body);
-    const row = await financeRepo.updateTransaction(user.id, req.params.id as string, patch);
+    const row = await transactionService.update(user.id, req.params.id as string, patch);
     res.json(row);
   } catch (err) {
     next(err);
@@ -68,7 +72,7 @@ export async function updateTransaction(req: Request, res: Response, next: NextF
 export async function deleteTransaction(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);
-    await financeRepo.deleteTransaction(user.id, req.params.id as string);
+    await transactionService.delete(user.id, req.params.id as string);
     res.status(204).send();
   } catch (err) {
     next(err);
@@ -79,7 +83,7 @@ export async function listCategories(req: Request, res: Response, next: NextFunc
   try {
     const user = requireUser(req);
     const { type } = monthQuerySchema.pick({ type: true }).parse(req.query);
-    const data = await financeRepo.listCategories(user.id, type);
+    const data = await categoryService.list(user.id, type);
     res.json(data);
   } catch (err) {
     next(err);
@@ -90,13 +94,8 @@ export async function getSummary(req: Request, res: Response, next: NextFunction
   try {
     const user = requireUser(req);
     const { month } = monthQuerySchema.required({ month: true }).parse(req.query);
-    const [transactions, plans, balance] = await Promise.all([
-      financeRepo.listTransactions(user.id, { month }),
-      financeRepo.listMonthlyPlans(user.id, month),
-      financeRepo.getMonthlyBalance(user.id, month),
-    ]);
-
-    res.json({ transactions, plans, balance });
+    const data = await monthlySummaryService.get(user.id, month);
+    res.json(data);
   } catch (err) {
     next(err);
   }

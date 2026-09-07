@@ -15,8 +15,26 @@ React/Vite frontend
 
 - `backend/src/app.ts` mounts `/health` and `/finance`.
 - `backend/src/middleware/auth.middleware.ts` verifies Supabase access tokens.
-- `backend/src/repositories/finance.repository.ts` owns all Postgres access through the Supabase service-role client.
+- Controllers parse HTTP input and return HTTP responses.
+- Services own business rules and orchestration.
+- Repositories own persistence and extend `backend/src/repositories/BaseRepository.ts`.
+- `BaseRepository` owns the Supabase service-role client, table access, and shared error wrapping.
 - `backend/supabase/migrations/001_initial_finance_schema.sql` defines the schema and RLS policies.
+
+Current backend layers:
+
+```text
+routes/finance.routes.ts
+  -> controllers/finance.controller.ts
+  -> services/transaction.service.ts
+  -> services/category.service.ts
+  -> services/monthlySummary.service.ts
+  -> repositories/transaction.repository.ts
+  -> repositories/category.repository.ts
+  -> repositories/monthlyPlan.repository.ts
+  -> repositories/monthlyBalance.repository.ts
+  -> repositories/BaseRepository.ts
+```
 
 ## Frontend
 
