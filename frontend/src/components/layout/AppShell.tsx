@@ -47,6 +47,10 @@ export function AppShell() {
           minHeight: "100vh",
           bgcolor: "background.default",
           overflow: "auto",
+          backgroundImage: (theme) =>
+            theme.palette.mode === "dark"
+              ? "linear-gradient(135deg, rgba(255,90,31,0.08), rgba(28,117,216,0.05) 38%, transparent 68%)"
+              : "linear-gradient(135deg, rgba(255,90,31,0.1), rgba(28,117,216,0.05) 40%, rgba(255,255,255,0) 72%)",
         }}
       >
         <Outlet />

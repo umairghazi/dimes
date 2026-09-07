@@ -136,12 +136,10 @@ export function Categories() {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1180, mx: "auto" }}>
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800 }}>Categories</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Manage the dropdown values used by Ledger.
-        </Typography>
+    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1220, mx: "auto" }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="overline" color="primary.main" sx={{ fontWeight: 850 }}>Configuration</Typography>
+        <Typography variant="h2" sx={{ fontWeight: 850 }}>Categories</Typography>
       </Box>
 
       {categoriesQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load categories</Alert>}
@@ -149,9 +147,36 @@ export function Categories() {
       {categoriesQuery.isLoading ? (
         <Skeleton variant="rectangular" height={540} sx={{ borderRadius: 1 }} />
       ) : (
-        <Paper variant="outlined" sx={{ overflow: "hidden", borderRadius: 1 }}>
+        <Paper
+          variant="outlined"
+          sx={{
+            overflow: "hidden",
+            borderRadius: 1,
+            bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(23,26,32,0.88)" : "rgba(255,255,255,0.84)",
+            backdropFilter: "blur(18px)",
+            WebkitBackdropFilter: "blur(18px)",
+          }}
+        >
           <TableContainer sx={{ maxHeight: "calc(100vh - 160px)" }}>
-            <Table stickyHeader size="small" sx={{ tableLayout: "fixed" }}>
+            <Table
+              stickyHeader
+              size="small"
+              sx={{
+                tableLayout: "fixed",
+                minWidth: 780,
+                "& .MuiTableCell-root": {
+                  px: 1,
+                  py: 0.55,
+                  height: 38,
+                },
+                "& .MuiInput-underline:before": {
+                  borderBottomColor: "transparent",
+                },
+                "& .MuiInput-underline:hover:before": {
+                  borderBottomColor: "divider",
+                },
+              }}
+            >
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ width: 260 }}>Category</TableCell>

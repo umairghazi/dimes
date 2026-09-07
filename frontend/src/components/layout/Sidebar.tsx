@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
+import { alpha } from "@mui/material/styles";
 import {
   Box,
   List,
@@ -57,7 +58,9 @@ export function Sidebar({ rail = false }: SidebarProps) {
         flexDirection: "column",
         borderRight: "1px solid",
         borderColor: "divider",
-        bgcolor: "background.paper",
+        bgcolor: (theme) => alpha(theme.palette.background.paper, 0.78),
+        backdropFilter: "blur(22px)",
+        WebkitBackdropFilter: "blur(22px)",
         overflow: "hidden",
         transition: "width 0.2s ease",
       }}
@@ -79,7 +82,7 @@ export function Sidebar({ rail = false }: SidebarProps) {
             width: 30,
             height: 30,
             borderRadius: "8px",
-            background: `linear-gradient(135deg, ${tokens.colors.accentDark}, ${tokens.colors.accentLight})`,
+            background: (theme) => theme.palette.text.primary,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -91,7 +94,7 @@ export function Sidebar({ rail = false }: SidebarProps) {
         {!rail && (
           <Typography
             variant="h6"
-            sx={{ fontWeight: 800, letterSpacing: "-0.02em", background: `linear-gradient(135deg, ${tokens.colors.accentDark}, ${tokens.colors.accentLight})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
+            sx={{ fontWeight: 850, letterSpacing: 0, color: "text.primary" }}
           >
             Dimes
           </Typography>
@@ -111,12 +114,16 @@ export function Sidebar({ rail = false }: SidebarProps) {
                 selected={active}
                 sx={{
                   borderRadius: "8px",
-                  minHeight: 40,
+                  minHeight: 44,
                   flexGrow: 0,
                   justifyContent: rail ? "center" : "flex-start",
                   px: rail ? 1 : 1.5,
                   py: 0.75,
-                  mb: 0.25,
+                  mb: 0.5,
+                  transition: "background-color 0.16s ease, color 0.16s ease, transform 0.16s ease",
+                  "&:hover": {
+                    transform: "translateX(2px)",
+                  },
                 }}
               >
                 <ListItemIcon
@@ -130,7 +137,7 @@ export function Sidebar({ rail = false }: SidebarProps) {
                 {!rail && (
                   <ListItemText
                     primary={item.label}
-                    slotProps={{ primary: { style: { fontSize: "0.875rem", fontWeight: active ? 600 : 500 } } }}
+                    slotProps={{ primary: { style: { fontSize: "0.9rem", fontWeight: active ? 760 : 620 } } }}
                   />
                 )}
               </ListItemButton>
@@ -152,7 +159,7 @@ export function Sidebar({ rail = false }: SidebarProps) {
               <LogoutIcon fontSize="small" />
             </ListItemIcon>
             {!rail && (
-              <ListItemText primary="Sign out" slotProps={{ primary: { style: { fontSize: "0.875rem", fontWeight: 500 } } }} />
+              <ListItemText primary="Sign out" slotProps={{ primary: { style: { fontSize: "0.875rem", fontWeight: 620 } } }} />
             )}
           </ListItemButton>
         </Tooltip>

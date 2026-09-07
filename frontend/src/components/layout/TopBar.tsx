@@ -46,7 +46,7 @@ export function TopBar({ onMenuClick, showMenu = false }: TopBarProps) {
               width: 26,
               height: 26,
               borderRadius: "7px",
-              background: `linear-gradient(135deg, ${tokens.colors.accentDark}, ${tokens.colors.accentLight})`,
+              background: (theme) => theme.palette.text.primary,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -57,12 +57,10 @@ export function TopBar({ onMenuClick, showMenu = false }: TopBarProps) {
           <Typography
             variant="h6"
             sx={{
-              fontWeight: 800,
-              letterSpacing: "-0.02em",
+              fontWeight: 850,
+              letterSpacing: 0,
               fontSize: "1rem",
-              background: `linear-gradient(135deg, ${tokens.colors.accentDark}, ${tokens.colors.accentLight})`,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
+              color: "text.primary",
             }}
           >
             Dimes

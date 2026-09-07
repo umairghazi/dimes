@@ -281,13 +281,15 @@ export function LedgerTable({
       variant="outlined"
       sx={{
         overflow: "hidden",
-        borderRadius: 0,
+        borderRadius: 1,
         borderColor: "divider",
-        bgcolor: "background.paper",
+        bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(23,26,32,0.88)" : "rgba(255,255,255,0.84)",
+        backdropFilter: "blur(18px)",
+        WebkitBackdropFilter: "blur(18px)",
       }}
     >
-      <Box sx={{ px: 0.5, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5 }}>
-        <Typography variant="h5" sx={{ fontWeight: 800, color: kind === "expense" ? "#f4511e" : "#f4511e" }}>
+      <Box sx={{ px: 1.25, py: 1.1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+        <Typography variant="h5" sx={{ fontWeight: 850, color: kind === "expense" ? "primary.main" : "success.main" }}>
           {title}
         </Typography>
         {selectedCount > 0 ? (
@@ -335,22 +337,32 @@ export function LedgerTable({
             tableLayout: "fixed",
             minWidth: kind === "expense" ? 850 : 650,
             "& .MuiTableCell-root": {
-              borderColor: "rgba(148, 163, 184, 0.35)",
-              px: 0.5,
-              py: 0.25,
-              height: 30,
+              borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(18,16,13,0.09)",
+              px: 0.75,
+              py: 0.35,
+              height: 34,
             },
             "& .MuiTableCell-head": {
-              bgcolor: "background.paper",
-              color: "text.primary",
+              bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(32,36,44,0.96)" : "rgba(240,235,227,0.96)",
+              color: "text.secondary",
               fontWeight: 800,
               textTransform: "none",
             },
+            "& .MuiTableRow-root:hover .MuiTableCell-body": {
+              backgroundColor: (theme) => theme.palette.mode === "dark" ? "rgba(255,135,92,0.07)" : "rgba(255,90,31,0.045)",
+            },
             "& .MuiInputBase-root": {
               fontSize: "0.875rem",
+              color: "text.primary",
             },
             "& .MuiInputBase-input": {
               py: 0.25,
+            },
+            "& .MuiInput-underline:before": {
+              borderBottomColor: "transparent",
+            },
+            "& .MuiInput-underline:hover:before": {
+              borderBottomColor: "divider",
             },
           }}
         >
@@ -511,7 +523,7 @@ export function LedgerTable({
               </TableRow>
             ))}
 
-            <TableRow sx={{ bgcolor: "action.hover" }}>
+            <TableRow sx={{ bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255,255,255,0.035)" : "rgba(18,16,13,0.035)" }}>
               <TableCell padding="checkbox" />
               <TableCell>
                 <TextField

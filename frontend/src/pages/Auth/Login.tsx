@@ -46,15 +46,15 @@ export function Login() {
           flexDirection: "column",
           justifyContent: "space-between",
           p: 6,
-          background: `linear-gradient(135deg, ${tokens.colors.accentDark} 0%, ${tokens.colors.accentLight} 100%)`,
-          color: "#fff",
+          background: "#12100d",
+          color: "#f7f2ea",
         }}
       >
-        <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
+        <Typography variant="h5" sx={{ fontWeight: 850, letterSpacing: 0, color: tokens.colors.accent }}>
           Dimes
         </Typography>
         <Box>
-          <Typography variant="h2" sx={{ fontWeight: 800, mb: 2, lineHeight: 1.1 }}>
+          <Typography variant="h1" sx={{ fontWeight: 850, mb: 2, lineHeight: 1.05 }}>
             Take control of your finances.
           </Typography>
           <Typography sx={{ opacity: 0.8, fontSize: "1.0625rem", lineHeight: 1.7 }}>
@@ -79,11 +79,11 @@ export function Login() {
           mx: "auto",
         }}
       >
-        <Typography variant="h5" color="primary" sx={{ fontWeight: 800, mb: 6, display: { md: "none" } }}>
+        <Typography variant="h5" color="primary" sx={{ fontWeight: 850, mb: 6, display: { md: "none" } }}>
           Dimes
         </Typography>
 
-        <Typography variant="h4" sx={{ fontWeight: 800, mb: 0.5 }}>
+        <Typography variant="h3" sx={{ fontWeight: 850, mb: 0.5 }}>
           Welcome back
         </Typography>
         <Typography color="text.secondary" sx={{ mb: 4, fontSize: "0.9375rem" }}>

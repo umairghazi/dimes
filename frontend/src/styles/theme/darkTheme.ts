@@ -7,8 +7,8 @@ export const darkTheme = createTheme({
     mode: "dark",
     primary: {
       main: tokens.colors.accentLight,
-      dark: tokens.colors.accent,
-      light: "#a78bfa",
+      dark: tokens.colors.accentDark,
+      light: "#ffb092",
       contrastText: "#ffffff",
     },
     secondary: { main: "#38bdf8" },
@@ -31,7 +31,7 @@ export const darkTheme = createTheme({
     ...typography,
   },
 
-  shape: { borderRadius: 10 },
+  shape: { borderRadius: 8 },
 
   shadows: [
     "none",
@@ -66,6 +66,7 @@ export const darkTheme = createTheme({
       styleOverrides: {
         body: {
           fontFamily: tokens.font.sans,
+          background: tokens.colors.bgDark,
           WebkitFontSmoothing: "antialiased",
           MozOsxFontSmoothing: "grayscale",
           textRendering: "optimizeLegibility",
@@ -92,7 +93,8 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           textTransform: "none",
-          fontWeight: 600,
+          fontWeight: 720,
+          letterSpacing: "0",
           borderRadius: tokens.radii.md,
           transition: "all 0.15s ease",
         },
@@ -104,7 +106,7 @@ export const darkTheme = createTheme({
           borderColor: tokens.colors.borderDark,
           "&:hover": {
             borderColor: tokens.colors.accentLight,
-            backgroundColor: alpha(tokens.colors.accentLight, 0.08),
+            backgroundColor: alpha(tokens.colors.accentLight, 0.1),
           },
         },
       },
@@ -129,8 +131,9 @@ export const darkTheme = createTheme({
     MuiChip: {
       styleOverrides: {
         root: {
-          fontWeight: 600,
+          fontWeight: 680,
           fontSize: "0.75rem",
+          letterSpacing: "0",
           borderRadius: tokens.radii.pill,
           border: `1px solid ${tokens.colors.borderDark}`,
         },
@@ -144,8 +147,8 @@ export const darkTheme = createTheme({
 
     MuiPaper: {
       styleOverrides: {
-        root: { backgroundImage: "none" },
-        outlined: { borderColor: tokens.colors.borderDark },
+        root: { backgroundImage: "none", borderRadius: tokens.radii.lg },
+        outlined: { borderColor: tokens.colors.borderDark, boxShadow: "0 20px 60px rgba(0,0,0,0.28)" },
       },
     },
 
@@ -153,12 +156,12 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           "& .MuiTableCell-head": {
-            fontWeight: 700,
+            fontWeight: 760,
             fontSize: "0.75rem",
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
+            letterSpacing: "0",
+            textTransform: "none",
             color: tokens.colors.textSecondaryDark,
-            backgroundColor: tokens.colors.bgDark,
+            backgroundColor: tokens.colors.surfaceMutedDark,
             borderBottom: `1px solid ${tokens.colors.borderDark}`,
           },
         },
@@ -169,6 +172,7 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           "&:last-child td": { borderBottom: 0 },
+          "&:hover td": { backgroundColor: "rgba(255, 135, 92, 0.07)" },
           "& .MuiTableCell-body": { borderColor: tokens.colors.borderDark },
         },
       },
@@ -179,7 +183,7 @@ export const darkTheme = createTheme({
         root: {
           borderRadius: tokens.radii.md,
           "&.Mui-selected": {
-            backgroundColor: alpha(tokens.colors.accentLight, 0.1),
+            backgroundColor: alpha(tokens.colors.accentLight, 0.14),
             color: tokens.colors.accentLight,
             "& .MuiListItemIcon-root": { color: tokens.colors.accentLight },
           },
@@ -192,9 +196,9 @@ export const darkTheme = createTheme({
         root: {
           height: tokens.bottomNav.height,
           borderTop: `1px solid ${tokens.colors.borderDark}`,
-          backgroundColor: alpha(tokens.colors.surfaceDark, 0.9),
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
+          backgroundColor: alpha(tokens.colors.surfaceDark, 0.86),
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter: "blur(18px)",
         },
       },
     },
@@ -212,7 +216,9 @@ export const darkTheme = createTheme({
         paper: {
           borderRight: `1px solid ${tokens.colors.borderDark}`,
           boxShadow: "none",
-          backgroundColor: tokens.colors.surfaceDark,
+          backgroundColor: alpha(tokens.colors.surfaceDark, 0.92),
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter: "blur(18px)",
         },
       },
     },

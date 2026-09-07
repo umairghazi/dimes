@@ -1,20 +1,20 @@
 export const tokens = {
   colors: {
-    // Accent - violet
-    accent: "#7c3aed",
-    accentDark: "#6d28d9",
-    accentLight: "#8b5cf6",
-    accentBg: "rgba(124, 58, 237, 0.08)",
-    accentBorder: "rgba(124, 58, 237, 0.3)",
+    // Accent - finance orange
+    accent: "#ff5a1f",
+    accentDark: "#d83b0c",
+    accentLight: "#ff875c",
+    accentBg: "rgba(255, 90, 31, 0.1)",
+    accentBorder: "rgba(255, 90, 31, 0.32)",
 
     // Semantic
-    success: "#16a34a",
-    successBg: "rgba(22, 163, 74, 0.08)",
-    warning: "#d97706",
-    warningBg: "rgba(217, 119, 6, 0.08)",
-    error: "#dc2626",
-    errorBg: "rgba(220, 38, 38, 0.08)",
-    info: "#0284c7",
+    success: "#0b8f5a",
+    successBg: "rgba(11, 143, 90, 0.1)",
+    warning: "#c98700",
+    warningBg: "rgba(201, 135, 0, 0.12)",
+    error: "#d33a2c",
+    errorBg: "rgba(211, 58, 44, 0.1)",
+    info: "#1c75d8",
 
     // Budget progress
     budgetGreen: "#16a34a",
@@ -22,47 +22,49 @@ export const tokens = {
     budgetRed: "#dc2626",
 
     // Light mode
-    bgLight: "#f9f8fc",
+    bgLight: "#f6f3ee",
     surfaceLight: "#ffffff",
-    borderLight: "#e5e4e7",
-    textPrimaryLight: "#08060d",
-    textSecondaryLight: "#6b6375",
+    surfaceMutedLight: "#f0ebe3",
+    borderLight: "#ded7cc",
+    textPrimaryLight: "#12100d",
+    textSecondaryLight: "#625b52",
 
     // Dark mode
-    bgDark: "#0c0a10",
-    surfaceDark: "#17141f",
-    borderDark: "#2a2533",
-    textPrimaryDark: "#f5f3ff",
-    textSecondaryDark: "#8b84a0",
+    bgDark: "#0f1115",
+    surfaceDark: "#171a20",
+    surfaceMutedDark: "#20242c",
+    borderDark: "#2b303a",
+    textPrimaryDark: "#f7f2ea",
+    textSecondaryDark: "#a7a096",
   },
 
   font: {
-    sans: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    sans: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
     mono: "ui-monospace, 'SF Mono', Consolas, monospace",
   },
 
   radii: {
     sm: "6px",
-    md: "10px",
-    lg: "14px",
-    xl: "20px",
+    md: "8px",
+    lg: "8px",
+    xl: "8px",
     pill: "999px",
   },
 
   shadows: {
-    xs: "0 1px 2px rgba(0,0,0,0.05)",
-    sm: "0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)",
-    md: "rgba(0,0,0,0.08) 0 4px 6px -1px, rgba(0,0,0,0.04) 0 2px 4px -1px",
-    lg: "rgba(0,0,0,0.10) 0 10px 15px -3px, rgba(0,0,0,0.05) 0 4px 6px -2px",
-    xl: "rgba(0,0,0,0.12) 0 20px 25px -5px, rgba(0,0,0,0.06) 0 10px 10px -5px",
-    card: "0 0 0 1px rgba(0,0,0,0.05), rgba(0,0,0,0.06) 0 4px 6px -1px",
-    cardHover: "0 0 0 1px rgba(0,0,0,0.08), rgba(0,0,0,0.10) 0 10px 15px -3px, rgba(0,0,0,0.05) 0 4px 6px -2px",
-    fab: "rgba(124,58,237,0.35) 0 8px 16px -2px",
+    xs: "0 1px 1px rgba(18,16,13,0.04)",
+    sm: "0 12px 30px rgba(18,16,13,0.06)",
+    md: "0 18px 50px rgba(18,16,13,0.08)",
+    lg: "0 24px 70px rgba(18,16,13,0.1)",
+    xl: "0 32px 90px rgba(18,16,13,0.12)",
+    card: "0 18px 50px rgba(18,16,13,0.07)",
+    cardHover: "0 24px 70px rgba(18,16,13,0.1)",
+    fab: "rgba(255,90,31,0.32) 0 12px 28px -8px",
     bottomSheet: "0 -4px 20px rgba(0,0,0,0.10)",
   },
 
   sidebar: {
-    width: 240,
+    width: 248,
     railWidth: 68,
   },
   bottomNav: {

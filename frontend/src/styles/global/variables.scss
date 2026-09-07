@@ -1,42 +1,42 @@
 // Design tokens - mirror of tokens.ts. Update both when changing a token.
 
 // Accent
-$accent: #7c3aed;
-$accent-dark: #6d28d9;
-$accent-light: #8b5cf6;
-$accent-bg: rgba(124, 58, 237, 0.08);
-$accent-border: rgba(124, 58, 237, 0.3);
+$accent: #ff5a1f;
+$accent-dark: #d83b0c;
+$accent-light: #ff875c;
+$accent-bg: rgba(255, 90, 31, 0.1);
+$accent-border: rgba(255, 90, 31, 0.32);
 
 // Semantic
-$success: #16a34a;
-$warning: #d97706;
-$error: #dc2626;
-$info: #0284c7;
+$success: #0b8f5a;
+$warning: #c98700;
+$error: #d33a2c;
+$info: #1c75d8;
 
 // Budget progress
-$budget-green: #16a34a;
-$budget-amber: #d97706;
-$budget-red: #dc2626;
+$budget-green: #0b8f5a;
+$budget-amber: #c98700;
+$budget-red: #d33a2c;
 
 // Light mode surfaces
-$bg-light: #f9f8fc;
+$bg-light: #f6f3ee;
 $surface-light: #ffffff;
-$border-light: #e5e4e7;
-$text-primary-light: #08060d;
-$text-secondary-light: #6b6375;
+$border-light: #ded7cc;
+$text-primary-light: #12100d;
+$text-secondary-light: #625b52;
 
 // Dark mode surfaces
-$bg-dark: #0c0a10;
-$surface-dark: #17141f;
-$border-dark: #2a2533;
-$text-primary-dark: #f5f3ff;
-$text-secondary-dark: #8b84a0;
+$bg-dark: #0f1115;
+$surface-dark: #171a20;
+$border-dark: #2b303a;
+$text-primary-dark: #f7f2ea;
+$text-secondary-dark: #a7a096;
 
 // Border radii
 $radius-sm: 6px;
-$radius-md: 10px;
-$radius-lg: 14px;
-$radius-xl: 20px;
+$radius-md: 8px;
+$radius-lg: 8px;
+$radius-xl: 8px;
 $radius-pill: 999px;
 
 // Spacing scale
@@ -51,7 +51,7 @@ $spacing-10: 40px;
 $spacing-12: 48px;
 
 // Layout
-$sidebar-width: 240px;
+$sidebar-width: 248px;
 $sidebar-rail-width: 68px;
 $bottom-nav-height: 60px;
 $top-bar-height: 60px;

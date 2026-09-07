@@ -5,7 +5,6 @@ import {
   Box,
   Grid,
   IconButton,
-  LinearProgress,
   Paper,
   Skeleton,
   Table,
@@ -35,7 +34,7 @@ interface BreakdownRow {
   percent: number;
 }
 
-const chartColors = ["#4285f4", "#db4437", "#f4b400", "#0f9d58", "#ff6d01", "#46bdc6", "#ab47bc", "#c6c91a", "#3949ab", "#f06292"];
+const chartColors = ["#ff5a1f", "#12100d", "#1c75d8", "#0b8f5a", "#f4b400", "#46bdc6", "#7c7064", "#c6c91a", "#f06292", "#8a8178"];
 
 function formatMonthLabel(monthYear: string): string {
   const [year, month] = monthYear.split("-").map(Number);
@@ -135,11 +134,21 @@ function DiffText({ value }: { value: number }) {
 
 function Metric({ label, value, helper }: { label: string; value: string; helper?: string }) {
   return (
-    <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, height: "100%" }}>
-      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 2.25,
+        borderRadius: 1,
+        height: "100%",
+        bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(23,26,32,0.88)" : "rgba(255,255,255,0.84)",
+        backdropFilter: "blur(18px)",
+        WebkitBackdropFilter: "blur(18px)",
+      }}
+    >
+      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 760, textTransform: "none" }}>
         {label}
       </Typography>
-      <Typography variant="h4" sx={{ mt: 1, fontWeight: 800 }}>
+      <Typography variant="h3" sx={{ mt: 0.75, fontWeight: 850 }}>
         {value}
       </Typography>
       {helper && (
@@ -147,6 +156,103 @@ function Metric({ label, value, helper }: { label: string; value: string; helper
           {helper}
         </Typography>
       )}
+    </Paper>
+  );
+}
+
+function SummaryHero({
+  startingBalance,
+  endingBalance,
+  totalSpend,
+  totalIncome,
+  plannedSpend,
+  netSavings,
+}: {
+  startingBalance: number;
+  endingBalance: number;
+  totalSpend: number;
+  totalIncome: number;
+  plannedSpend: number;
+  netSavings: number;
+}) {
+  const savingsRate = startingBalance > 0 ? (netSavings / startingBalance) * 100 : 0;
+  const spendRatio = plannedSpend > 0 ? Math.min(100, (totalSpend / plannedSpend) * 100) : 0;
+  const maxBalance = Math.max(startingBalance, endingBalance, 1);
+
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", lg: "1.1fr 0.9fr" },
+        gap: { xs: 3, lg: 5 },
+        p: { xs: 2.5, md: 4 },
+        mb: 2,
+        borderRadius: 1,
+        bgcolor: (theme) => theme.palette.mode === "dark" ? "#12100d" : "#12100d",
+        color: "#f7f2ea",
+        overflow: "hidden",
+        position: "relative",
+        boxShadow: "0 28px 80px rgba(18,16,13,0.18)",
+      }}
+    >
+      <Box>
+        <Typography variant="overline" sx={{ color: "#ff875c", fontWeight: 850 }}>Monthly position</Typography>
+        <Typography variant="h1" sx={{ mt: 1, maxWidth: 720 }}>
+          {netSavings >= 0 ? "You are building cushion." : "You are drawing down cash."}
+        </Typography>
+        <Typography variant="h2" sx={{ mt: 2, color: netSavings >= 0 ? "#77e0ac" : "#ff875c" }}>
+          {currency(netSavings)}
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1, color: "rgba(247,242,234,0.72)", maxWidth: 560 }}>
+          Income, expenses, and bank movement for this month in one clean view.
+        </Typography>
+
+        <Box sx={{ mt: 4, display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" }, gap: 1 }}>
+          {[
+            ["Income", currency(totalIncome), "#77e0ac"],
+            ["Expenses", currency(totalSpend), "#ff875c"],
+            ["Planned spend", currency(plannedSpend), "#9ec5ff"],
+          ].map(([label, value, color]) => (
+            <Box key={label} sx={{ border: "1px solid rgba(247,242,234,0.16)", borderRadius: 1, p: 1.5, bgcolor: "rgba(255,255,255,0.045)" }}>
+              <Typography variant="caption" sx={{ color: "rgba(247,242,234,0.58)" }}>{label}</Typography>
+              <Typography variant="h5" sx={{ color, mt: 0.5 }}>{value}</Typography>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+
+      <Box sx={{ display: "grid", alignContent: "space-between", gap: 3 }}>
+        <Box sx={{ border: "1px solid rgba(247,242,234,0.16)", borderRadius: 1, p: 2, bgcolor: "rgba(255,255,255,0.045)" }}>
+          <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 2 }}>
+            <Typography variant="caption" sx={{ color: "rgba(247,242,234,0.58)" }}>Savings rate</Typography>
+            <Typography variant="h3" sx={{ color: savingsRate >= 0 ? "#77e0ac" : "#ff875c" }}>
+              {savingsRate > 0 ? "+" : ""}{savingsRate.toFixed(0)}%
+            </Typography>
+          </Box>
+          <Box sx={{ mt: 2, height: 8, borderRadius: 999, bgcolor: "rgba(247,242,234,0.14)", overflow: "hidden" }}>
+            <Box sx={{ width: `${spendRatio}%`, height: "100%", bgcolor: "#ff5a1f", borderRadius: 999 }} />
+          </Box>
+          <Typography variant="caption" sx={{ display: "block", mt: 1, color: "rgba(247,242,234,0.62)" }}>
+            {currency(totalSpend)} spent of {currency(plannedSpend)} planned
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, minHeight: 240, alignItems: "end" }}>
+          {[
+            ["Start", startingBalance, "#9ec5ff"],
+            ["End", endingBalance, endingBalance >= startingBalance ? "#77e0ac" : "#ff875c"],
+          ].map(([label, value, color]) => (
+            <Box key={label} sx={{ display: "grid", alignItems: "end", justifyItems: "center", gap: 1.25 }}>
+              <Box sx={{ width: "44%", minWidth: 54, height: `${Math.max(18, (Number(value) / maxBalance) * 180)}px`, bgcolor: color, borderRadius: "8px 8px 2px 2px" }} />
+              <Box sx={{ textAlign: "center" }}>
+                <Typography variant="caption" sx={{ color: "rgba(247,242,234,0.58)" }}>{label}</Typography>
+                <Typography variant="h5">{currency(Number(value))}</Typography>
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      </Box>
     </Paper>
   );
 }
@@ -171,8 +277,8 @@ function SpendByDateChart({ rows }: { rows: BreakdownRow[] }) {
   const ticks = [0, 0.5, 1];
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 0, p: 2, overflowX: "auto" }}>
-      <Typography variant="h5" sx={{ fontWeight: 800, color: "text.secondary", mb: 1 }}>Money spent by Date</Typography>
+    <Paper variant="outlined" sx={{ borderRadius: 1, p: 2.25, overflowX: "auto", bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(23,26,32,0.88)" : "rgba(255,255,255,0.84)", backdropFilter: "blur(18px)" }}>
+      <Typography variant="h5" sx={{ fontWeight: 850, color: "text.primary", mb: 1 }}>Money spent by Date</Typography>
       {rows.length === 0 ? (
         <Typography color="text.secondary">No expenses for this month.</Typography>
       ) : (
@@ -181,7 +287,7 @@ function SpendByDateChart({ rows }: { rows: BreakdownRow[] }) {
             const y = top + plotHeight - tick * plotHeight;
             return (
               <g key={tick}>
-                <line x1={left} x2={width - right} y1={y} y2={y} stroke="#d0d0d0" />
+                <line x1={left} x2={width - right} y1={y} y2={y} stroke="currentColor" opacity="0.12" />
                 <text x={left - 10} y={y + 4} textAnchor="end" fontSize="12" fill="#777">{currencyWithCents(max * tick)}</text>
               </g>
             );
@@ -192,12 +298,12 @@ function SpendByDateChart({ rows }: { rows: BreakdownRow[] }) {
             const barHeight = (row.amount / max) * plotHeight;
             return (
               <g key={row.label}>
-                <rect x={x - barWidth / 2} y={top + plotHeight - barHeight} width={barWidth} height={barHeight} fill="#4285f4" rx="2" />
+                <rect x={x - barWidth / 2} y={top + plotHeight - barHeight} width={barWidth} height={barHeight} fill="#ff5a1f" rx="6" />
                 <text x={x} y={height - 28} textAnchor="middle" fontSize="12" fill="#777">{formatShortDate(row.label)}</text>
               </g>
             );
           })}
-          <polyline points={points} fill="none" stroke="#ea4335" strokeWidth="2.5" />
+          <polyline points={points} fill="none" stroke="#12100d" strokeWidth="2.5" />
           <text x={18} y={top + plotHeight / 2} transform={`rotate(-90 18 ${top + plotHeight / 2})`} textAnchor="middle" fontSize="13" fontWeight="700" fill="#444">Amount</text>
           <text x={left + plotWidth / 2} y={height - 4} textAnchor="middle" fontSize="13" fontWeight="700" fill="#444">Date</text>
         </Box>
@@ -217,8 +323,8 @@ function BreakdownChart({ title, rows }: { title: string; rows: BreakdownRow[] }
     }).join(", ");
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 0, p: 2, height: "100%" }}>
-      <Typography variant="h5" sx={{ fontWeight: 800, color: "text.secondary", mb: 2 }}>{title}</Typography>
+    <Paper variant="outlined" sx={{ borderRadius: 1, p: 2.25, height: "100%", bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(23,26,32,0.88)" : "rgba(255,255,255,0.84)", backdropFilter: "blur(18px)" }}>
+      <Typography variant="h5" sx={{ fontWeight: 850, color: "text.primary", mb: 2 }}>{title}</Typography>
       {rows.length === 0 ? (
         <Typography color="text.secondary">No expenses for this month.</Typography>
       ) : (
@@ -234,7 +340,7 @@ function BreakdownChart({ title, rows }: { title: string; rows: BreakdownRow[] }
           />
           <Box sx={{ display: "grid", gap: 0.75 }}>
             {rows.slice(0, 10).map((row, index) => (
-              <Box key={row.label} sx={{ display: "grid", gridTemplateColumns: "14px 1fr auto", gap: 1, alignItems: "center" }}>
+              <Box key={row.label} sx={{ display: "grid", gridTemplateColumns: "14px 1fr auto", gap: 1, alignItems: "center", py: 0.35 }}>
                 <Box sx={{ width: 10, height: 10, bgcolor: chartColors[index % chartColors.length] }} />
                 <Typography variant="body2" sx={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {row.label}
@@ -262,9 +368,9 @@ function BudgetTable({ title, rows, type }: { title: string; rows: SummaryRow[];
   );
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 1, overflow: "hidden" }}>
-      <Box sx={{ px: 1.5, py: 1.25 }}>
-        <Typography variant="h6" sx={{ fontWeight: 800, color: type === "expense" ? "error.main" : "success.main" }}>
+    <Paper variant="outlined" sx={{ borderRadius: 1, overflow: "hidden", bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(23,26,32,0.88)" : "rgba(255,255,255,0.84)", backdropFilter: "blur(18px)" }}>
+      <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "divider" }}>
+        <Typography variant="h5" sx={{ fontWeight: 850, color: type === "expense" ? "primary.main" : "success.main" }}>
           {title}
         </Typography>
       </Box>
@@ -319,25 +425,22 @@ export function Summary() {
   const startingBalance = summaryQuery.data?.balance?.startingBalance ?? 0;
   const endingBalance = summaryQuery.data?.balance?.endingBalance ?? startingBalance + netSavings;
   const plannedSpend = expenseRows.reduce((sum, row) => sum + row.planned, 0);
-  const spendRatio = plannedSpend > 0 ? Math.min(100, (totalSpend / plannedSpend) * 100) : 0;
   const dailySpend = useMemo(() => spendByDate(transactions), [transactions]);
   const categorySpend = useMemo(() => expenseBreakdown(transactions, "category"), [transactions]);
   const mainCategorySpend = useMemo(() => expenseBreakdown(transactions, "mainCategory"), [transactions]);
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1440, mx: "auto" }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1500, mx: "auto" }}>
+      <Box sx={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", mb: 3, gap: 2 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800 }}>Monthly Summary</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Planned vs actual, balances, and savings for the month.
-          </Typography>
+          <Typography variant="overline" color="primary.main" sx={{ fontWeight: 850 }}>{formatMonthLabel(month)}</Typography>
+          <Typography variant="h1" sx={{ fontWeight: 850 }}>Monthly Budget</Typography>
         </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1, py: 0.5, border: "1px solid", borderColor: "divider", borderRadius: 1, bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(23,26,32,0.78)" : "rgba(255,255,255,0.78)", backdropFilter: "blur(18px)" }}>
           <IconButton size="small" onClick={prevMonth}>
             <ChevronLeftIcon />
           </IconButton>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, minWidth: 150, textAlign: "center" }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 760, minWidth: 150, textAlign: "center" }}>
             {formatMonthLabel(month)}
           </Typography>
           <IconButton size="small" onClick={nextMonth} disabled={isCurrentMonth}>
@@ -352,6 +455,15 @@ export function Summary() {
         <Skeleton variant="rectangular" height={640} sx={{ borderRadius: 1 }} />
       ) : (
         <>
+          <SummaryHero
+            startingBalance={startingBalance}
+            endingBalance={endingBalance}
+            totalSpend={totalSpend}
+            totalIncome={totalIncome}
+            plannedSpend={plannedSpend}
+            netSavings={netSavings}
+          />
+
           <Grid container spacing={2} sx={{ mb: 2 }}>
             <Grid size={{ xs: 12, md: 3 }}>
               <Metric label="Starting Balance" value={currency(startingBalance)} />
@@ -366,19 +478,6 @@ export function Summary() {
               <Metric label="Expenses" value={currency(totalSpend)} helper={`${transactions.length} rows loaded`} />
             </Grid>
           </Grid>
-
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, mb: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>Expense Pace</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {currency(totalSpend)} of {currency(plannedSpend)}
-              </Typography>
-            </Box>
-            <LinearProgress variant="determinate" value={spendRatio} />
-            <Typography variant="body2" sx={{ mt: 1, fontWeight: 700 }}>
-              Savings: {currency(netSavings)}
-            </Typography>
-          </Paper>
 
           <Grid container spacing={2} sx={{ mb: 2 }}>
             <Grid size={{ xs: 12 }}>
