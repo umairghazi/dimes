@@ -11,6 +11,16 @@ interface CategoryRow {
   sort_order: number;
 }
 
+export interface CreateCategoryData {
+  name: string;
+  mainCategory?: string | null;
+  type?: FinanceTransactionType;
+  isFixed?: boolean;
+  sortOrder?: number;
+}
+
+export type UpdateCategoryData = Partial<CreateCategoryData>;
+
 function toCategory(row: CategoryRow): FinanceCategory {
   return {
     id: row.id,
@@ -53,5 +63,54 @@ export class CategoryRepository extends BaseRepository {
         .maybeSingle(),
     );
     return Boolean(row);
+  }
+
+  async create(userId: string, data: CreateCategoryData): Promise<FinanceCategory> {
+    const row = await this.execute<CategoryRow>(
+      "create category",
+      this.table()
+        .insert({
+          user_id: userId,
+          name: data.name,
+          main_category: data.mainCategory ?? null,
+          type: data.type ?? "expense",
+          is_fixed: data.isFixed ?? false,
+          sort_order: data.sortOrder ?? 0,
+        })
+        .select("id, user_id, name, main_category, type, is_fixed, sort_order")
+        .single(),
+    );
+    return toCategory(row);
+  }
+
+  async update(userId: string, id: string, patch: UpdateCategoryData): Promise<FinanceCategory> {
+    const data: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (patch.name !== undefined) data.name = patch.name;
+    if (patch.mainCategory !== undefined) data.main_category = patch.mainCategory;
+    if (patch.type !== undefined) data.type = patch.type;
+    if (patch.isFixed !== undefined) data.is_fixed = patch.isFixed;
+    if (patch.sortOrder !== undefined) data.sort_order = patch.sortOrder;
+
+    const row = await this.execute<CategoryRow>(
+      "update category",
+      this.table()
+        .update(data)
+        .eq("user_id", userId)
+        .eq("id", id)
+        .is("deleted_at", null)
+        .select("id, user_id, name, main_category, type, is_fixed, sort_order")
+        .single(),
+    );
+    return toCategory(row);
+  }
+
+  async delete(userId: string, id: string): Promise<void> {
+    await this.executeEmpty(
+      "delete category",
+      this.table()
+        .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("user_id", userId)
+        .eq("id", id),
+    );
   }
 }

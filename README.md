@@ -65,3 +65,6 @@ npm run dev
 - `PATCH /finance/transactions/:id`
 - `DELETE /finance/transactions/:id`
 - `GET /finance/categories`
+- `POST /finance/categories`
+- `PATCH /finance/categories/:id`
+- `DELETE /finance/categories/:id`

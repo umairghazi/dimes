@@ -11,6 +11,14 @@ export interface FinanceCategory {
   sortOrder: number;
 }
 
+export interface CategoryInput {
+  name: string;
+  mainCategory?: string | null;
+  type?: "expense" | "income";
+  isFixed?: boolean;
+  sortOrder?: number;
+}
+
 export interface MonthlyPlan {
   id: string;
   userId: string;
@@ -57,6 +65,14 @@ export const financeApi = {
 
   categories: (params?: { type?: "expense" | "income" }) =>
     apiClient.get<FinanceCategory[]>("/finance/categories", { params }).then((r) => r.data),
+
+  createCategory: (data: CategoryInput) =>
+    apiClient.post<FinanceCategory>("/finance/categories", data).then((r) => r.data),
+
+  updateCategory: (id: string, data: Partial<CategoryInput>) =>
+    apiClient.patch<FinanceCategory>(`/finance/categories/${id}`, data).then((r) => r.data),
+
+  deleteCategory: (id: string) => apiClient.delete(`/finance/categories/${id}`),
 
   summary: (month: string) =>
     apiClient.get<FinanceSummary>("/finance/summary", { params: { month } }).then((r) => r.data),

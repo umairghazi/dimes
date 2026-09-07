@@ -16,8 +16,7 @@ create table if not exists public.categories (
   sort_order integer not null default 0,
   deleted_at timestamptz,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (user_id, name, type)
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists public.transactions (
@@ -68,6 +67,8 @@ create table if not exists public.monthly_balances (
 
 create index if not exists categories_user_id_idx on public.categories(user_id);
 create index if not exists categories_user_type_idx on public.categories(user_id, type);
+alter table public.categories drop constraint if exists categories_user_id_name_type_key;
+create unique index if not exists categories_user_name_type_active_idx on public.categories(user_id, name, type) where deleted_at is null;
 create index if not exists transactions_user_date_idx on public.transactions(user_id, date desc);
 create index if not exists transactions_user_type_date_idx on public.transactions(user_id, type, date desc);
 create index if not exists transactions_user_category_idx on public.transactions(user_id, category_id);

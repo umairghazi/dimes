@@ -91,14 +91,9 @@ export function Ledger() {
   const categories = categoriesQuery.data ?? [];
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1440, mx: "auto" }}>
+    <Box sx={{ p: { xs: 1.5, md: 2 }, width: "100%", minWidth: 0 }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800 }}>Ledger</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Fast monthly entry for expenses and income.
-          </Typography>
-        </Box>
+        <Typography variant="h4" sx={{ fontWeight: 800 }}>Ledger</Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
           <IconButton size="small" onClick={prevMonth}>
             <ChevronLeftIcon />
@@ -115,17 +110,17 @@ export function Ledger() {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       {loading ? (
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, lg: 7 }}>
+        <Grid container spacing={2} sx={{ alignItems: "flex-start" }}>
+          <Grid size={{ xs: 12, xl: 7 }}>
             <Skeleton variant="rectangular" height={520} sx={{ borderRadius: 1 }} />
           </Grid>
-          <Grid size={{ xs: 12, lg: 5 }}>
+          <Grid size={{ xs: 12, xl: 5 }}>
             <Skeleton variant="rectangular" height={520} sx={{ borderRadius: 1 }} />
           </Grid>
         </Grid>
       ) : (
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, lg: 7 }}>
+        <Grid container spacing={2} sx={{ alignItems: "flex-start" }}>
+          <Grid size={{ xs: 12, xl: 7 }}>
             <LedgerTable
               title="Expenses"
               kind="expense"
@@ -137,7 +132,7 @@ export function Ledger() {
               onDelete={async (id) => { await deleteMutation.mutateAsync(id); }}
             />
           </Grid>
-          <Grid size={{ xs: 12, lg: 5 }}>
+          <Grid size={{ xs: 12, xl: 5 }}>
             <LedgerTable
               title="Income"
               kind="income"

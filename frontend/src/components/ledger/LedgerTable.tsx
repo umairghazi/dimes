@@ -277,9 +277,17 @@ export function LedgerTable({
   };
 
   return (
-    <Paper variant="outlined" sx={{ overflow: "hidden", borderRadius: 1 }}>
-      <Box sx={{ px: 1.5, py: 1.25, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5 }}>
-        <Typography variant="h6" sx={{ fontWeight: 800, color: kind === "expense" ? "error.main" : "success.main" }}>
+    <Paper
+      variant="outlined"
+      sx={{
+        overflow: "hidden",
+        borderRadius: 0,
+        borderColor: "divider",
+        bgcolor: "background.paper",
+      }}
+    >
+      <Box sx={{ px: 0.5, py: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, color: kind === "expense" ? "#f4511e" : "#f4511e" }}>
           {title}
         </Typography>
         {selectedCount > 0 ? (
@@ -319,11 +327,36 @@ export function LedgerTable({
         )}
       </Box>
 
-      <TableContainer sx={{ maxHeight: "calc(100vh - 220px)" }}>
-        <Table stickyHeader size="small" sx={{ tableLayout: "fixed" }}>
+      <TableContainer sx={{ maxHeight: "calc(100vh - 180px)", overflowX: "auto" }}>
+        <Table
+          stickyHeader
+          size="small"
+          sx={{
+            tableLayout: "fixed",
+            minWidth: kind === "expense" ? 850 : 650,
+            "& .MuiTableCell-root": {
+              borderColor: "rgba(148, 163, 184, 0.35)",
+              px: 0.5,
+              py: 0.25,
+              height: 30,
+            },
+            "& .MuiTableCell-head": {
+              bgcolor: "background.paper",
+              color: "text.primary",
+              fontWeight: 800,
+              textTransform: "none",
+            },
+            "& .MuiInputBase-root": {
+              fontSize: "0.875rem",
+            },
+            "& .MuiInputBase-input": {
+              py: 0.25,
+            },
+          }}
+        >
           <TableHead>
             <TableRow>
-              <TableCell padding="checkbox" sx={{ width: 42 }}>
+              <TableCell padding="checkbox" sx={{ width: 34 }}>
                 <Checkbox
                   size="small"
                   checked={allVisibleSelected}
@@ -331,20 +364,21 @@ export function LedgerTable({
                   onChange={(e) => toggleAll(e.target.checked)}
                 />
               </TableCell>
-              <TableCell sx={{ width: 118 }}>Date</TableCell>
+              <TableCell sx={{ width: 150 }}>Date</TableCell>
               {kind === "expense" ? (
                 <>
-                  <TableCell>Description</TableCell>
-                  <TableCell align="right" sx={{ width: 112 }}>Amount</TableCell>
+                  <TableCell sx={{ width: 230 }}>Description</TableCell>
+                  <TableCell align="right" sx={{ width: 110 }}>Amount</TableCell>
                 </>
               ) : (
                 <>
-                  <TableCell align="right" sx={{ width: 112 }}>Amount</TableCell>
-                  <TableCell>Description</TableCell>
+                  <TableCell align="right" sx={{ width: 110 }}>Amount</TableCell>
+                  <TableCell sx={{ width: 230 }}>Description</TableCell>
                 </>
               )}
               <TableCell sx={{ width: 220 }}>Category</TableCell>
-              <TableCell sx={{ width: 42 }} />
+              {kind === "expense" && <TableCell sx={{ width: 160 }}>Main Category</TableCell>}
+              <TableCell sx={{ width: 38 }} />
             </TableRow>
           </TableHead>
 
@@ -366,6 +400,7 @@ export function LedgerTable({
                     variant="standard"
                     fullWidth
                     value={displayValue(row, "date")}
+                    slotProps={{ htmlInput: { style: { minWidth: 126 } } }}
                     onChange={(e) => setCell(row.id, "date", e.target.value)}
                     onBlur={() => void commitCell(row, "date")}
                     onKeyDown={(e) => void handleKeyDown(e, row, "date")}
@@ -451,6 +486,21 @@ export function LedgerTable({
                     ))}
                   </Select>
                 </TableCell>
+                {kind === "expense" && (
+                  <TableCell>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        color: "text.secondary",
+                      }}
+                    >
+                      {row.mainCategory || "Uncategorized"}
+                    </Typography>
+                  </TableCell>
+                )}
                 <TableCell align="center">
                   <Tooltip title="Delete row">
                     <IconButton size="small" onClick={() => void onDelete(row.id)}>
@@ -470,6 +520,7 @@ export function LedgerTable({
                   variant="standard"
                   fullWidth
                   value={draft.date}
+                  slotProps={{ htmlInput: { style: { minWidth: 126 } } }}
                   onChange={(e) => setDraft((d) => ({ ...d, date: e.target.value }))}
                   onKeyDown={maybeAddOnEnter}
                   onPaste={handlePaste}
@@ -551,6 +602,13 @@ export function LedgerTable({
                   ))}
                 </Select>
               </TableCell>
+              {kind === "expense" && (
+                <TableCell>
+                  <Typography variant="body2" color="text.secondary">
+                    {options.find((category) => category.id === draft.categoryId)?.mainCategory || ""}
+                  </Typography>
+                </TableCell>
+              )}
               <TableCell align="center">
                 <Tooltip title="Add row">
                   <IconButton size="small" color="primary" onClick={() => void addDraft()}>

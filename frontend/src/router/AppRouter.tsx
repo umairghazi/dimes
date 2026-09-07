@@ -3,6 +3,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { AppShell } from "@/components/layout/AppShell";
 import { Ledger } from "@/pages/Ledger/Ledger";
 import { Summary } from "@/pages/Summary/Summary";
+import { Categories } from "@/pages/Categories/Categories";
 import { Login } from "@/pages/Auth/Login";
 import { Register } from "@/pages/Auth/Register";
 
@@ -22,6 +23,7 @@ export function AppRouter() {
         >
           <Route index element={<Summary />} />
           <Route path="ledger" element={<Ledger />} />
+          <Route path="categories" element={<Categories />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

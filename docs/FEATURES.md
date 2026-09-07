@@ -16,7 +16,8 @@ This branch is the Supabase database direction. Google Sheets is no longer the d
 | Backend service/repository layering | Done | Controllers call services; table-specific repositories extend `BaseRepository` for shared Supabase behavior |
 | Monthly Summary | In progress | Default route mirrors the spreadsheet summary shape using Supabase data |
 | Ledger | In progress | Spreadsheet-style expense/income tables read and write Supabase transactions |
-| Minimal navigation | Done | Visible app navigation is reduced to Summary and Ledger |
+| Category management | Done | `/categories` manages category names, main categories, types, sort order, and delete |
+| Minimal navigation | Done | Visible app navigation is reduced to Summary, Ledger, and Categories |
 
 ## Removed
 
@@ -36,4 +37,3 @@ This branch is the Supabase database direction. Google Sheets is no longer the d
 | Seed/import existing spreadsheet data | Not started | Add a simple Supabase import path for current transactions, categories, plans, and balances |
 | Editable monthly plans | Not started | Let Summary update planned expense/income values |
 | Editable monthly balances | Not started | Let Summary update starting and ending bank balances |
-| Category management in ledger | Not started | Add lightweight category creation/editing without bringing back the old settings surface |

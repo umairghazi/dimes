@@ -13,6 +13,7 @@ import {
 import TableRowsIcon from "@mui/icons-material/TableRows";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import SummarizeIcon from "@mui/icons-material/Summarize";
+import CategoryIcon from "@mui/icons-material/Category";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -24,6 +25,7 @@ import { supabase } from "@/lib/supabase/client";
 const NAV_ITEMS = [
   { label: "Summary", icon: <SummarizeIcon fontSize="small" />, path: "/" },
   { label: "Ledger", icon: <TableRowsIcon fontSize="small" />, path: "/ledger" },
+  { label: "Categories", icon: <CategoryIcon fontSize="small" />, path: "/categories" },
 ];
 
 interface SidebarProps {
