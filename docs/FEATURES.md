@@ -13,7 +13,7 @@ This branch is the Supabase database direction. Google Sheets is no longer the d
 | Supabase Auth | Done | Frontend uses Supabase login/register/session restore; backend verifies Supabase bearer tokens |
 | Supabase Postgres schema | Done | SQL migration defines profiles, categories, transactions, monthly plans, and monthly balances with RLS |
 | Finance API | Done | `/finance` exposes transactions, categories, and monthly summary |
-| Backend service/repository layering | Done | Controllers call services; table-specific repositories extend `BaseRepository` for shared parameterized SQL behavior |
+| Backend service/repository layering | Done | Controllers call services; table-specific repositories extend `BaseRepository` for shared Supabase behavior |
 | Monthly Summary | In progress | Default route mirrors the spreadsheet summary shape using Supabase data |
 | Ledger | In progress | Spreadsheet-style expense/income tables read and write Supabase transactions |
 | Minimal navigation | Done | Visible app navigation is reduced to Summary and Ledger |

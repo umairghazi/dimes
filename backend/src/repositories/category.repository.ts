@@ -24,50 +24,34 @@ function toCategory(row: CategoryRow): FinanceCategory {
 }
 
 export class CategoryRepository extends BaseRepository {
+  constructor() {
+    super("categories");
+  }
+
   async listByUser(userId: string, type?: FinanceTransactionType): Promise<FinanceCategory[]> {
-    const params: unknown[] = [userId];
-    const predicates = ["user_id = $1", "deleted_at is null"];
+    let query = this.table()
+      .select("*")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .order("main_category", { ascending: true })
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true });
+    if (type) query = query.eq("type", type);
 
-    if (type) {
-      params.push(type);
-      predicates.push(`type = $${params.length}`);
-    }
-
-    const rows = await this.query<CategoryRow>(
-      "list categories",
-      `
-      select
-        id,
-        user_id,
-        name,
-        main_category,
-        type,
-        is_fixed,
-        sort_order
-      from public.categories
-      where ${predicates.join(" and ")}
-      order by main_category asc nulls last, sort_order asc, name asc
-      `,
-      params,
-    );
-
-    return rows.map(toCategory);
+    const rows = await this.execute<CategoryRow[]>("list categories", query);
+    return (rows ?? []).map(toCategory);
   }
 
   async existsForUser(userId: string, id: string): Promise<boolean> {
-    const row = await this.queryOne<{ id: string }>(
+    const row = await this.execute<CategoryRow | null>(
       "find category",
-      `
-      select id
-      from public.categories
-      where user_id = $1
-        and id = $2
-        and deleted_at is null
-      limit 1
-      `,
-      [userId, id],
+      this.table()
+        .select("id, user_id, name, main_category, type, is_fixed, sort_order")
+        .eq("user_id", userId)
+        .eq("id", id)
+        .is("deleted_at", null)
+        .maybeSingle(),
     );
-
     return Boolean(row);
   }
 }

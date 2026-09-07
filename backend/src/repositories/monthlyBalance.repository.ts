@@ -22,23 +22,18 @@ function toBalance(row: BalanceRow): MonthlyBalance {
 }
 
 export class MonthlyBalanceRepository extends BaseRepository {
+  constructor() {
+    super("monthly_balances");
+  }
+
   async getByMonth(userId: string, monthYear: string): Promise<MonthlyBalance | null> {
-    const row = await this.queryOne<BalanceRow>(
+    const row = await this.execute<BalanceRow | null>(
       "get monthly balance",
-      `
-      select
-        id,
-        user_id,
-        month_year,
-        starting_balance,
-        ending_balance,
-        currency
-      from public.monthly_balances
-      where user_id = $1
-        and month_year = $2
-      limit 1
-      `,
-      [userId, monthYear],
+      this.table()
+        .select("*")
+        .eq("user_id", userId)
+        .eq("month_year", monthYear)
+        .maybeSingle(),
     );
 
     return row ? toBalance(row) : null;
