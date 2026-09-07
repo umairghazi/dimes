@@ -28,21 +28,28 @@ function toPlan(row: PlanRow): MonthlyPlan {
 }
 
 export class MonthlyPlanRepository extends BaseRepository {
-  constructor() {
-    super("monthly_plans");
-  }
-
   async listByMonth(userId: string, monthYear: string): Promise<MonthlyPlan[]> {
-    const rows = await this.execute<PlanRow[]>(
+    const rows = await this.query<PlanRow>(
       "list monthly plans",
-      this.table()
-        .select("*")
-        .eq("user_id", userId)
-        .eq("month_year", monthYear)
-        .order("type", { ascending: true })
-        .order("category_name", { ascending: true }),
+      `
+      select
+        id,
+        user_id,
+        month_year,
+        category_id,
+        category_name,
+        type,
+        planned_amount,
+        currency,
+        carry_forward
+      from public.monthly_plans
+      where user_id = $1
+        and month_year = $2
+      order by type asc, category_name asc
+      `,
+      [userId, monthYear],
     );
 
-    return (rows ?? []).map(toPlan);
+    return rows.map(toPlan);
   }
 }

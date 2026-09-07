@@ -7,7 +7,7 @@ Dimes is a lightweight personal finance app built around a spreadsheet-style mon
 ## Stack
 
 - Frontend: React 19, MUI, Zustand, TanStack Query, Vite
-- Backend: Node.js, Express, Supabase Auth verification
+- Backend: Node.js, Express, Supabase Auth verification, parameterized SQL via `pg`
 - Database: Supabase Postgres
 
 ## Setup
@@ -31,6 +31,7 @@ CLIENT_ORIGIN=http://localhost:5173
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+DATABASE_URL=postgresql://postgres.your-project-ref:your-password@aws-0-us-east-1.pooler.supabase.com:6543/postgres
 ```
 
 `frontend/.env`

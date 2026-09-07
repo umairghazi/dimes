@@ -1,26 +1,26 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import { pool } from "../db/pool";
 import { RepositoryError } from "../errors/RepositoryError";
-import { getSupabaseAdminClient } from "../integrations/supabase/supabaseAdmin.client";
 
 export abstract class BaseRepository {
-  protected readonly db: SupabaseClient;
-
-  protected constructor(protected readonly tableName: string) {
-    this.db = getSupabaseAdminClient();
+  protected async query<T>(
+    operation: string,
+    sql: string,
+    params: unknown[] = [],
+  ): Promise<T[]> {
+    try {
+      const result = await pool.query(sql, params);
+      return result.rows as T[];
+    } catch (err) {
+      throw new RepositoryError(`Failed to ${operation}`, operation, err);
+    }
   }
 
-  protected table() {
-    return this.db.from(this.tableName);
-  }
-
-  protected async execute<T>(operation: string, query: PromiseLike<{ data: unknown; error: unknown }>): Promise<T> {
-    const { data, error } = await query;
-    if (error) throw new RepositoryError(`Failed to ${operation}`, operation, error);
-    return data as T;
-  }
-
-  protected async executeEmpty(operation: string, query: PromiseLike<{ error: unknown }>): Promise<void> {
-    const { error } = await query;
-    if (error) throw new RepositoryError(`Failed to ${operation}`, operation, error);
+  protected async queryOne<T>(
+    operation: string,
+    sql: string,
+    params: unknown[] = [],
+  ): Promise<T | null> {
+    const rows = await this.query<T>(operation, sql, params);
+    return rows[0] ?? null;
   }
 }

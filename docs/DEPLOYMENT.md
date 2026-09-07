@@ -15,6 +15,7 @@ CLIENT_ORIGIN=https://your-frontend-domain
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+DATABASE_URL=postgresql://postgres.your-project-ref:your-password@aws-0-us-east-1.pooler.supabase.com:6543/postgres
 ```
 
 ## Frontend Environment
@@ -29,4 +30,4 @@ VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 
 Run `backend/supabase/migrations/001_initial_finance_schema.sql` against the Supabase project before starting the backend.
 
-Keep `SUPABASE_SERVICE_ROLE_KEY` on the backend only.
+Keep `SUPABASE_SERVICE_ROLE_KEY` and `DATABASE_URL` on the backend only.

@@ -8,7 +8,7 @@ Dimes now has one product path: Supabase-backed finance data with a spreadsheet-
 React/Vite frontend
   -> Supabase Auth for browser session
   -> Express API with Supabase bearer-token verification
-  -> Supabase Postgres finance tables
+  -> Parameterized SQL against Supabase Postgres finance tables
 ```
 
 ## Backend
@@ -18,7 +18,8 @@ React/Vite frontend
 - Controllers parse HTTP input and return HTTP responses.
 - Services own business rules and orchestration.
 - Repositories own persistence and extend `backend/src/repositories/BaseRepository.ts`.
-- `BaseRepository` owns the Supabase service-role client, table access, and shared error wrapping.
+- `BaseRepository` owns parameterized `pg` query execution and shared error wrapping.
+- Supabase SDK usage is limited to Auth/session verification; finance persistence uses explicit SQL.
 - `backend/supabase/migrations/001_initial_finance_schema.sql` defines the schema and RLS policies.
 
 Current backend layers:
