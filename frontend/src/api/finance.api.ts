@@ -1,6 +1,15 @@
 import { apiClient } from "./client";
 import { Expense } from "@/types/expense.types";
-import { UserCategory } from "@/types/category.types";
+
+export interface FinanceCategory {
+  id: string;
+  userId: string;
+  name: string;
+  mainCategory: string | null;
+  type: "expense" | "income";
+  isFixed: boolean;
+  sortOrder: number;
+}
 
 export interface MonthlyPlan {
   id: string;
@@ -47,7 +56,7 @@ export const financeApi = {
   deleteTransaction: (id: string) => apiClient.delete(`/finance/transactions/${id}`),
 
   categories: (params?: { type?: "expense" | "income" }) =>
-    apiClient.get<UserCategory[]>("/finance/categories", { params }).then((r) => r.data),
+    apiClient.get<FinanceCategory[]>("/finance/categories", { params }).then((r) => r.data),
 
   summary: (month: string) =>
     apiClient.get<FinanceSummary>("/finance/summary", { params: { month } }).then((r) => r.data),

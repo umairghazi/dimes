@@ -2,92 +2,66 @@
 
 Track your dimes. Every one counts.
 
-A full-stack personal finance tracker with AI-powered categorization, budget tracking, and natural language queries.
+Dimes is a lightweight personal finance app built around a spreadsheet-style monthly workflow. Supabase handles authentication and Postgres data storage; the frontend focuses on the two core views that matter first: Monthly Summary and Ledger.
 
 ## Stack
 
-- **Frontend** - React 19, MUI v6, Zustand, Recharts, Vite (PWA)
-- **Backend** - Node.js, Express, Prisma, MongoDB
-- **AI** - Pluggable provider: Anthropic, OpenAI, Google, AWS Bedrock, or local (Ollama, LMStudio)
+- Frontend: React 19, MUI, Zustand, TanStack Query, Vite
+- Backend: Node.js, Express, Supabase Auth verification
+- Database: Supabase Postgres
 
-## Getting started
-
-### Prerequisites
-
-- Node.js 18+
-- MongoDB Atlas cluster (or local MongoDB)
-
-### Setup
+## Setup
 
 ```bash
-# Install all dependencies (workspaces hoisted to root)
 npm install
-
-# Configure backend environment
 cp backend/.env.example backend/.env
-# Edit backend/.env - set MONGO_URI and at least one AI provider key
+cp frontend/.env.example frontend/.env
 ```
 
-### Run
+Create a Supabase project, copy the values from Project Settings -> API, and run the SQL in `backend/supabase/migrations/001_initial_finance_schema.sql` in the Supabase SQL editor.
+
+## Environment
+
+`backend/.env`
+
+```env
+PORT=3000
+NODE_ENV=development
+CLIENT_ORIGIN=http://localhost:5173
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+```
+
+`frontend/.env`
+
+```env
+VITE_API_BASE_URL=http://localhost:3000
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+## Run
 
 ```bash
-# Start both frontend and backend in parallel
 npm run dev
 ```
 
 - Frontend: http://localhost:5173
 - Backend: http://localhost:3000
 
----
+## App Routes
 
-## Environment variables
+- `/` - monthly summary
+- `/ledger` - spreadsheet-style expense and income ledger
+- `/login` and `/register` - Supabase auth
 
-### Backend (`backend/.env`)
-```
-MONGO_URI=
-JWT_ACCESS_SECRET=
-JWT_REFRESH_SECRET=
-JWT_ACCESS_EXPIRY=15m
-JWT_REFRESH_EXPIRY=7d
-CLIENT_ORIGIN=http://localhost:5173
+## API
 
-# Pick one AI provider:
-AI_PROVIDER=anthropic          # anthropic | openai | local | google | bedrock
-
-ANTHROPIC_API_KEY=
-ANTHROPIC_MODEL=claude-sonnet-4-6
-
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4o
-
-LOCAL_AI_BASE_URL=http://localhost:11434/v1
-LOCAL_AI_MODEL=llama3
-LOCAL_AI_API_KEY=ollama
-
-GOOGLE_AI_API_KEY=
-GOOGLE_AI_MODEL=gemini-1.5-pro
-
-AWS_REGION=
-AWS_BEDROCK_MODEL_ID=
-```
-
-### Frontend (`frontend/.env`)
-```
-VITE_API_BASE_URL=http://localhost:3000
-```
-
----
-
-## AI providers
-
-Set `AI_PROVIDER` in `backend/.env` to one of:
-
-| Value | Key required |
-|---|---|
-| `anthropic` | `ANTHROPIC_API_KEY` |
-| `openai` | `OPENAI_API_KEY` |
-| `google` | `GOOGLE_AI_API_KEY` |
-| `bedrock` | AWS credentials in env |
-| `local` | `LOCAL_AI_BASE_URL` (Ollama etc.) |
-
-If no provider is configured, CSV import still works - transactions land as uncategorized and you assign categories manually in the staging review.
+- `GET /health`
+- `GET /finance/summary?month=YYYY-MM`
+- `GET /finance/transactions?month=YYYY-MM&type=expense`
+- `POST /finance/transactions`
+- `PATCH /finance/transactions/:id`
+- `DELETE /finance/transactions/:id`
+- `GET /finance/categories`

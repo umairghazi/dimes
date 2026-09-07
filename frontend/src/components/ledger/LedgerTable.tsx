@@ -20,8 +20,8 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SellIcon from "@mui/icons-material/Sell";
+import { FinanceCategory } from "@/api/finance.api";
 import { Expense } from "@/types/expense.types";
-import { UserCategory } from "@/types/category.types";
 
 type LedgerKind = "expense" | "income";
 
@@ -36,7 +36,7 @@ interface LedgerTableProps {
   title: string;
   kind: LedgerKind;
   rows: Expense[];
-  categories: UserCategory[];
+  categories: FinanceCategory[];
   defaultDate: string;
   onCreate: (draft: { date: string; description: string; amount: number; categoryId?: string | null; type: LedgerKind }) => Promise<void>;
   onUpdate: (id: string, patch: Partial<Expense> & { categoryId?: string | null }) => Promise<void>;
@@ -91,7 +91,7 @@ function parseDate(value: string): string | null {
   return `${year}-${month}-${day}`;
 }
 
-function parsePastedRows(text: string, kind: LedgerKind, categories: UserCategory[]): ParsedPasteRow[] {
+function parsePastedRows(text: string, kind: LedgerKind, categories: FinanceCategory[]): ParsedPasteRow[] {
   const categoryByName = new Map(categories.map((c) => [normalizeCategoryName(c.name), c.id]));
   const parsedRows: ParsedPasteRow[] = [];
 

@@ -12,7 +12,7 @@ export interface Expense {
   type: "expense" | "income";
   subCategory?: string;
   merchantName?: string;
-  source: "manual" | "csv-upload";
+  source: string;
   isRecurring: boolean;
   tags: string[];
   originalDescription?: string;
