@@ -58,19 +58,18 @@ function LedgerStat({ label, value, tone }: { label: string; value: string; tone
     <Paper
       variant="outlined"
       sx={{
-        p: 2,
+        p: 1.75,
         borderRadius: 1,
-        bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(23,26,32,0.86)" : "rgba(255,255,255,0.82)",
-        backdropFilter: "blur(18px)",
-        minHeight: 96,
+        bgcolor: "background.paper",
+        minHeight: 88,
       }}
     >
-      <Typography variant="caption" color="text.secondary">{label}</Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>{label}</Typography>
       <Typography
-        variant="h4"
+        variant="h5"
         sx={{
           mt: 0.75,
-          fontWeight: 850,
+          fontWeight: 900,
           color: tone === "good" ? "success.main" : tone === "bad" ? "primary.main" : "text.primary",
         }}
       >
@@ -134,24 +133,22 @@ export function Ledger() {
   const net = totalIncome - totalExpenses;
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, width: "100%", minWidth: 0 }}>
+    <Box sx={{ width: "100%", minWidth: 0 }}>
       <Paper
         variant="outlined"
         sx={{
           p: { xs: 2, md: 3 },
           mb: 2,
           borderRadius: 1,
-          bgcolor: (theme) => theme.palette.mode === "dark" ? "#12100d" : "#12100d",
-          color: "#f7f2ea",
-          boxShadow: "0 24px 70px rgba(18,16,13,0.16)",
+          bgcolor: "background.paper",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
           <Box>
-            <Typography variant="overline" sx={{ color: "#ff875c", fontWeight: 850 }}>Transactions</Typography>
-            <Typography variant="h1" sx={{ fontWeight: 850 }}>Ledger</Typography>
-            <Typography variant="body1" sx={{ mt: 1, color: "rgba(247,242,234,0.68)", maxWidth: 620 }}>
-              Fast spreadsheet entry with category cleanup and monthly totals in sight.
+            <Typography variant="overline" color="primary.main" sx={{ fontWeight: 900 }}>Transactions</Typography>
+            <Typography variant="h1" sx={{ fontWeight: 900 }}>Ledger</Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mt: 1, maxWidth: 620 }}>
+              Fast entry for expenses and income, with inline edits, bulk category cleanup, and paste support.
             </Typography>
           </Box>
           <Box
@@ -161,18 +158,19 @@ export function Ledger() {
               gap: 0.5,
               px: 1,
               py: 0.5,
-              border: "1px solid rgba(247,242,234,0.18)",
+              border: "1px solid",
+              borderColor: "divider",
               borderRadius: 1,
-              bgcolor: "rgba(255,255,255,0.06)",
+              bgcolor: "background.default",
             }}
           >
-            <IconButton size="small" onClick={prevMonth} sx={{ color: "#f7f2ea" }}>
+            <IconButton size="small" onClick={prevMonth}>
               <ChevronLeftIcon />
             </IconButton>
             <Typography variant="subtitle1" sx={{ fontWeight: 760, minWidth: 150, textAlign: "center" }}>
               {formatMonthLabel(month)}
             </Typography>
-            <IconButton size="small" onClick={nextMonth} disabled={isCurrentMonth} sx={{ color: "#f7f2ea" }}>
+            <IconButton size="small" onClick={nextMonth} disabled={isCurrentMonth}>
               <ChevronRightIcon />
             </IconButton>
           </Box>

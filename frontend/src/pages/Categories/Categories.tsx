@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
   Box,
+  Grid,
   IconButton,
   MenuItem,
   Paper,
@@ -135,12 +136,34 @@ export function Categories() {
     await createCategory();
   };
 
+  const expenseCount = rows.filter((row) => row.type === "expense").length;
+  const incomeCount = rows.filter((row) => row.type === "income").length;
+  const mainCategoryCount = new Set(rows.map((row) => row.mainCategory).filter(Boolean)).size;
+
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1220, mx: "auto" }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="overline" color="primary.main" sx={{ fontWeight: 850 }}>Configuration</Typography>
-        <Typography variant="h2" sx={{ fontWeight: 850 }}>Categories</Typography>
-      </Box>
+    <Box>
+      <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, mb: 2, borderRadius: 1, bgcolor: "background.paper" }}>
+        <Typography variant="overline" color="primary.main" sx={{ fontWeight: 900 }}>Configuration</Typography>
+        <Typography variant="h1" sx={{ fontWeight: 900 }}>Categories</Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 1, maxWidth: 620 }}>
+          Manage the category list that powers ledger dropdowns, monthly summaries, and main-category pivots.
+        </Typography>
+      </Paper>
+
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        {[
+          ["Expense categories", expenseCount],
+          ["Income categories", incomeCount],
+          ["Main categories", mainCategoryCount],
+        ].map(([label, value]) => (
+          <Grid key={label} size={{ xs: 12, md: 4 }}>
+            <Paper variant="outlined" sx={{ p: 1.75, borderRadius: 1, bgcolor: "background.paper" }}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>{label}</Typography>
+              <Typography variant="h4" sx={{ mt: 0.75, fontWeight: 900 }}>{value}</Typography>
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
 
       {categoriesQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load categories</Alert>}
 
@@ -152,12 +175,14 @@ export function Categories() {
           sx={{
             overflow: "hidden",
             borderRadius: 1,
-            bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(23,26,32,0.88)" : "rgba(255,255,255,0.84)",
-            backdropFilter: "blur(18px)",
-            WebkitBackdropFilter: "blur(18px)",
+            bgcolor: "background.paper",
           }}
         >
-          <TableContainer sx={{ maxHeight: "calc(100vh - 160px)" }}>
+          <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="h5" sx={{ fontWeight: 900 }}>Category matrix</Typography>
+            <Typography variant="caption" color="text.secondary">{rows.length} total</Typography>
+          </Box>
+          <TableContainer sx={{ maxHeight: "calc(100vh - 330px)" }}>
             <Table
               stickyHeader
               size="small"
@@ -165,9 +190,13 @@ export function Categories() {
                 tableLayout: "fixed",
                 minWidth: 780,
                 "& .MuiTableCell-root": {
-                  px: 1,
+                  px: 0.9,
                   py: 0.55,
-                  height: 38,
+                  height: 40,
+                },
+                "& .MuiTableCell-head": {
+                  fontWeight: 900,
+                  bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(32,36,44,0.98)" : "rgba(248,245,240,0.98)",
                 },
                 "& .MuiInput-underline:before": {
                   borderBottomColor: "transparent",

@@ -137,18 +137,16 @@ function Metric({ label, value, helper }: { label: string; value: string; helper
     <Paper
       variant="outlined"
       sx={{
-        p: 2.25,
+        p: 2,
         borderRadius: 1,
         height: "100%",
-        bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(23,26,32,0.88)" : "rgba(255,255,255,0.84)",
-        backdropFilter: "blur(18px)",
-        WebkitBackdropFilter: "blur(18px)",
+        bgcolor: "background.paper",
       }}
     >
-      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 760, textTransform: "none" }}>
+      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
         {label}
       </Typography>
-      <Typography variant="h3" sx={{ mt: 0.75, fontWeight: 850 }}>
+      <Typography variant="h4" sx={{ mt: 0.75, fontWeight: 900 }}>
         {value}
       </Typography>
       {helper && (
@@ -185,36 +183,35 @@ function SummaryHero({
       sx={{
         display: "grid",
         gridTemplateColumns: { xs: "1fr", lg: "1.1fr 0.9fr" },
-        gap: { xs: 3, lg: 5 },
-        p: { xs: 2.5, md: 4 },
-        mb: 2,
+        gap: { xs: 3, lg: 4 },
+        p: { xs: 2, md: 3 },
         borderRadius: 1,
         bgcolor: (theme) => theme.palette.mode === "dark" ? "#12100d" : "#12100d",
         color: "#f7f2ea",
         overflow: "hidden",
         position: "relative",
-        boxShadow: "0 28px 80px rgba(18,16,13,0.18)",
+        boxShadow: "0 24px 70px rgba(18,16,13,0.16)",
       }}
     >
       <Box>
-        <Typography variant="overline" sx={{ color: "#ff875c", fontWeight: 850 }}>Monthly position</Typography>
-        <Typography variant="h1" sx={{ mt: 1, maxWidth: 720 }}>
-          {netSavings >= 0 ? "You are building cushion." : "You are drawing down cash."}
+        <Typography variant="overline" sx={{ color: "#ff875c", fontWeight: 900 }}>Monthly position</Typography>
+        <Typography variant="h2" sx={{ mt: 1, maxWidth: 720 }}>
+          {netSavings >= 0 ? "Cash flow is positive." : "Cash flow is negative."}
         </Typography>
-        <Typography variant="h2" sx={{ mt: 2, color: netSavings >= 0 ? "#77e0ac" : "#ff875c" }}>
+        <Typography variant="h1" sx={{ mt: 1.5, color: netSavings >= 0 ? "#77e0ac" : "#ff875c" }}>
           {currency(netSavings)}
         </Typography>
-        <Typography variant="body1" sx={{ mt: 1, color: "rgba(247,242,234,0.72)", maxWidth: 560 }}>
-          Income, expenses, and bank movement for this month in one clean view.
+        <Typography variant="body1" sx={{ mt: 1, color: "rgba(247,242,234,0.7)", maxWidth: 560 }}>
+          A compact view of spend, income, planned budgets, and the account movement behind the month.
         </Typography>
 
-        <Box sx={{ mt: 4, display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" }, gap: 1 }}>
+        <Box sx={{ mt: 3, display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" }, gap: 1 }}>
           {[
             ["Income", currency(totalIncome), "#77e0ac"],
             ["Expenses", currency(totalSpend), "#ff875c"],
             ["Planned spend", currency(plannedSpend), "#9ec5ff"],
           ].map(([label, value, color]) => (
-            <Box key={label} sx={{ border: "1px solid rgba(247,242,234,0.16)", borderRadius: 1, p: 1.5, bgcolor: "rgba(255,255,255,0.045)" }}>
+            <Box key={label} sx={{ border: "1px solid rgba(247,242,234,0.16)", borderRadius: 1, p: 1.5, bgcolor: "rgba(255,255,255,0.05)" }}>
               <Typography variant="caption" sx={{ color: "rgba(247,242,234,0.58)" }}>{label}</Typography>
               <Typography variant="h5" sx={{ color, mt: 0.5 }}>{value}</Typography>
             </Box>
@@ -277,8 +274,8 @@ function SpendByDateChart({ rows }: { rows: BreakdownRow[] }) {
   const ticks = [0, 0.5, 1];
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 1, p: 2.25, overflowX: "auto", bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(23,26,32,0.88)" : "rgba(255,255,255,0.84)", backdropFilter: "blur(18px)" }}>
-      <Typography variant="h5" sx={{ fontWeight: 850, color: "text.primary", mb: 1 }}>Money spent by Date</Typography>
+    <Paper variant="outlined" sx={{ borderRadius: 1, p: 2, overflowX: "auto", bgcolor: "background.paper" }}>
+      <Typography variant="h5" sx={{ fontWeight: 900, color: "text.primary", mb: 1 }}>Money spent by date</Typography>
       {rows.length === 0 ? (
         <Typography color="text.secondary">No expenses for this month.</Typography>
       ) : (
@@ -298,7 +295,7 @@ function SpendByDateChart({ rows }: { rows: BreakdownRow[] }) {
             const barHeight = (row.amount / max) * plotHeight;
             return (
               <g key={row.label}>
-                <rect x={x - barWidth / 2} y={top + plotHeight - barHeight} width={barWidth} height={barHeight} fill="#ff5a1f" rx="6" />
+                <rect x={x - barWidth / 2} y={top + plotHeight - barHeight} width={barWidth} height={barHeight} fill="#ff5a1f" rx="4" />
                 <text x={x} y={height - 28} textAnchor="middle" fontSize="12" fill="#777">{formatShortDate(row.label)}</text>
               </g>
             );
@@ -323,8 +320,8 @@ function BreakdownChart({ title, rows }: { title: string; rows: BreakdownRow[] }
     }).join(", ");
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 1, p: 2.25, height: "100%", bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(23,26,32,0.88)" : "rgba(255,255,255,0.84)", backdropFilter: "blur(18px)" }}>
-      <Typography variant="h5" sx={{ fontWeight: 850, color: "text.primary", mb: 2 }}>{title}</Typography>
+    <Paper variant="outlined" sx={{ borderRadius: 1, p: 2, height: "100%", bgcolor: "background.paper" }}>
+      <Typography variant="h5" sx={{ fontWeight: 900, color: "text.primary", mb: 2 }}>{title}</Typography>
       {rows.length === 0 ? (
         <Typography color="text.secondary">No expenses for this month.</Typography>
       ) : (
@@ -368,11 +365,12 @@ function BudgetTable({ title, rows, type }: { title: string; rows: SummaryRow[];
   );
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 1, overflow: "hidden", bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(23,26,32,0.88)" : "rgba(255,255,255,0.84)", backdropFilter: "blur(18px)" }}>
-      <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "divider" }}>
-        <Typography variant="h5" sx={{ fontWeight: 850, color: type === "expense" ? "primary.main" : "success.main" }}>
+    <Paper variant="outlined" sx={{ borderRadius: 1, overflow: "hidden", bgcolor: "background.paper" }}>
+      <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h5" sx={{ fontWeight: 900, color: type === "expense" ? "primary.main" : "success.main" }}>
           {title}
         </Typography>
+        <Typography variant="caption" color="text.secondary">{rows.length} categories</Typography>
       </Box>
       <TableContainer sx={{ maxHeight: "calc(100vh - 360px)" }}>
         <Table stickyHeader size="small">
@@ -430,13 +428,13 @@ export function Summary() {
   const mainCategorySpend = useMemo(() => expenseBreakdown(transactions, "mainCategory"), [transactions]);
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1500, mx: "auto" }}>
-      <Box sx={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", mb: 3, gap: 2 }}>
+    <Box>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2, gap: 2, flexWrap: "wrap" }}>
         <Box>
-          <Typography variant="overline" color="primary.main" sx={{ fontWeight: 850 }}>{formatMonthLabel(month)}</Typography>
-          <Typography variant="h1" sx={{ fontWeight: 850 }}>Monthly Budget</Typography>
+          <Typography variant="overline" color="primary.main" sx={{ fontWeight: 900 }}>Overview</Typography>
+          <Typography variant="h1" sx={{ fontWeight: 900 }}>{formatMonthLabel(month)}</Typography>
         </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1, py: 0.5, border: "1px solid", borderColor: "divider", borderRadius: 1, bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(23,26,32,0.78)" : "rgba(255,255,255,0.78)", backdropFilter: "blur(18px)" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1, py: 0.5, border: "1px solid", borderColor: "divider", borderRadius: 1, bgcolor: "background.paper" }}>
           <IconButton size="small" onClick={prevMonth}>
             <ChevronLeftIcon />
           </IconButton>
@@ -464,7 +462,7 @@ export function Summary() {
             netSavings={netSavings}
           />
 
-          <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid container spacing={2} sx={{ my: 2 }}>
             <Grid size={{ xs: 12, md: 3 }}>
               <Metric label="Starting Balance" value={currency(startingBalance)} />
             </Grid>

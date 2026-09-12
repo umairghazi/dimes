@@ -283,15 +283,18 @@ export function LedgerTable({
         overflow: "hidden",
         borderRadius: 1,
         borderColor: "divider",
-        bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(23,26,32,0.88)" : "rgba(255,255,255,0.84)",
-        backdropFilter: "blur(18px)",
-        WebkitBackdropFilter: "blur(18px)",
+        bgcolor: "background.paper",
       }}
     >
-      <Box sx={{ px: 1.25, py: 1.1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
-        <Typography variant="h5" sx={{ fontWeight: 850, color: kind === "expense" ? "primary.main" : "success.main" }}>
-          {title}
-        </Typography>
+      <Box sx={{ px: 1.5, py: 1.25, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 900, color: kind === "expense" ? "primary.main" : "success.main" }}>
+            {title}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {kind === "expense" ? "Date, description, amount, category" : "Date, amount, description, category"}
+          </Typography>
+        </Box>
         {selectedCount > 0 ? (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
             <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
@@ -329,7 +332,7 @@ export function LedgerTable({
         )}
       </Box>
 
-      <TableContainer sx={{ maxHeight: "calc(100vh - 180px)", overflowX: "auto" }}>
+      <TableContainer sx={{ maxHeight: "calc(100vh - 218px)", overflowX: "auto" }}>
         <Table
           stickyHeader
           size="small"
@@ -338,14 +341,14 @@ export function LedgerTable({
             minWidth: kind === "expense" ? 850 : 650,
             "& .MuiTableCell-root": {
               borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(18,16,13,0.09)",
-              px: 0.75,
-              py: 0.35,
-              height: 34,
+              px: 0.9,
+              py: 0.45,
+              height: 38,
             },
             "& .MuiTableCell-head": {
-              bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(32,36,44,0.96)" : "rgba(240,235,227,0.96)",
+              bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(32,36,44,0.98)" : "rgba(248,245,240,0.98)",
               color: "text.secondary",
-              fontWeight: 800,
+              fontWeight: 900,
               textTransform: "none",
             },
             "& .MuiTableRow-root:hover .MuiTableCell-body": {
@@ -354,6 +357,7 @@ export function LedgerTable({
             "& .MuiInputBase-root": {
               fontSize: "0.875rem",
               color: "text.primary",
+              fontWeight: 580,
             },
             "& .MuiInputBase-input": {
               py: 0.25,
