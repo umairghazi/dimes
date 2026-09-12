@@ -4,16 +4,18 @@ import { FinanceCategory, FinanceTransactionType } from "../types/finance.types"
 interface CategoryRow {
   id: string;
   user_id: string;
+  group_id: string | null;
   name: string;
   main_category: string | null;
   type: FinanceTransactionType;
   is_fixed: boolean;
   sort_order: number;
+  category_groups?: { name: string } | null;
 }
 
 export interface CreateCategoryData {
   name: string;
-  mainCategory?: string | null;
+  groupId?: string | null;
   type?: FinanceTransactionType;
   isFixed?: boolean;
   sortOrder?: number;
@@ -25,8 +27,10 @@ function toCategory(row: CategoryRow): FinanceCategory {
   return {
     id: row.id,
     userId: row.user_id,
+    groupId: row.group_id,
+    groupName: row.category_groups?.name ?? row.main_category,
     name: row.name,
-    mainCategory: row.main_category,
+    mainCategory: row.category_groups?.name ?? row.main_category,
     type: row.type,
     isFixed: row.is_fixed,
     sortOrder: row.sort_order,
@@ -40,10 +44,10 @@ export class CategoryRepository extends BaseRepository {
 
   async listByUser(userId: string, type?: FinanceTransactionType): Promise<FinanceCategory[]> {
     let query = this.table()
-      .select("*")
+      .select("id, user_id, group_id, name, main_category, type, is_fixed, sort_order, category_groups(name)")
       .eq("user_id", userId)
       .is("deleted_at", null)
-      .order("main_category", { ascending: true })
+      .order("group_id", { ascending: true })
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true });
     if (type) query = query.eq("type", type);
@@ -56,7 +60,7 @@ export class CategoryRepository extends BaseRepository {
     const row = await this.execute<CategoryRow | null>(
       "find category",
       this.table()
-        .select("id, user_id, name, main_category, type, is_fixed, sort_order")
+        .select("id, user_id, group_id, name, main_category, type, is_fixed, sort_order")
         .eq("user_id", userId)
         .eq("id", id)
         .is("deleted_at", null)
@@ -71,13 +75,13 @@ export class CategoryRepository extends BaseRepository {
       this.table()
         .insert({
           user_id: userId,
+          group_id: data.groupId ?? null,
           name: data.name,
-          main_category: data.mainCategory ?? null,
           type: data.type ?? "expense",
           is_fixed: data.isFixed ?? false,
           sort_order: data.sortOrder ?? 0,
         })
-        .select("id, user_id, name, main_category, type, is_fixed, sort_order")
+        .select("id, user_id, group_id, name, main_category, type, is_fixed, sort_order, category_groups(name)")
         .single(),
     );
     return toCategory(row);
@@ -86,7 +90,7 @@ export class CategoryRepository extends BaseRepository {
   async update(userId: string, id: string, patch: UpdateCategoryData): Promise<FinanceCategory> {
     const data: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (patch.name !== undefined) data.name = patch.name;
-    if (patch.mainCategory !== undefined) data.main_category = patch.mainCategory;
+    if (patch.groupId !== undefined) data.group_id = patch.groupId;
     if (patch.type !== undefined) data.type = patch.type;
     if (patch.isFixed !== undefined) data.is_fixed = patch.isFixed;
     if (patch.sortOrder !== undefined) data.sort_order = patch.sortOrder;
@@ -98,7 +102,7 @@ export class CategoryRepository extends BaseRepository {
         .eq("user_id", userId)
         .eq("id", id)
         .is("deleted_at", null)
-        .select("id, user_id, name, main_category, type, is_fixed, sort_order")
+        .select("id, user_id, group_id, name, main_category, type, is_fixed, sort_order, category_groups(name)")
         .single(),
     );
     return toCategory(row);
@@ -111,6 +115,16 @@ export class CategoryRepository extends BaseRepository {
         .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq("user_id", userId)
         .eq("id", id),
+    );
+  }
+
+  async clearGroup(userId: string, groupId: string): Promise<void> {
+    await this.executeEmpty(
+      "clear category group",
+      this.table()
+        .update({ group_id: null, updated_at: new Date().toISOString() })
+        .eq("user_id", userId)
+        .eq("group_id", groupId),
     );
   }
 }

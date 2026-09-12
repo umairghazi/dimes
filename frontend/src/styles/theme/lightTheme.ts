@@ -62,6 +62,11 @@ export const lightTheme = createTheme({
   ],
 
   components: {
+    MuiButtonBase: {
+      defaultProps: {
+        disableRipple: true,
+      }
+    },
     MuiCssBaseline: {
       styleOverrides: {
         "*, *::before, *::after": { boxSizing: "border-box" },

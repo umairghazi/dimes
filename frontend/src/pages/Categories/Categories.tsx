@@ -21,26 +21,43 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { financeApi, FinanceCategory } from "@/api/finance.api";
+import { financeApi, FinanceCategory, FinanceCategoryGroup } from "@/api/finance.api";
 
 type CategoryType = "expense" | "income";
 
-interface CategoryDraft {
+interface GroupDraft {
   name: string;
-  mainCategory: string;
   type: CategoryType;
   sortOrder: string;
 }
 
-const blankDraft: CategoryDraft = {
+interface CategoryDraft {
+  name: string;
+  groupId: string;
+  type: CategoryType;
+  sortOrder: string;
+}
+
+const blankGroupDraft: GroupDraft = {
   name: "",
-  mainCategory: "",
   type: "expense",
   sortOrder: "0",
 };
 
-function displayValue(row: FinanceCategory, field: keyof CategoryDraft): string {
-  if (field === "mainCategory") return row.mainCategory ?? "";
+const blankCategoryDraft: CategoryDraft = {
+  name: "",
+  groupId: "",
+  type: "expense",
+  sortOrder: "0",
+};
+
+function groupValue(row: FinanceCategoryGroup, field: keyof GroupDraft): string {
+  if (field === "sortOrder") return String(row.sortOrder ?? 0);
+  return row[field];
+}
+
+function categoryValue(row: FinanceCategory, field: keyof CategoryDraft): string {
+  if (field === "groupId") return row.groupId ?? "";
   if (field === "sortOrder") return String(row.sortOrder ?? 0);
   return row[field];
 }
@@ -54,7 +71,7 @@ function CategoryStatSkeleton({ label }: { label: string }) {
   );
 }
 
-function CategoryTableSkeleton() {
+function MatrixSkeleton({ title }: { title: string }) {
   return (
     <Paper
       variant="outlined"
@@ -66,13 +83,12 @@ function CategoryTableSkeleton() {
       }}
     >
       <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(15,17,23,0.36)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="h5" sx={{ fontWeight: 900 }}>Category matrix</Typography>
+        <Typography variant="h5" sx={{ fontWeight: 900 }}>{title}</Typography>
         <Skeleton width={70} height={18} />
       </Box>
       <Box sx={{ p: 1.5, display: "grid", gap: 1 }}>
-        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((row) => (
-          <Box key={row} sx={{ display: "grid", gridTemplateColumns: "260px 220px 140px 110px 48px", gap: 1, alignItems: "center" }}>
-            <Skeleton height={24} />
+        {[0, 1, 2, 3, 4, 5].map((row) => (
+          <Box key={row} sx={{ display: "grid", gridTemplateColumns: "1fr 160px 110px 48px", gap: 1, alignItems: "center" }}>
             <Skeleton height={24} />
             <Skeleton height={24} />
             <Skeleton height={24} />
@@ -86,9 +102,16 @@ function CategoryTableSkeleton() {
 
 export function Categories() {
   const queryClient = useQueryClient();
-  const [draft, setDraft] = useState<CategoryDraft>(blankDraft);
-  const [editing, setEditing] = useState<Record<string, Partial<CategoryDraft>>>({});
+  const [groupDraft, setGroupDraft] = useState<GroupDraft>(blankGroupDraft);
+  const [categoryDraft, setCategoryDraft] = useState<CategoryDraft>(blankCategoryDraft);
+  const [groupEditing, setGroupEditing] = useState<Record<string, Partial<GroupDraft>>>({});
+  const [categoryEditing, setCategoryEditing] = useState<Record<string, Partial<CategoryDraft>>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
+
+  const groupsQuery = useQuery({
+    queryKey: ["finance", "category-groups"],
+    queryFn: () => financeApi.categoryGroups(),
+  });
 
   const categoriesQuery = useQuery({
     queryKey: ["finance", "categories"],
@@ -99,85 +122,148 @@ export function Categories() {
     queryClient.invalidateQueries({ queryKey: ["finance"] });
   };
 
-  const createMutation = useMutation({
-    mutationFn: financeApi.createCategory,
+  const createGroupMutation = useMutation({
+    mutationFn: financeApi.createCategoryGroup,
     onSuccess: invalidate,
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, patch }: { id: string; patch: Partial<CategoryDraft> }) =>
-      financeApi.updateCategory(id, {
+  const updateGroupMutation = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: Partial<GroupDraft> }) =>
+      financeApi.updateCategoryGroup(id, {
         ...patch,
-        mainCategory: patch.mainCategory === "" ? null : patch.mainCategory,
         sortOrder: patch.sortOrder === undefined ? undefined : Number(patch.sortOrder),
       }),
     onSuccess: invalidate,
   });
 
-  const deleteMutation = useMutation({
+  const deleteGroupMutation = useMutation({
+    mutationFn: financeApi.deleteCategoryGroup,
+    onSuccess: invalidate,
+  });
+
+  const createCategoryMutation = useMutation({
+    mutationFn: financeApi.createCategory,
+    onSuccess: invalidate,
+  });
+
+  const updateCategoryMutation = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: Partial<CategoryDraft> }) =>
+      financeApi.updateCategory(id, {
+        ...patch,
+        groupId: patch.groupId === "" ? null : patch.groupId,
+        sortOrder: patch.sortOrder === undefined ? undefined : Number(patch.sortOrder),
+      }),
+    onSuccess: invalidate,
+  });
+
+  const deleteCategoryMutation = useMutation({
     mutationFn: financeApi.deleteCategory,
     onSuccess: invalidate,
   });
 
-  const rows = useMemo(
+  const groups = useMemo(
+    () => [...(groupsQuery.data ?? [])].sort((a, b) => {
+      if (a.type !== b.type) return a.type.localeCompare(b.type);
+      if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+      return a.name.localeCompare(b.name);
+    }),
+    [groupsQuery.data],
+  );
+
+  const categories = useMemo(
     () => [...(categoriesQuery.data ?? [])].sort((a, b) => {
       if (a.type !== b.type) return a.type.localeCompare(b.type);
-      const main = (a.mainCategory ?? "").localeCompare(b.mainCategory ?? "");
-      if (main !== 0) return main;
+      const group = (a.groupName ?? "").localeCompare(b.groupName ?? "");
+      if (group !== 0) return group;
       if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
       return a.name.localeCompare(b.name);
     }),
     [categoriesQuery.data],
   );
 
-  const setCell = (id: string, field: keyof CategoryDraft, value: string) => {
-    setEditing((current) => ({ ...current, [id]: { ...current[id], [field]: value } }));
+  const groupsForType = (type: CategoryType) => groups.filter((group) => group.type === type);
+
+  const setGroupCell = (id: string, field: keyof GroupDraft, value: string) => {
+    setGroupEditing((current) => ({ ...current, [id]: { ...current[id], [field]: value } }));
   };
 
-  const getCell = (row: FinanceCategory, field: keyof CategoryDraft): string => {
-    return editing[row.id]?.[field] ?? displayValue(row, field);
+  const setCategoryCell = (id: string, field: keyof CategoryDraft, value: string) => {
+    setCategoryEditing((current) => ({ ...current, [id]: { ...current[id], [field]: value } }));
   };
 
-  const commitCell = async (row: FinanceCategory, field: keyof CategoryDraft) => {
-    const next = editing[row.id]?.[field];
+  const getGroupCell = (row: FinanceCategoryGroup, field: keyof GroupDraft): string => {
+    return groupEditing[row.id]?.[field] ?? groupValue(row, field);
+  };
+
+  const getCategoryCell = (row: FinanceCategory, field: keyof CategoryDraft): string => {
+    return categoryEditing[row.id]?.[field] ?? categoryValue(row, field);
+  };
+
+  const commitGroupCell = async (row: FinanceCategoryGroup, field: keyof GroupDraft) => {
+    const next = groupEditing[row.id]?.[field];
     if (next === undefined) return;
-    const current = displayValue(row, field);
+    const current = groupValue(row, field);
 
-    setEditing((state) => {
+    setGroupEditing((state) => {
       const nextRow = { ...state[row.id] };
       delete nextRow[field];
       return { ...state, [row.id]: nextRow };
     });
 
-    if (next === current || (field !== "mainCategory" && !String(next).trim())) return;
+    if (next === current || !String(next).trim()) return;
     setSavingId(row.id);
     try {
-      await updateMutation.mutateAsync({ id: row.id, patch: { [field]: next } });
+      await updateGroupMutation.mutateAsync({ id: row.id, patch: { [field]: next } });
     } finally {
       setSavingId(null);
     }
   };
 
-  const createCategory = async () => {
-    if (!draft.name.trim()) return;
-    await createMutation.mutateAsync({
-      name: draft.name.trim(),
-      mainCategory: draft.mainCategory.trim() || null,
-      type: draft.type,
-      sortOrder: Number(draft.sortOrder) || 0,
+  const commitCategoryCell = async (row: FinanceCategory, field: keyof CategoryDraft) => {
+    const next = categoryEditing[row.id]?.[field];
+    if (next === undefined) return;
+    const current = categoryValue(row, field);
+
+    setCategoryEditing((state) => {
+      const nextRow = { ...state[row.id] };
+      delete nextRow[field];
+      return { ...state, [row.id]: nextRow };
     });
-    setDraft({ ...blankDraft, type: draft.type });
+
+    if (next === current || (field !== "groupId" && !String(next).trim())) return;
+    setSavingId(row.id);
+    try {
+      await updateCategoryMutation.mutateAsync({ id: row.id, patch: { [field]: next } });
+    } finally {
+      setSavingId(null);
+    }
   };
 
-  const addOnEnter = async (event: React.KeyboardEvent<HTMLElement>) => {
-    if (event.key !== "Enter") return;
-    event.preventDefault();
-    await createCategory();
+  const createGroup = async () => {
+    if (!groupDraft.name.trim()) return;
+    await createGroupMutation.mutateAsync({
+      name: groupDraft.name.trim(),
+      type: groupDraft.type,
+      sortOrder: Number(groupDraft.sortOrder) || 0,
+    });
+    setGroupDraft({ ...blankGroupDraft, type: groupDraft.type });
   };
 
-  const expenseCount = rows.filter((row) => row.type === "expense").length;
-  const incomeCount = rows.filter((row) => row.type === "income").length;
-  const mainCategoryCount = new Set(rows.map((row) => row.mainCategory).filter(Boolean)).size;
+  const createCategory = async () => {
+    if (!categoryDraft.name.trim()) return;
+    await createCategoryMutation.mutateAsync({
+      name: categoryDraft.name.trim(),
+      groupId: categoryDraft.groupId || null,
+      type: categoryDraft.type,
+      sortOrder: Number(categoryDraft.sortOrder) || 0,
+    });
+    setCategoryDraft({ ...blankCategoryDraft, type: categoryDraft.type, groupId: categoryDraft.groupId });
+  };
+
+  const expenseCount = categories.filter((row) => row.type === "expense").length;
+  const incomeCount = categories.filter((row) => row.type === "income").length;
+  const groupCount = groups.length;
+  const loading = groupsQuery.isLoading || categoriesQuery.isLoading;
 
   return (
     <Box>
@@ -194,19 +280,19 @@ export function Categories() {
       >
         <Typography variant="overline" color="primary.main" sx={{ fontWeight: 900 }}>Configuration</Typography>
         <Typography variant="h1" sx={{ fontWeight: 900 }}>Categories</Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mt: 1, maxWidth: 620 }}>
-          Manage the category list that powers ledger dropdowns, monthly summaries, and main-category pivots.
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 1, maxWidth: 660 }}>
+          Manage category groups and the categories inside them. Ledger entry still uses one category picker.
         </Typography>
       </Paper>
 
       <Grid container spacing={2} sx={{ mb: 2 }}>
         {[
+          ["Groups", groupCount],
           ["Expense categories", expenseCount],
           ["Income categories", incomeCount],
-          ["Main categories", mainCategoryCount],
         ].map(([label, value]) => (
           <Grid key={label} size={{ xs: 12, md: 4 }}>
-            {categoriesQuery.isLoading ? (
+            {loading ? (
               <CategoryStatSkeleton label={String(label)} />
             ) : (
               <Paper variant="outlined" sx={{ p: 1.75, borderRadius: 1, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)", boxShadow: "0 18px 40px rgba(0,0,0,0.24)" }}>
@@ -218,179 +304,172 @@ export function Categories() {
         ))}
       </Grid>
 
-      {categoriesQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load categories</Alert>}
-
-      {categoriesQuery.isLoading ? (
-        <CategoryTableSkeleton />
-      ) : (
-        <Paper
-          variant="outlined"
-          sx={{
-            overflow: "hidden",
-            borderRadius: 1,
-            borderColor: "rgba(255,255,255,0.08)",
-            bgcolor: "rgba(32,35,45,0.94)",
-            boxShadow: "0 20px 52px rgba(0,0,0,0.28)",
-          }}
-        >
-          <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(15,17,23,0.36)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Typography variant="h5" sx={{ fontWeight: 900 }}>Category matrix</Typography>
-            <Typography variant="caption" color="text.secondary">{rows.length} total</Typography>
-          </Box>
-          <TableContainer sx={{ maxHeight: "calc(100vh - 330px)" }}>
-            <Table
-              stickyHeader
-              size="small"
-              sx={{
-                tableLayout: "fixed",
-                minWidth: 780,
-                "& .MuiTableCell-root": {
-                  px: 0.9,
-                  py: 0.55,
-                  height: 40,
-                },
-                "& .MuiTableCell-head": {
-                  fontWeight: 900,
-                  bgcolor: "#262a36",
-                },
-                "& .MuiInput-underline:before": {
-                  borderBottomColor: "transparent",
-                },
-                "& .MuiInput-underline:hover:before": {
-                  borderBottomColor: "divider",
-                },
-              }}
-            >
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ width: 260 }}>Category</TableCell>
-                  <TableCell sx={{ width: 220 }}>Main Category</TableCell>
-                  <TableCell sx={{ width: 140 }}>Type</TableCell>
-                  <TableCell align="right" sx={{ width: 110 }}>Sort</TableCell>
-                  <TableCell sx={{ width: 48 }} />
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                <TableRow sx={{ bgcolor: "action.hover" }}>
-                  <TableCell>
-                    <TextField
-                      size="small"
-                      variant="standard"
-                      fullWidth
-                      placeholder="Add category"
-                      value={draft.name}
-                      onChange={(event) => setDraft((value) => ({ ...value, name: event.target.value }))}
-                      onKeyDown={addOnEnter}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <TextField
-                      size="small"
-                      variant="standard"
-                      fullWidth
-                      placeholder="Main category"
-                      value={draft.mainCategory}
-                      onChange={(event) => setDraft((value) => ({ ...value, mainCategory: event.target.value }))}
-                      onKeyDown={addOnEnter}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      size="small"
-                      variant="standard"
-                      fullWidth
-                      value={draft.type}
-                      onChange={(event) => setDraft((value) => ({ ...value, type: event.target.value as CategoryType }))}
-                    >
-                      <MenuItem value="expense">Expense</MenuItem>
-                      <MenuItem value="income">Income</MenuItem>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <TextField
-                      type="number"
-                      size="small"
-                      variant="standard"
-                      fullWidth
-                      value={draft.sortOrder}
-                      slotProps={{ htmlInput: { style: { textAlign: "right" } } }}
-                      onChange={(event) => setDraft((value) => ({ ...value, sortOrder: event.target.value }))}
-                      onKeyDown={addOnEnter}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="Add category">
-                      <IconButton size="small" color="primary" onClick={() => void createCategory()}>
-                        <AddIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-
-                {rows.map((row) => (
-                  <TableRow key={row.id} hover sx={{ opacity: savingId === row.id ? 0.55 : 1 }}>
-                    <TableCell>
-                      <TextField
-                        size="small"
-                        variant="standard"
-                        fullWidth
-                        value={getCell(row, "name")}
-                        onChange={(event) => setCell(row.id, "name", event.target.value)}
-                        onBlur={() => void commitCell(row, "name")}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        size="small"
-                        variant="standard"
-                        fullWidth
-                        value={getCell(row, "mainCategory")}
-                        onChange={(event) => setCell(row.id, "mainCategory", event.target.value)}
-                        onBlur={() => void commitCell(row, "mainCategory")}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        size="small"
-                        variant="standard"
-                        fullWidth
-                        value={getCell(row, "type")}
-                        onChange={(event) => {
-                          const value = event.target.value as CategoryType;
-                          setCell(row.id, "type", value);
-                          void updateMutation.mutateAsync({ id: row.id, patch: { type: value } });
-                        }}
-                      >
-                        <MenuItem value="expense">Expense</MenuItem>
-                        <MenuItem value="income">Income</MenuItem>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        type="number"
-                        size="small"
-                        variant="standard"
-                        fullWidth
-                        value={getCell(row, "sortOrder")}
-                        slotProps={{ htmlInput: { style: { textAlign: "right" } } }}
-                        onChange={(event) => setCell(row.id, "sortOrder", event.target.value)}
-                        onBlur={() => void commitCell(row, "sortOrder")}
-                      />
-                    </TableCell>
-                    <TableCell align="center">
-                      <Tooltip title="Delete category">
-                        <IconButton size="small" onClick={() => void deleteMutation.mutateAsync(row.id)}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
+      {(groupsQuery.isError || categoriesQuery.isError) && (
+        <Alert severity="error" sx={{ mb: 2 }}>Failed to load categories</Alert>
       )}
+
+      <Grid container spacing={2} sx={{ alignItems: "flex-start" }}>
+        <Grid size={{ xs: 12, lg: 5 }}>
+          {groupsQuery.isLoading ? (
+            <MatrixSkeleton title="Category groups" />
+          ) : (
+            <Paper variant="outlined" sx={{ overflow: "hidden", borderRadius: 1, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.94)", boxShadow: "0 20px 52px rgba(0,0,0,0.28)" }}>
+              <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(15,17,23,0.36)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Typography variant="h5" sx={{ fontWeight: 900 }}>Category groups</Typography>
+                <Typography variant="caption" color="text.secondary">{groups.length} total</Typography>
+              </Box>
+              <TableContainer sx={{ maxHeight: "calc(100vh - 330px)" }}>
+                <Table stickyHeader size="small" sx={{ tableLayout: "fixed", minWidth: 520 }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Group</TableCell>
+                      <TableCell sx={{ width: 130 }}>Type</TableCell>
+                      <TableCell align="right" sx={{ width: 90 }}>Sort</TableCell>
+                      <TableCell sx={{ width: 48 }} />
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    <TableRow sx={{ bgcolor: "action.hover" }}>
+                      <TableCell>
+                        <TextField size="small" variant="standard" fullWidth placeholder="Add group" value={groupDraft.name} onChange={(event) => setGroupDraft((value) => ({ ...value, name: event.target.value }))} />
+                      </TableCell>
+                      <TableCell>
+                        <Select size="small" variant="standard" fullWidth value={groupDraft.type} onChange={(event) => setGroupDraft((value) => ({ ...value, type: event.target.value as CategoryType }))}>
+                          <MenuItem value="expense">Expense</MenuItem>
+                          <MenuItem value="income">Income</MenuItem>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <TextField type="number" size="small" variant="standard" fullWidth value={groupDraft.sortOrder} slotProps={{ htmlInput: { style: { textAlign: "right" } } }} onChange={(event) => setGroupDraft((value) => ({ ...value, sortOrder: event.target.value }))} />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Tooltip title="Add group">
+                          <IconButton size="small" color="primary" onClick={() => void createGroup()}>
+                            <AddIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+
+                    {groups.map((row) => (
+                      <TableRow key={row.id} hover sx={{ opacity: savingId === row.id ? 0.55 : 1 }}>
+                        <TableCell>
+                          <TextField size="small" variant="standard" fullWidth value={getGroupCell(row, "name")} onChange={(event) => setGroupCell(row.id, "name", event.target.value)} onBlur={() => void commitGroupCell(row, "name")} />
+                        </TableCell>
+                        <TableCell>
+                          <Select size="small" variant="standard" fullWidth value={getGroupCell(row, "type")} onChange={(event) => void updateGroupMutation.mutateAsync({ id: row.id, patch: { type: event.target.value as CategoryType } })}>
+                            <MenuItem value="expense">Expense</MenuItem>
+                            <MenuItem value="income">Income</MenuItem>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <TextField type="number" size="small" variant="standard" fullWidth value={getGroupCell(row, "sortOrder")} slotProps={{ htmlInput: { style: { textAlign: "right" } } }} onChange={(event) => setGroupCell(row.id, "sortOrder", event.target.value)} onBlur={() => void commitGroupCell(row, "sortOrder")} />
+                        </TableCell>
+                        <TableCell align="center">
+                          <Tooltip title="Delete group">
+                            <IconButton size="small" onClick={() => void deleteGroupMutation.mutateAsync(row.id)}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
+          )}
+        </Grid>
+
+        <Grid size={{ xs: 12, lg: 7 }}>
+          {loading ? (
+            <MatrixSkeleton title="Categories" />
+          ) : (
+            <Paper variant="outlined" sx={{ overflow: "hidden", borderRadius: 1, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.94)", boxShadow: "0 20px 52px rgba(0,0,0,0.28)" }}>
+              <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(15,17,23,0.36)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Typography variant="h5" sx={{ fontWeight: 900 }}>Categories</Typography>
+                <Typography variant="caption" color="text.secondary">{categories.length} total</Typography>
+              </Box>
+              <TableContainer sx={{ maxHeight: "calc(100vh - 330px)" }}>
+                <Table stickyHeader size="small" sx={{ tableLayout: "fixed", minWidth: 720 }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Category</TableCell>
+                      <TableCell sx={{ width: 220 }}>Group</TableCell>
+                      <TableCell sx={{ width: 130 }}>Type</TableCell>
+                      <TableCell align="right" sx={{ width: 90 }}>Sort</TableCell>
+                      <TableCell sx={{ width: 48 }} />
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    <TableRow sx={{ bgcolor: "action.hover" }}>
+                      <TableCell>
+                        <TextField size="small" variant="standard" fullWidth placeholder="Add category" value={categoryDraft.name} onChange={(event) => setCategoryDraft((value) => ({ ...value, name: event.target.value }))} />
+                      </TableCell>
+                      <TableCell>
+                        <Select size="small" variant="standard" fullWidth displayEmpty value={categoryDraft.groupId} onChange={(event) => setCategoryDraft((value) => ({ ...value, groupId: event.target.value }))}>
+                          <MenuItem value="">No group</MenuItem>
+                          {groupsForType(categoryDraft.type).map((group) => (
+                            <MenuItem key={group.id} value={group.id}>{group.name}</MenuItem>
+                          ))}
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Select size="small" variant="standard" fullWidth value={categoryDraft.type} onChange={(event) => setCategoryDraft((value) => ({ ...value, type: event.target.value as CategoryType, groupId: "" }))}>
+                          <MenuItem value="expense">Expense</MenuItem>
+                          <MenuItem value="income">Income</MenuItem>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <TextField type="number" size="small" variant="standard" fullWidth value={categoryDraft.sortOrder} slotProps={{ htmlInput: { style: { textAlign: "right" } } }} onChange={(event) => setCategoryDraft((value) => ({ ...value, sortOrder: event.target.value }))} />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Tooltip title="Add category">
+                          <IconButton size="small" color="primary" onClick={() => void createCategory()}>
+                            <AddIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+
+                    {categories.map((row) => (
+                      <TableRow key={row.id} hover sx={{ opacity: savingId === row.id ? 0.55 : 1 }}>
+                        <TableCell>
+                          <TextField size="small" variant="standard" fullWidth value={getCategoryCell(row, "name")} onChange={(event) => setCategoryCell(row.id, "name", event.target.value)} onBlur={() => void commitCategoryCell(row, "name")} />
+                        </TableCell>
+                        <TableCell>
+                          <Select size="small" variant="standard" fullWidth displayEmpty value={getCategoryCell(row, "groupId")} onChange={(event) => void updateCategoryMutation.mutateAsync({ id: row.id, patch: { groupId: event.target.value } })}>
+                            <MenuItem value="">No group</MenuItem>
+                            {groupsForType(row.type).map((group) => (
+                              <MenuItem key={group.id} value={group.id}>{group.name}</MenuItem>
+                            ))}
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Select size="small" variant="standard" fullWidth value={getCategoryCell(row, "type")} onChange={(event) => void updateCategoryMutation.mutateAsync({ id: row.id, patch: { type: event.target.value as CategoryType, groupId: "" } })}>
+                            <MenuItem value="expense">Expense</MenuItem>
+                            <MenuItem value="income">Income</MenuItem>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <TextField type="number" size="small" variant="standard" fullWidth value={getCategoryCell(row, "sortOrder")} slotProps={{ htmlInput: { style: { textAlign: "right" } } }} onChange={(event) => setCategoryCell(row.id, "sortOrder", event.target.value)} onBlur={() => void commitCategoryCell(row, "sortOrder")} />
+                        </TableCell>
+                        <TableCell align="center">
+                          <Tooltip title="Delete category">
+                            <IconButton size="small" onClick={() => void deleteCategoryMutation.mutateAsync(row.id)}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
+          )}
+        </Grid>
+      </Grid>
     </Box>
   );
 }

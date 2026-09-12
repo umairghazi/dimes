@@ -4,11 +4,13 @@ export interface Expense {
   id: string;
   userId: string;
   date: string;
+  monthYear: string;
   description: string;
   amount: number;
   currency: string;
   category: ExpenseCategory;   // resolved name (always present in API response)
   categoryId?: string | null;
+  categoryGroupId?: string | null;
   mainCategory?: string;
   type: "expense" | "income";
   subCategory?: string;

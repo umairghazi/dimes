@@ -69,6 +69,10 @@ function normalizeCategoryName(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+function categoryLabel(category: FinanceCategory): string {
+  return category.groupName ? `${category.groupName} / ${category.name}` : category.name;
+}
+
 function parseAmount(value: string): number | null {
   const clean = value.replace(/[$,\s]/g, "").replace(/^\((.*)\)$/, "$1");
   const amount = Number(clean);
@@ -92,7 +96,12 @@ function parseDate(value: string): string | null {
 }
 
 function parsePastedRows(text: string, kind: LedgerKind, categories: FinanceCategory[]): ParsedPasteRow[] {
-  const categoryByName = new Map(categories.map((c) => [normalizeCategoryName(c.name), c.id]));
+  const categoryByName = new Map(
+    categories.flatMap((c) => [
+      [normalizeCategoryName(c.name), c.id],
+      [normalizeCategoryName(categoryLabel(c)), c.id],
+    ]),
+  );
   const parsedRows: ParsedPasteRow[] = [];
 
   text
@@ -311,7 +320,7 @@ export function LedgerTable({
               <MenuItem value="">Uncategorized</MenuItem>
               {options.map((category) => (
                 <MenuItem key={category.id} value={category.id}>
-                  {category.name}
+                  {categoryLabel(category)}
                 </MenuItem>
               ))}
             </Select>
@@ -339,7 +348,7 @@ export function LedgerTable({
           size="small"
           sx={{
             tableLayout: "fixed",
-            minWidth: kind === "expense" ? 850 : 650,
+            minWidth: 730,
             "& .MuiTableCell-root": {
               borderColor: "rgba(255,255,255,0.065)",
               px: 0.9,
@@ -393,8 +402,7 @@ export function LedgerTable({
                   <TableCell sx={{ width: 230 }}>Description</TableCell>
                 </>
               )}
-              <TableCell sx={{ width: 220 }}>Category</TableCell>
-              {kind === "expense" && <TableCell sx={{ width: 160 }}>Main Category</TableCell>}
+              <TableCell sx={{ width: 260 }}>Category</TableCell>
               <TableCell sx={{ width: 38 }} />
             </TableRow>
           </TableHead>
@@ -498,26 +506,11 @@ export function LedgerTable({
                     <MenuItem value="">Uncategorized</MenuItem>
                     {options.map((category) => (
                       <MenuItem key={category.id} value={category.id}>
-                        {category.name}
+                        {categoryLabel(category)}
                       </MenuItem>
                     ))}
                   </Select>
                 </TableCell>
-                {kind === "expense" && (
-                  <TableCell>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        color: "text.secondary",
-                      }}
-                    >
-                      {row.mainCategory || "Uncategorized"}
-                    </Typography>
-                  </TableCell>
-                )}
                 <TableCell align="center">
                   <Tooltip title="Delete row">
                     <IconButton size="small" onClick={() => void onDelete(row.id)}>
@@ -614,18 +607,11 @@ export function LedgerTable({
                   <MenuItem value="">Uncategorized</MenuItem>
                   {options.map((category) => (
                     <MenuItem key={category.id} value={category.id}>
-                      {category.name}
+                      {categoryLabel(category)}
                     </MenuItem>
                   ))}
                 </Select>
               </TableCell>
-              {kind === "expense" && (
-                <TableCell>
-                  <Typography variant="body2" color="text.secondary">
-                    {options.find((category) => category.id === draft.categoryId)?.mainCategory || ""}
-                  </Typography>
-                </TableCell>
-              )}
               <TableCell align="center">
                 <Tooltip title="Add row">
                   <IconButton size="small" color="primary" onClick={() => void addDraft()}>

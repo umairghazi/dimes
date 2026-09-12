@@ -4,12 +4,14 @@ export interface FinanceTransaction {
   id: string;
   userId: string;
   date: string;
+  monthYear: string;
   description: string;
   amount: number;
   currency: string;
   categoryId: string | null;
   category: string;
   mainCategory: string;
+  categoryGroupId: string | null;
   type: FinanceTransactionType;
   merchantName: string | null;
   source: string;
@@ -20,9 +22,19 @@ export interface FinanceTransaction {
   updatedAt: string;
 }
 
+export interface FinanceCategoryGroup {
+  id: string;
+  userId: string;
+  name: string;
+  type: FinanceTransactionType;
+  sortOrder: number;
+}
+
 export interface FinanceCategory {
   id: string;
   userId: string;
+  groupId: string | null;
+  groupName: string | null;
   name: string;
   mainCategory: string | null;
   type: FinanceTransactionType;
@@ -70,4 +82,8 @@ export function monthBounds(monthYear: string): { from: string; to: string } {
     from: `${year}-${String(month).padStart(2, "0")}-01`,
     to: `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`,
   };
+}
+
+export function monthFromDate(date: string): string {
+  return date.slice(0, 7);
 }

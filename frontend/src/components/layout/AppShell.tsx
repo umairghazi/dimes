@@ -3,6 +3,7 @@ import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
+import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/authStore";
@@ -20,6 +21,7 @@ export function AppShell() {
   const navItems = [
     { label: "Overview", path: "/", icon: AnalyticsOutlinedIcon },
     { label: "Ledger", path: "/ledger", icon: ReceiptLongOutlinedIcon },
+    { label: "Import", path: "/import", icon: UploadFileOutlinedIcon },
     { label: "Categories", path: "/categories", icon: SellOutlinedIcon },
   ];
 

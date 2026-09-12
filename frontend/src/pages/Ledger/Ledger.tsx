@@ -256,7 +256,7 @@ export function Ledger() {
               rows={expenseRows}
               categories={categories}
               defaultDate={range.defaultDate}
-              onCreate={async (draft) => { await createMutation.mutateAsync({ ...draft, currency: "USD", source: "manual", isRecurring: false, tags: [] }); }}
+              onCreate={async (draft) => { await createMutation.mutateAsync({ ...draft, monthYear: month, currency: "USD", source: "manual", isRecurring: false, tags: [] }); }}
               onUpdate={async (id, patch) => { await updateMutation.mutateAsync({ id, patch }); }}
               onDelete={async (id) => { await deleteMutation.mutateAsync(id); }}
             />
@@ -272,7 +272,7 @@ export function Ledger() {
               rows={incomeRows}
               categories={categories}
               defaultDate={range.defaultDate}
-              onCreate={async (draft) => { await createMutation.mutateAsync({ ...draft, currency: "USD", source: "manual", isRecurring: false, tags: [] }); }}
+              onCreate={async (draft) => { await createMutation.mutateAsync({ ...draft, monthYear: month, currency: "USD", source: "manual", isRecurring: false, tags: [] }); }}
               onUpdate={async (id, patch) => { await updateMutation.mutateAsync({ id, patch }); }}
               onDelete={async (id) => { await deleteMutation.mutateAsync(id); }}
             />

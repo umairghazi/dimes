@@ -1,10 +1,11 @@
 import { BaseRepository } from "./BaseRepository";
-import { FinanceTransaction, FinanceTransactionType, money, monthBounds } from "../types/finance.types";
+import { FinanceTransaction, FinanceTransactionType, money, monthFromDate } from "../types/finance.types";
 
 interface TransactionRow {
   id: string;
   user_id: string;
   date: string;
+  month_year: string;
   description: string;
   amount: string | number;
   currency: string;
@@ -18,7 +19,12 @@ interface TransactionRow {
   original_description: string | null;
   created_at: string;
   updated_at: string;
-  categories?: { name: string; main_category: string | null } | null;
+  categories?: {
+    name: string;
+    group_id: string | null;
+    main_category: string | null;
+    category_groups?: { name: string } | null;
+  } | null;
 }
 
 export interface TransactionFilters {
@@ -28,6 +34,7 @@ export interface TransactionFilters {
 
 export interface CreateTransactionData {
   date: string;
+  monthYear?: string;
   description: string;
   amount: number;
   currency?: string;
@@ -44,17 +51,20 @@ export interface CreateTransactionData {
 export type UpdateTransactionData = Partial<CreateTransactionData>;
 
 function toTransaction(row: TransactionRow): FinanceTransaction {
-  const category = row.categories?.name ?? "Uncategorized";
+  const categoryName = row.categories?.name ?? "Uncategorized";
+  const groupName = row.categories?.category_groups?.name ?? row.main_category ?? row.categories?.main_category ?? null;
   return {
     id: row.id,
     userId: row.user_id,
     date: row.date,
+    monthYear: row.month_year,
     description: row.description,
     amount: money(row.amount),
     currency: row.currency,
     categoryId: row.category_id,
-    category,
-    mainCategory: row.main_category ?? row.categories?.main_category ?? category.split(" - ")[0] ?? category,
+    category: categoryName,
+    mainCategory: groupName ?? categoryName,
+    categoryGroupId: row.categories?.group_id ?? null,
     type: row.type,
     merchantName: row.merchant_name,
     source: row.source,
@@ -73,14 +83,13 @@ export class TransactionRepository extends BaseRepository {
 
   async listByUser(userId: string, filters: TransactionFilters = {}): Promise<FinanceTransaction[]> {
     let query = this.table()
-      .select("*, categories(name, main_category)")
+      .select("*, categories(name, group_id, main_category, category_groups(name))")
       .eq("user_id", userId)
       .order("date", { ascending: false })
       .order("created_at", { ascending: false });
 
     if (filters.month) {
-      const { from, to } = monthBounds(filters.month);
-      query = query.gte("date", from).lte("date", to);
+      query = query.eq("month_year", filters.month);
     }
     if (filters.type) query = query.eq("type", filters.type);
 
@@ -95,6 +104,7 @@ export class TransactionRepository extends BaseRepository {
         .insert({
           user_id: userId,
           date: data.date,
+          month_year: data.monthYear ?? monthFromDate(data.date),
           description: data.description,
           amount: data.amount,
           currency: data.currency ?? "CAD",
@@ -107,7 +117,7 @@ export class TransactionRepository extends BaseRepository {
           tags: data.tags ?? [],
           original_description: data.originalDescription ?? null,
         })
-        .select("*, categories(name, main_category)")
+        .select("*, categories(name, group_id, main_category, category_groups(name))")
         .single(),
     );
 
@@ -117,6 +127,7 @@ export class TransactionRepository extends BaseRepository {
   async update(userId: string, id: string, patch: UpdateTransactionData): Promise<FinanceTransaction> {
     const data: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (patch.date !== undefined) data.date = patch.date;
+    if (patch.monthYear !== undefined) data.month_year = patch.monthYear;
     if (patch.description !== undefined) data.description = patch.description;
     if (patch.amount !== undefined) data.amount = patch.amount;
     if (patch.currency !== undefined) data.currency = patch.currency;
@@ -135,7 +146,7 @@ export class TransactionRepository extends BaseRepository {
         .update(data)
         .eq("user_id", userId)
         .eq("id", id)
-        .select("*, categories(name, main_category)")
+        .select("*, categories(name, group_id, main_category, category_groups(name))")
         .single(),
     );
 

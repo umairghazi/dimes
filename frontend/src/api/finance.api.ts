@@ -4,6 +4,8 @@ import { Expense } from "@/types/expense.types";
 export interface FinanceCategory {
   id: string;
   userId: string;
+  groupId: string | null;
+  groupName: string | null;
   name: string;
   mainCategory: string | null;
   type: "expense" | "income";
@@ -11,12 +13,43 @@ export interface FinanceCategory {
   sortOrder: number;
 }
 
+export interface FinanceCategoryGroup {
+  id: string;
+  userId: string;
+  name: string;
+  type: "expense" | "income";
+  sortOrder: number;
+}
+
 export interface CategoryInput {
   name: string;
-  mainCategory?: string | null;
+  groupId?: string | null;
   type?: "expense" | "income";
   isFixed?: boolean;
   sortOrder?: number;
+}
+
+export interface CategoryGroupInput {
+  name: string;
+  type?: "expense" | "income";
+  sortOrder?: number;
+}
+
+export interface ImportTransactionRow {
+  date: string;
+  monthYear?: string;
+  description: string;
+  amount: number;
+  type: "expense" | "income";
+  categoryName?: string | null;
+  groupName?: string | null;
+  currency?: string;
+}
+
+export interface ImportTransactionsResult {
+  transactions: Expense[];
+  createdGroups: number;
+  createdCategories: number;
 }
 
 export interface MonthlyPlan {
@@ -52,11 +85,15 @@ export const financeApi = {
 
   createTransaction: (data: Partial<Expense> & {
     date: string;
+    monthYear?: string;
     description: string;
     amount: number;
     type: "expense" | "income";
     categoryId?: string | null;
   }) => apiClient.post<Expense>("/finance/transactions", data).then((r) => r.data),
+
+  importTransactions: (rows: ImportTransactionRow[]) =>
+    apiClient.post<ImportTransactionsResult>("/finance/transactions/import", { rows }).then((r) => r.data),
 
   updateTransaction: (id: string, data: Partial<Expense> & { categoryId?: string | null }) =>
     apiClient.patch<Expense>(`/finance/transactions/${id}`, data).then((r) => r.data),
@@ -65,6 +102,17 @@ export const financeApi = {
 
   categories: (params?: { type?: "expense" | "income" }) =>
     apiClient.get<FinanceCategory[]>("/finance/categories", { params }).then((r) => r.data),
+
+  categoryGroups: (params?: { type?: "expense" | "income" }) =>
+    apiClient.get<FinanceCategoryGroup[]>("/finance/category-groups", { params }).then((r) => r.data),
+
+  createCategoryGroup: (data: CategoryGroupInput) =>
+    apiClient.post<FinanceCategoryGroup>("/finance/category-groups", data).then((r) => r.data),
+
+  updateCategoryGroup: (id: string, data: Partial<CategoryGroupInput>) =>
+    apiClient.patch<FinanceCategoryGroup>(`/finance/category-groups/${id}`, data).then((r) => r.data),
+
+  deleteCategoryGroup: (id: string) => apiClient.delete(`/finance/category-groups/${id}`),
 
   createCategory: (data: CategoryInput) =>
     apiClient.post<FinanceCategory>("/finance/categories", data).then((r) => r.data),
