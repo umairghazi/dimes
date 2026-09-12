@@ -27,4 +27,13 @@ export class MonthlySummaryService {
   async getBalance(userId: string, month: string) {
     return this.monthlyBalanceRepo.getByMonth(userId, month);
   }
+
+  async upsertBalance(userId: string, data: {
+    monthYear: string;
+    startingBalance: number;
+    endingBalance?: number | null;
+    currency?: string;
+  }) {
+    return this.monthlyBalanceRepo.upsert(userId, data);
+  }
 }

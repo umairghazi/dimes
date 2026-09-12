@@ -1,10 +1,12 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
   Box,
+  Button,
   Grid,
   IconButton,
+  InputAdornment,
   Paper,
   Skeleton,
   Table,
@@ -13,10 +15,12 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Typography,
 } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import { financeApi, MonthlyPlan } from "@/api/finance.api";
 import { Expense } from "@/types/expense.types";
 import { useMonthStore, isCurrentMonthYear } from "@/store/monthStore";
@@ -374,14 +378,34 @@ function SpendByDateChart({ rows }: { rows: BreakdownRow[] }) {
 }
 
 function BreakdownChart({ title, rows }: { title: string; rows: BreakdownRow[] }) {
+  const [tooltip, setTooltip] = useState<{ row: BreakdownRow; x: number; y: number } | null>(null);
   let cursor = 0;
+  const slices = rows.map((row) => {
+    const start = cursor;
+    cursor += row.percent;
+    return { row, start, end: cursor };
+  });
   const gradient = rows.length === 0
     ? "#e5e7eb"
-    : rows.map((row, index) => {
-      const start = cursor;
-      cursor += row.percent;
-      return `${chartColors[index % chartColors.length]} ${start}% ${cursor}%`;
-    }).join(", ");
+    : slices.map(({ start, end }, index) => `${chartColors[index % chartColors.length]} ${start}% ${end}%`).join(", ");
+
+  const updateTooltip = (event: React.MouseEvent<HTMLDivElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - bounds.left;
+    const y = event.clientY - bounds.top;
+    const centerX = bounds.width / 2;
+    const centerY = bounds.height / 2;
+    const distance = Math.hypot(x - centerX, y - centerY);
+    if (distance > bounds.width / 2) {
+      setTooltip(null);
+      return;
+    }
+
+    const degrees = (Math.atan2(y - centerY, x - centerX) * 180) / Math.PI;
+    const percent = ((degrees + 450) % 360) / 360 * 100;
+    const slice = slices.find(({ start, end }) => percent >= start && percent <= end);
+    setTooltip(slice ? { row: slice.row, x, y } : null);
+  };
 
   return (
     <Paper variant="outlined" sx={{ borderRadius: 1, p: 2, height: "100%", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
@@ -390,15 +414,42 @@ function BreakdownChart({ title, rows }: { title: string; rows: BreakdownRow[] }
         <Typography color="text.secondary">No expenses for this month.</Typography>
       ) : (
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "240px 1fr" }, gap: 2, alignItems: "center" }}>
-          <Box
-            sx={{
-              width: 240,
-              height: 240,
-              borderRadius: "50%",
-              background: `conic-gradient(${gradient})`,
-              justifySelf: "center",
-            }}
-          />
+          <Box sx={{ position: "relative", width: 240, height: 240, justifySelf: "center" }}>
+            <Box
+              onMouseMove={updateTooltip}
+              onMouseLeave={() => setTooltip(null)}
+              sx={{
+                width: 240,
+                height: 240,
+                borderRadius: "50%",
+                background: `conic-gradient(${gradient})`,
+                cursor: "crosshair",
+              }}
+            />
+            {tooltip && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  left: tooltip.x,
+                  top: tooltip.y,
+                  transform: "translate(12px, -50%)",
+                  zIndex: 2,
+                  minWidth: 168,
+                  p: 1,
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: 1,
+                  bgcolor: "rgba(15,17,23,0.96)",
+                  boxShadow: "0 16px 34px rgba(0,0,0,0.32)",
+                  pointerEvents: "none",
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 900 }}>{tooltip.row.label}</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
+                  {currencyWithCents(tooltip.row.amount)} · {tooltip.row.percent.toFixed(1)}%
+                </Typography>
+              </Box>
+            )}
+          </Box>
           <Box sx={{ display: "grid", gap: 0.75 }}>
             {rows.slice(0, 10).map((row, index) => (
               <Box key={row.label} sx={{ display: "grid", gridTemplateColumns: "14px 1fr auto", gap: 1, alignItems: "center", py: 0.35 }}>
@@ -413,6 +464,131 @@ function BreakdownChart({ title, rows }: { title: string; rows: BreakdownRow[] }
             ))}
           </Box>
         </Box>
+      )}
+    </Paper>
+  );
+}
+
+function decimalInput(value: number | null | undefined): string {
+  return value === null || value === undefined ? "" : String(value);
+}
+
+function parseMoneyInput(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed.replace(/[$,\s]/g, ""));
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function BalanceEditor({
+  month,
+  balance,
+  calculatedEndingBalance,
+  isLoading,
+  isSaving,
+  onSave,
+}: {
+  month: string;
+  balance: { startingBalance: number; endingBalance: number | null; currency: string } | null | undefined;
+  calculatedEndingBalance: number;
+  isLoading: boolean;
+  isSaving: boolean;
+  onSave: (data: { startingBalance: number; endingBalance: number | null; currency: string }) => Promise<void>;
+}) {
+  const [starting, setStarting] = useState("");
+  const [ending, setEnding] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setStarting(decimalInput(balance?.startingBalance ?? 0));
+    setEnding(decimalInput(balance?.endingBalance));
+    setError(null);
+  }, [balance?.startingBalance, balance?.endingBalance, month]);
+
+  const save = async () => {
+    const startingBalance = parseMoneyInput(starting);
+    const endingBalance = parseMoneyInput(ending);
+    if (startingBalance === null) {
+      setError("Enter a valid starting balance.");
+      return;
+    }
+    if (ending.trim() && endingBalance === null) {
+      setError("Enter a valid ending balance, or leave it blank.");
+      return;
+    }
+
+    setError(null);
+    await onSave({
+      startingBalance,
+      endingBalance: ending.trim() ? endingBalance : null,
+      currency: balance?.currency ?? "CAD",
+    });
+  };
+
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 2,
+        my: 2,
+        borderRadius: 1,
+        borderColor: "rgba(255,255,255,0.08)",
+        bgcolor: "rgba(32,35,45,0.92)",
+      }}
+    >
+      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, flexWrap: "wrap", mb: 1.5 }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 900 }}>Account balances</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Leave ending balance blank to calculate it from starting balance, income, and expenses.
+          </Typography>
+        </Box>
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, pt: 0.4 }}>
+          Calculated end: {currency(calculatedEndingBalance)}
+        </Typography>
+      </Box>
+
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr auto" }, gap: 1.5, alignItems: "start" }}>
+        <TextField
+          label="Starting balance"
+          type="number"
+          size="small"
+          value={starting}
+          disabled={isLoading || isSaving}
+          onChange={(event) => setStarting(event.target.value)}
+          slotProps={{
+            input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+            htmlInput: { min: 0, step: "0.01" },
+          }}
+        />
+        <TextField
+          label="Ending balance"
+          type="number"
+          size="small"
+          value={ending}
+          disabled={isLoading || isSaving}
+          onChange={(event) => setEnding(event.target.value)}
+          placeholder={calculatedEndingBalance.toFixed(2)}
+          slotProps={{
+            input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
+            htmlInput: { min: 0, step: "0.01" },
+          }}
+        />
+        <Button
+          variant="contained"
+          startIcon={<SaveOutlinedIcon />}
+          disabled={isLoading || isSaving}
+          onClick={() => void save()}
+          sx={{ minHeight: 40 }}
+        >
+          {isSaving ? "Saving..." : "Save"}
+        </Button>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mt: 1.5 }}>
+          {error}
+        </Alert>
       )}
     </Paper>
   );
@@ -501,6 +677,7 @@ function BudgetTableSkeleton({ title, type }: { title: string; type: "expense" |
 }
 
 export function Summary() {
+  const queryClient = useQueryClient();
   const { month, prevMonth, nextMonth } = useMonthStore();
   const isCurrentMonth = isCurrentMonthYear(month);
 
@@ -519,6 +696,14 @@ export function Summary() {
     queryFn: () => financeApi.monthlyBalance(month),
   });
 
+  const balanceMutation = useMutation({
+    mutationFn: financeApi.upsertMonthlyBalance,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["finance", "balance", month] });
+      queryClient.invalidateQueries({ queryKey: ["finance", "summary", month] });
+    },
+  });
+
   const transactions = transactionsQuery.data?.data ?? [];
   const plans = plansQuery.data ?? [];
   const expenseRows = useMemo(() => buildRows(transactions, plans, "expense"), [transactions, plans]);
@@ -527,7 +712,8 @@ export function Summary() {
   const totalIncome = total(transactions, "income");
   const netSavings = totalIncome - totalSpend;
   const startingBalance = balanceQuery.data?.startingBalance ?? 0;
-  const endingBalance = balanceQuery.data?.endingBalance ?? startingBalance + netSavings;
+  const calculatedEndingBalance = startingBalance + netSavings;
+  const endingBalance = balanceQuery.data?.endingBalance ?? calculatedEndingBalance;
   const plannedSpend = expenseRows.reduce((sum, row) => sum + row.planned, 0);
   const dailySpend = useMemo(() => spendByDate(transactions), [transactions]);
   const categorySpend = useMemo(() => expenseBreakdown(transactions, "category"), [transactions]);
@@ -569,6 +755,19 @@ export function Summary() {
           netSavings={netSavings}
         />
       )}
+
+      <BalanceEditor
+        month={month}
+        balance={balanceQuery.data}
+        calculatedEndingBalance={calculatedEndingBalance}
+        isLoading={balanceQuery.isLoading}
+        isSaving={balanceMutation.isPending}
+        onSave={async (data) => {
+          await balanceMutation.mutateAsync({ monthYear: month, ...data });
+        }}
+      />
+
+      {balanceMutation.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to save account balances</Alert>}
 
       <Grid container spacing={2} sx={{ my: 2 }}>
         <Grid size={{ xs: 12, md: 3 }}>

@@ -16,6 +16,7 @@ import {
   listTransactions,
   updateCategory,
   updateCategoryGroup,
+  upsertMonthlyBalance,
   updateTransaction,
 } from "../controllers/finance.controller";
 
@@ -36,6 +37,7 @@ router.patch("/categories/:id", authenticate, updateCategory);
 router.delete("/categories/:id", authenticate, deleteCategory);
 router.get("/plans", authenticate, listMonthlyPlans);
 router.get("/balance", authenticate, getMonthlyBalance);
+router.put("/balance", authenticate, upsertMonthlyBalance);
 router.get("/summary", authenticate, getSummary);
 
 export default router;

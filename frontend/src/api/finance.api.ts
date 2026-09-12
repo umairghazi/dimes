@@ -73,6 +73,13 @@ export interface MonthlyBalance {
   currency: string;
 }
 
+export interface MonthlyBalanceInput {
+  monthYear: string;
+  startingBalance: number;
+  endingBalance?: number | null;
+  currency?: string;
+}
+
 export interface FinanceSummary {
   transactions: Expense[];
   plans: MonthlyPlan[];
@@ -127,6 +134,9 @@ export const financeApi = {
 
   monthlyBalance: (month: string) =>
     apiClient.get<MonthlyBalance | null>("/finance/balance", { params: { month } }).then((r) => r.data),
+
+  upsertMonthlyBalance: (data: MonthlyBalanceInput) =>
+    apiClient.put<MonthlyBalance>("/finance/balance", data).then((r) => r.data),
 
   summary: (month: string) =>
     apiClient.get<FinanceSummary>("/finance/summary", { params: { month } }).then((r) => r.data),

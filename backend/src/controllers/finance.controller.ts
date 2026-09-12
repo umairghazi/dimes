@@ -46,6 +46,12 @@ const importTransactionRowSchema = z.object({
 const importTransactionsSchema = z.object({
   rows: z.array(importTransactionRowSchema).min(1).max(1000),
 });
+const monthlyBalanceSchema = z.object({
+  monthYear: z.string().regex(/^\d{4}-\d{2}$/),
+  startingBalance: z.number().min(0),
+  endingBalance: z.number().min(0).nullable().optional(),
+  currency: z.string().default("CAD"),
+});
 const categorySchema = z.object({
   name: z.string().trim().min(1),
   groupId: z.string().uuid().nullable().optional(),
@@ -234,6 +240,17 @@ export async function getMonthlyBalance(req: Request, res: Response, next: NextF
     const { month } = monthQuerySchema.required({ month: true }).parse(req.query);
     const data = await monthlySummaryService.getBalance(user.id, month);
     res.json(data);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function upsertMonthlyBalance(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = requireUser(req);
+    const data = monthlyBalanceSchema.parse(req.body);
+    const row = await monthlySummaryService.upsertBalance(user.id, data);
+    res.json(row);
   } catch (err) {
     next(err);
   }

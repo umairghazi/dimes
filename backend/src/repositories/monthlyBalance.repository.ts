@@ -10,6 +10,13 @@ interface BalanceRow {
   currency: string;
 }
 
+export interface UpsertMonthlyBalanceData {
+  monthYear: string;
+  startingBalance: number;
+  endingBalance?: number | null;
+  currency?: string;
+}
+
 function toBalance(row: BalanceRow): MonthlyBalance {
   return {
     id: row.id,
@@ -37,5 +44,24 @@ export class MonthlyBalanceRepository extends BaseRepository {
     );
 
     return row ? toBalance(row) : null;
+  }
+
+  async upsert(userId: string, data: UpsertMonthlyBalanceData): Promise<MonthlyBalance> {
+    const row = await this.execute<BalanceRow>(
+      "upsert monthly balance",
+      this.table()
+        .upsert({
+          user_id: userId,
+          month_year: data.monthYear,
+          starting_balance: data.startingBalance,
+          ending_balance: data.endingBalance ?? null,
+          currency: data.currency ?? "CAD",
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,month_year" })
+        .select("*")
+        .single(),
+    );
+
+    return toBalance(row);
   }
 }
