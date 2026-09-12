@@ -160,6 +160,25 @@ function Metric({ label, value, helper }: { label: string; value: string; helper
   );
 }
 
+function MetricSkeleton() {
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 2,
+        borderRadius: 1,
+        height: "100%",
+        borderColor: "rgba(255,255,255,0.08)",
+        bgcolor: "rgba(32,35,45,0.92)",
+      }}
+    >
+      <Skeleton width={96} height={18} />
+      <Skeleton width="68%" height={36} sx={{ mt: 0.75 }} />
+      <Skeleton width="44%" height={18} sx={{ mt: 0.5 }} />
+    </Paper>
+  );
+}
+
 function SummaryHero({
   startingBalance,
   endingBalance,
@@ -253,6 +272,47 @@ function SummaryHero({
             </Box>
           ))}
         </Box>
+      </Box>
+    </Paper>
+  );
+}
+
+function SummaryHeroSkeleton() {
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", lg: "1.1fr 0.9fr" },
+        gap: { xs: 3, lg: 4 },
+        p: { xs: 2, md: 3 },
+        borderRadius: 1,
+        borderColor: "rgba(255,255,255,0.08)",
+        bgcolor: "#171a23",
+        minHeight: 360,
+      }}
+    >
+      <Box>
+        <Skeleton width={140} height={18} />
+        <Skeleton width="76%" height={54} sx={{ mt: 1 }} />
+        <Skeleton width={260} height={64} sx={{ mt: 1.5 }} />
+        <Skeleton width="58%" height={22} sx={{ mt: 1 }} />
+        <Box sx={{ mt: 3, display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" }, gap: 1 }}>
+          {[0, 1, 2].map((item) => (
+            <Box key={item} sx={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 1, p: 1.5, bgcolor: "rgba(15,17,23,0.48)" }}>
+              <Skeleton width="50%" height={18} />
+              <Skeleton width="72%" height={30} sx={{ mt: 0.5 }} />
+            </Box>
+          ))}
+        </Box>
+      </Box>
+      <Box sx={{ display: "grid", alignContent: "space-between", gap: 3 }}>
+        <Box sx={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 1, p: 2, bgcolor: "rgba(15,17,23,0.48)" }}>
+          <Skeleton width="40%" height={18} />
+          <Skeleton width="36%" height={48} sx={{ mt: 1 }} />
+          <Skeleton variant="rectangular" height={8} sx={{ mt: 2, borderRadius: 999 }} />
+        </Box>
+        <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 1 }} />
       </Box>
     </Paper>
   );
@@ -358,6 +418,15 @@ function BreakdownChart({ title, rows }: { title: string; rows: BreakdownRow[] }
   );
 }
 
+function ChartSkeleton({ title }: { title: string }) {
+  return (
+    <Paper variant="outlined" sx={{ borderRadius: 1, p: 2, minHeight: 320, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
+      <Typography variant="h5" sx={{ fontWeight: 900, color: "text.primary", mb: 2 }}>{title}</Typography>
+      <Skeleton variant="rectangular" height={238} sx={{ borderRadius: 1 }} />
+    </Paper>
+  );
+}
+
 function BudgetTable({ title, rows, type }: { title: string; rows: SummaryRow[]; type: "expense" | "income" }) {
   const totals = rows.reduce(
     (sum, row) => ({
@@ -408,24 +477,57 @@ function BudgetTable({ title, rows, type }: { title: string; rows: SummaryRow[];
   );
 }
 
+function BudgetTableSkeleton({ title, type }: { title: string; type: "expense" | "income" }) {
+  return (
+    <Paper variant="outlined" sx={{ borderRadius: 1, overflow: "hidden", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
+      <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h5" sx={{ fontWeight: 900, color: type === "expense" ? "primary.main" : "success.main" }}>
+          {title}
+        </Typography>
+        <Skeleton width={86} height={18} />
+      </Box>
+      <Box sx={{ p: 1.5, display: "grid", gap: 1 }}>
+        {[0, 1, 2, 3, 4, 5, 6].map((row) => (
+          <Box key={row} sx={{ display: "grid", gridTemplateColumns: "1fr 112px 112px 112px", gap: 1, alignItems: "center" }}>
+            <Skeleton height={24} />
+            <Skeleton height={24} />
+            <Skeleton height={24} />
+            <Skeleton height={24} />
+          </Box>
+        ))}
+      </Box>
+    </Paper>
+  );
+}
+
 export function Summary() {
   const { month, prevMonth, nextMonth } = useMonthStore();
   const isCurrentMonth = isCurrentMonthYear(month);
 
-  const summaryQuery = useQuery({
-    queryKey: ["finance", "summary", month],
-    queryFn: () => financeApi.summary(month),
+  const transactionsQuery = useQuery({
+    queryKey: ["finance", "transactions", month],
+    queryFn: () => financeApi.transactions({ month }),
   });
 
-  const transactions = summaryQuery.data?.transactions ?? [];
-  const plans = summaryQuery.data?.plans ?? [];
+  const plansQuery = useQuery({
+    queryKey: ["finance", "plans", month],
+    queryFn: () => financeApi.monthlyPlans(month),
+  });
+
+  const balanceQuery = useQuery({
+    queryKey: ["finance", "balance", month],
+    queryFn: () => financeApi.monthlyBalance(month),
+  });
+
+  const transactions = transactionsQuery.data?.data ?? [];
+  const plans = plansQuery.data ?? [];
   const expenseRows = useMemo(() => buildRows(transactions, plans, "expense"), [transactions, plans]);
   const incomeRows = useMemo(() => buildRows(transactions, plans, "income"), [transactions, plans]);
   const totalSpend = total(transactions, "expense");
   const totalIncome = total(transactions, "income");
   const netSavings = totalIncome - totalSpend;
-  const startingBalance = summaryQuery.data?.balance?.startingBalance ?? 0;
-  const endingBalance = summaryQuery.data?.balance?.endingBalance ?? startingBalance + netSavings;
+  const startingBalance = balanceQuery.data?.startingBalance ?? 0;
+  const endingBalance = balanceQuery.data?.endingBalance ?? startingBalance + netSavings;
   const plannedSpend = expenseRows.reduce((sum, row) => sum + row.planned, 0);
   const dailySpend = useMemo(() => spendByDate(transactions), [transactions]);
   const categorySpend = useMemo(() => expenseBreakdown(transactions, "category"), [transactions]);
@@ -451,58 +553,58 @@ export function Summary() {
         </Box>
       </Box>
 
-      {summaryQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load monthly summary</Alert>}
+      {transactionsQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load transactions</Alert>}
+      {plansQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load monthly plans</Alert>}
+      {balanceQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load monthly balance</Alert>}
 
-      {summaryQuery.isLoading ? (
-        <Skeleton variant="rectangular" height={640} sx={{ borderRadius: 1 }} />
+      {transactionsQuery.isLoading || balanceQuery.isLoading || plansQuery.isLoading ? (
+        <SummaryHeroSkeleton />
       ) : (
-        <>
-          <SummaryHero
-            startingBalance={startingBalance}
-            endingBalance={endingBalance}
-            totalSpend={totalSpend}
-            totalIncome={totalIncome}
-            plannedSpend={plannedSpend}
-            netSavings={netSavings}
-          />
-
-          <Grid container spacing={2} sx={{ my: 2 }}>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <Metric label="Starting Balance" value={currency(startingBalance)} />
-            </Grid>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <Metric label="Ending Balance" value={currency(endingBalance)} />
-            </Grid>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <Metric label="Income" value={currency(totalIncome)} helper={`${incomeRows.length} categories`} />
-            </Grid>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <Metric label="Expenses" value={currency(totalSpend)} helper={`${transactions.length} rows loaded`} />
-            </Grid>
-          </Grid>
-
-          <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid size={{ xs: 12 }}>
-              <SpendByDateChart rows={dailySpend} />
-            </Grid>
-            <Grid size={{ xs: 12, lg: 6 }}>
-              <BreakdownChart title="Percentage spent on Category" rows={categorySpend} />
-            </Grid>
-            <Grid size={{ xs: 12, lg: 6 }}>
-              <BreakdownChart title="Percentage spent on Main Category" rows={mainCategorySpend} />
-            </Grid>
-          </Grid>
-
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, lg: 7 }}>
-              <BudgetTable title="Expenses" rows={expenseRows} type="expense" />
-            </Grid>
-            <Grid size={{ xs: 12, lg: 5 }}>
-              <BudgetTable title="Income" rows={incomeRows} type="income" />
-            </Grid>
-          </Grid>
-        </>
+        <SummaryHero
+          startingBalance={startingBalance}
+          endingBalance={endingBalance}
+          totalSpend={totalSpend}
+          totalIncome={totalIncome}
+          plannedSpend={plannedSpend}
+          netSavings={netSavings}
+        />
       )}
+
+      <Grid container spacing={2} sx={{ my: 2 }}>
+        <Grid size={{ xs: 12, md: 3 }}>
+          {balanceQuery.isLoading ? <MetricSkeleton /> : <Metric label="Starting Balance" value={currency(startingBalance)} />}
+        </Grid>
+        <Grid size={{ xs: 12, md: 3 }}>
+          {balanceQuery.isLoading || transactionsQuery.isLoading ? <MetricSkeleton /> : <Metric label="Ending Balance" value={currency(endingBalance)} />}
+        </Grid>
+        <Grid size={{ xs: 12, md: 3 }}>
+          {transactionsQuery.isLoading || plansQuery.isLoading ? <MetricSkeleton /> : <Metric label="Income" value={currency(totalIncome)} helper={`${incomeRows.length} categories`} />}
+        </Grid>
+        <Grid size={{ xs: 12, md: 3 }}>
+          {transactionsQuery.isLoading ? <MetricSkeleton /> : <Metric label="Expenses" value={currency(totalSpend)} helper={`${transactions.length} rows loaded`} />}
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid size={{ xs: 12 }}>
+          {transactionsQuery.isLoading ? <ChartSkeleton title="Money spent by date" /> : <SpendByDateChart rows={dailySpend} />}
+        </Grid>
+        <Grid size={{ xs: 12, lg: 6 }}>
+          {transactionsQuery.isLoading ? <ChartSkeleton title="Percentage spent on Category" /> : <BreakdownChart title="Percentage spent on Category" rows={categorySpend} />}
+        </Grid>
+        <Grid size={{ xs: 12, lg: 6 }}>
+          {transactionsQuery.isLoading ? <ChartSkeleton title="Percentage spent on Main Category" /> : <BreakdownChart title="Percentage spent on Main Category" rows={mainCategorySpend} />}
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, lg: 7 }}>
+          {transactionsQuery.isLoading || plansQuery.isLoading ? <BudgetTableSkeleton title="Expenses" type="expense" /> : <BudgetTable title="Expenses" rows={expenseRows} type="expense" />}
+        </Grid>
+        <Grid size={{ xs: 12, lg: 5 }}>
+          {transactionsQuery.isLoading || plansQuery.isLoading ? <BudgetTableSkeleton title="Income" type="income" /> : <BudgetTable title="Income" rows={incomeRows} type="income" />}
+        </Grid>
+      </Grid>
     </Box>
   );
 }

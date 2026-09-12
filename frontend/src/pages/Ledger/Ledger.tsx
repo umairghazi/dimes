@@ -81,6 +81,54 @@ function LedgerStat({ label, value, tone }: { label: string; value: string; tone
   );
 }
 
+function LedgerStatSkeleton({ label }: { label: string }) {
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 1.75,
+        borderRadius: 1,
+        borderColor: "rgba(255,255,255,0.08)",
+        bgcolor: "rgba(32,35,45,0.92)",
+        minHeight: 88,
+      }}
+    >
+      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>{label}</Typography>
+      <Skeleton width="68%" height={32} sx={{ mt: 0.75 }} />
+    </Paper>
+  );
+}
+
+function LedgerTableSkeleton({ title, height = 520 }: { title: string; height?: number }) {
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        overflow: "hidden",
+        borderRadius: 1,
+        borderColor: "rgba(255,255,255,0.08)",
+        bgcolor: "rgba(32,35,45,0.94)",
+      }}
+    >
+      <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(15,17,23,0.36)" }}>
+        <Typography variant="h5" sx={{ fontWeight: 900 }}>{title}</Typography>
+        <Skeleton width={170} height={18} sx={{ mt: 0.35 }} />
+      </Box>
+      <Box sx={{ p: 1.5, display: "grid", gap: 1, minHeight: height - 72 }}>
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((row) => (
+          <Box key={row} sx={{ display: "grid", gridTemplateColumns: "34px 150px 1fr 110px 220px", gap: 1, alignItems: "center" }}>
+            <Skeleton height={24} />
+            <Skeleton height={24} />
+            <Skeleton height={24} />
+            <Skeleton height={24} />
+            <Skeleton height={24} />
+          </Box>
+        ))}
+      </Box>
+    </Paper>
+  );
+}
+
 export function Ledger() {
   const queryClient = useQueryClient();
   const { month, prevMonth, nextMonth } = useMonthStore();
@@ -122,7 +170,6 @@ export function Ledger() {
     onSuccess: invalidate,
   });
 
-  const loading = expensesQuery.isLoading || incomeQuery.isLoading || categoriesQuery.isLoading;
   const error = categoriesQuery.isError || expensesQuery.isError || incomeQuery.isError
     ? "Failed to load ledger"
     : null;
@@ -183,33 +230,26 @@ export function Ledger() {
 
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12, md: 3 }}>
-          <LedgerStat label="Expenses" value={currency(totalExpenses)} tone="bad" />
+          {expensesQuery.isLoading ? <LedgerStatSkeleton label="Expenses" /> : <LedgerStat label="Expenses" value={currency(totalExpenses)} tone="bad" />}
         </Grid>
         <Grid size={{ xs: 12, md: 3 }}>
-          <LedgerStat label="Income" value={currency(totalIncome)} tone="good" />
+          {incomeQuery.isLoading ? <LedgerStatSkeleton label="Income" /> : <LedgerStat label="Income" value={currency(totalIncome)} tone="good" />}
         </Grid>
         <Grid size={{ xs: 12, md: 3 }}>
-          <LedgerStat label="Net" value={currency(net)} tone={net >= 0 ? "good" : "bad"} />
+          {expensesQuery.isLoading || incomeQuery.isLoading ? <LedgerStatSkeleton label="Net" /> : <LedgerStat label="Net" value={currency(net)} tone={net >= 0 ? "good" : "bad"} />}
         </Grid>
         <Grid size={{ xs: 12, md: 3 }}>
-          <LedgerStat label="Rows" value={`${expenseRows.length + incomeRows.length}`} />
+          {expensesQuery.isLoading || incomeQuery.isLoading ? <LedgerStatSkeleton label="Rows" /> : <LedgerStat label="Rows" value={`${expenseRows.length + incomeRows.length}`} />}
         </Grid>
       </Grid>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      {loading ? (
-        <Grid container spacing={2} sx={{ alignItems: "flex-start" }}>
-          <Grid size={{ xs: 12, xl: 7 }}>
-            <Skeleton variant="rectangular" height={520} sx={{ borderRadius: 1 }} />
-          </Grid>
-          <Grid size={{ xs: 12, xl: 5 }}>
-            <Skeleton variant="rectangular" height={520} sx={{ borderRadius: 1 }} />
-          </Grid>
-        </Grid>
-      ) : (
-        <Grid container spacing={2} sx={{ alignItems: "flex-start" }}>
-          <Grid size={{ xs: 12, xl: 7 }}>
+      <Grid container spacing={2} sx={{ alignItems: "flex-start" }}>
+        <Grid size={{ xs: 12, xl: 7 }}>
+          {expensesQuery.isLoading || categoriesQuery.isLoading ? (
+            <LedgerTableSkeleton title="Expenses" />
+          ) : (
             <LedgerTable
               title="Expenses"
               kind="expense"
@@ -220,8 +260,12 @@ export function Ledger() {
               onUpdate={async (id, patch) => { await updateMutation.mutateAsync({ id, patch }); }}
               onDelete={async (id) => { await deleteMutation.mutateAsync(id); }}
             />
-          </Grid>
-          <Grid size={{ xs: 12, xl: 5 }}>
+          )}
+        </Grid>
+        <Grid size={{ xs: 12, xl: 5 }}>
+          {incomeQuery.isLoading || categoriesQuery.isLoading ? (
+            <LedgerTableSkeleton title="Income" />
+          ) : (
             <LedgerTable
               title="Income"
               kind="income"
@@ -232,9 +276,9 @@ export function Ledger() {
               onUpdate={async (id, patch) => { await updateMutation.mutateAsync({ id, patch }); }}
               onDelete={async (id) => { await deleteMutation.mutateAsync(id); }}
             />
-          </Grid>
+          )}
         </Grid>
-      )}
+      </Grid>
     </Box>
   );
 }

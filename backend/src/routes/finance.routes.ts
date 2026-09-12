@@ -5,7 +5,9 @@ import {
   createTransaction,
   deleteCategory,
   deleteTransaction,
+  getMonthlyBalance,
   getSummary,
+  listMonthlyPlans,
   listCategories,
   listTransactions,
   updateCategory,
@@ -22,6 +24,8 @@ router.get("/categories", authenticate, listCategories);
 router.post("/categories", authenticate, createCategory);
 router.patch("/categories/:id", authenticate, updateCategory);
 router.delete("/categories/:id", authenticate, deleteCategory);
+router.get("/plans", authenticate, listMonthlyPlans);
+router.get("/balance", authenticate, getMonthlyBalance);
 router.get("/summary", authenticate, getSummary);
 
 export default router;

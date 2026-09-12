@@ -140,3 +140,25 @@ export async function getSummary(req: Request, res: Response, next: NextFunction
     next(err);
   }
 }
+
+export async function listMonthlyPlans(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = requireUser(req);
+    const { month } = monthQuerySchema.required({ month: true }).parse(req.query);
+    const data = await monthlySummaryService.listPlans(user.id, month);
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getMonthlyBalance(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = requireUser(req);
+    const { month } = monthQuerySchema.required({ month: true }).parse(req.query);
+    const data = await monthlySummaryService.getBalance(user.id, month);
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+}

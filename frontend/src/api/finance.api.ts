@@ -74,6 +74,12 @@ export const financeApi = {
 
   deleteCategory: (id: string) => apiClient.delete(`/finance/categories/${id}`),
 
+  monthlyPlans: (month: string) =>
+    apiClient.get<MonthlyPlan[]>("/finance/plans", { params: { month } }).then((r) => r.data),
+
+  monthlyBalance: (month: string) =>
+    apiClient.get<MonthlyBalance | null>("/finance/balance", { params: { month } }).then((r) => r.data),
+
   summary: (month: string) =>
     apiClient.get<FinanceSummary>("/finance/summary", { params: { month } }).then((r) => r.data),
 };

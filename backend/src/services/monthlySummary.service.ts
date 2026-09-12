@@ -19,4 +19,12 @@ export class MonthlySummaryService {
 
     return { transactions, plans, balance };
   }
+
+  async listPlans(userId: string, month: string) {
+    return this.monthlyPlanRepo.listByMonth(userId, month);
+  }
+
+  async getBalance(userId: string, month: string) {
+    return this.monthlyBalanceRepo.getByMonth(userId, month);
+  }
 }

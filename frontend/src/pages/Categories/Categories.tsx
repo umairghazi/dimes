@@ -45,6 +45,45 @@ function displayValue(row: FinanceCategory, field: keyof CategoryDraft): string 
   return row[field];
 }
 
+function CategoryStatSkeleton({ label }: { label: string }) {
+  return (
+    <Paper variant="outlined" sx={{ p: 1.75, borderRadius: 1, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
+      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>{label}</Typography>
+      <Skeleton width="36%" height={40} sx={{ mt: 0.75 }} />
+    </Paper>
+  );
+}
+
+function CategoryTableSkeleton() {
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        overflow: "hidden",
+        borderRadius: 1,
+        borderColor: "rgba(255,255,255,0.08)",
+        bgcolor: "rgba(32,35,45,0.94)",
+      }}
+    >
+      <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(15,17,23,0.36)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h5" sx={{ fontWeight: 900 }}>Category matrix</Typography>
+        <Skeleton width={70} height={18} />
+      </Box>
+      <Box sx={{ p: 1.5, display: "grid", gap: 1 }}>
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((row) => (
+          <Box key={row} sx={{ display: "grid", gridTemplateColumns: "260px 220px 140px 110px 48px", gap: 1, alignItems: "center" }}>
+            <Skeleton height={24} />
+            <Skeleton height={24} />
+            <Skeleton height={24} />
+            <Skeleton height={24} />
+            <Skeleton height={24} />
+          </Box>
+        ))}
+      </Box>
+    </Paper>
+  );
+}
+
 export function Categories() {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<CategoryDraft>(blankDraft);
@@ -167,10 +206,14 @@ export function Categories() {
           ["Main categories", mainCategoryCount],
         ].map(([label, value]) => (
           <Grid key={label} size={{ xs: 12, md: 4 }}>
-            <Paper variant="outlined" sx={{ p: 1.75, borderRadius: 1, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)", boxShadow: "0 18px 40px rgba(0,0,0,0.24)" }}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>{label}</Typography>
-              <Typography variant="h4" sx={{ mt: 0.75, fontWeight: 900 }}>{value}</Typography>
-            </Paper>
+            {categoriesQuery.isLoading ? (
+              <CategoryStatSkeleton label={String(label)} />
+            ) : (
+              <Paper variant="outlined" sx={{ p: 1.75, borderRadius: 1, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)", boxShadow: "0 18px 40px rgba(0,0,0,0.24)" }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>{label}</Typography>
+                <Typography variant="h4" sx={{ mt: 0.75, fontWeight: 900 }}>{value}</Typography>
+              </Paper>
+            )}
           </Grid>
         ))}
       </Grid>
@@ -178,7 +221,7 @@ export function Categories() {
       {categoriesQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load categories</Alert>}
 
       {categoriesQuery.isLoading ? (
-        <Skeleton variant="rectangular" height={540} sx={{ borderRadius: 1 }} />
+        <CategoryTableSkeleton />
       ) : (
         <Paper
           variant="outlined"
