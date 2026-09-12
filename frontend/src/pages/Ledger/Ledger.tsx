@@ -60,8 +60,10 @@ function LedgerStat({ label, value, tone }: { label: string; value: string; tone
       sx={{
         p: 1.75,
         borderRadius: 1,
-        bgcolor: "background.paper",
+        borderColor: "rgba(255,255,255,0.08)",
+        bgcolor: "rgba(32,35,45,0.92)",
         minHeight: 88,
+        boxShadow: "0 18px 40px rgba(0,0,0,0.24)",
       }}
     >
       <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>{label}</Typography>
@@ -140,7 +142,9 @@ export function Ledger() {
           p: { xs: 2, md: 3 },
           mb: 2,
           borderRadius: 1,
-          bgcolor: "background.paper",
+          borderColor: "rgba(255,255,255,0.08)",
+          bgcolor: "#171a23",
+          backgroundImage: "linear-gradient(135deg, rgba(88,101,242,0.16), rgba(255,107,44,0.12) 44%, rgba(255,255,255,0.03))",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
@@ -159,9 +163,9 @@ export function Ledger() {
               px: 1,
               py: 0.5,
               border: "1px solid",
-              borderColor: "divider",
+              borderColor: "rgba(255,255,255,0.1)",
               borderRadius: 1,
-              bgcolor: "background.default",
+              bgcolor: "rgba(15,17,23,0.48)",
             }}
           >
             <IconButton size="small" onClick={prevMonth}>

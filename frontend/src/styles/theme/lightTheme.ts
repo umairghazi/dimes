@@ -124,6 +124,17 @@ export const lightTheme = createTheme({
       },
     },
 
+    MuiInput: {
+      styleOverrides: {
+        root: {
+          color: tokens.colors.textPrimaryLight,
+          "&:before": { borderBottomColor: alpha(tokens.colors.textSecondaryLight, 0.32) },
+          "&:hover:not(.Mui-disabled):before": { borderBottomColor: tokens.colors.accentLight },
+          "&:after": { borderBottomColor: tokens.colors.accentLight },
+        },
+      },
+    },
+
     MuiTextField: {
       styleOverrides: {
         root: {
@@ -188,7 +199,7 @@ export const lightTheme = createTheme({
           borderRadius: tokens.radii.lg,
         },
         outlined: {
-          borderColor: tokens.colors.borderLight,
+          borderColor: alpha("#ffffff", 0.08),
           boxShadow: tokens.shadows.sm,
         },
       },
@@ -215,7 +226,7 @@ export const lightTheme = createTheme({
         root: {
           "&:last-child td": { borderBottom: 0 },
           "&:hover td": {
-            backgroundColor: "rgba(255, 90, 31, 0.045)",
+            backgroundColor: "rgba(88, 101, 242, 0.12)",
           },
           "& .MuiTableCell-body": {
             borderColor: tokens.colors.borderLight,

@@ -282,11 +282,12 @@ export function LedgerTable({
       sx={{
         overflow: "hidden",
         borderRadius: 1,
-        borderColor: "divider",
-        bgcolor: "background.paper",
+        borderColor: "rgba(255,255,255,0.08)",
+        bgcolor: "rgba(32,35,45,0.94)",
+        boxShadow: "0 20px 52px rgba(0,0,0,0.28)",
       }}
     >
-      <Box sx={{ px: 1.5, py: 1.25, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+      <Box sx={{ px: 1.5, py: 1.25, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5, borderBottom: "1px solid", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(15,17,23,0.36)" }}>
         <Box>
           <Typography variant="h5" sx={{ fontWeight: 900, color: kind === "expense" ? "primary.main" : "success.main" }}>
             {title}
@@ -340,19 +341,19 @@ export function LedgerTable({
             tableLayout: "fixed",
             minWidth: kind === "expense" ? 850 : 650,
             "& .MuiTableCell-root": {
-              borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(18,16,13,0.09)",
+              borderColor: "rgba(255,255,255,0.065)",
               px: 0.9,
               py: 0.45,
               height: 38,
             },
             "& .MuiTableCell-head": {
-              bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(32,36,44,0.98)" : "rgba(248,245,240,0.98)",
+              bgcolor: "#262a36",
               color: "text.secondary",
               fontWeight: 900,
               textTransform: "none",
             },
             "& .MuiTableRow-root:hover .MuiTableCell-body": {
-              backgroundColor: (theme) => theme.palette.mode === "dark" ? "rgba(255,135,92,0.07)" : "rgba(255,90,31,0.045)",
+              backgroundColor: "rgba(88,101,242,0.12)",
             },
             "& .MuiInputBase-root": {
               fontSize: "0.875rem",
@@ -527,7 +528,7 @@ export function LedgerTable({
               </TableRow>
             ))}
 
-            <TableRow sx={{ bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(255,255,255,0.035)" : "rgba(18,16,13,0.035)" }}>
+            <TableRow sx={{ bgcolor: "rgba(255,107,44,0.08)" }}>
               <TableCell padding="checkbox" />
               <TableCell>
                 <TextField

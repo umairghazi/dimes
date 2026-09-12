@@ -1,20 +1,20 @@
 export const tokens = {
   colors: {
-    // Accent - finance orange
-    accent: "#ff5a1f",
-    accentDark: "#d83b0c",
-    accentLight: "#ff875c",
-    accentBg: "rgba(255, 90, 31, 0.1)",
-    accentBorder: "rgba(255, 90, 31, 0.32)",
+    // Accent - high contrast finance orange
+    accent: "#ff6b2c",
+    accentDark: "#e24f12",
+    accentLight: "#ff9a64",
+    accentBg: "rgba(255, 107, 44, 0.16)",
+    accentBorder: "rgba(255, 107, 44, 0.42)",
 
     // Semantic
-    success: "#0b8f5a",
-    successBg: "rgba(11, 143, 90, 0.1)",
-    warning: "#c98700",
-    warningBg: "rgba(201, 135, 0, 0.12)",
-    error: "#d33a2c",
-    errorBg: "rgba(211, 58, 44, 0.1)",
-    info: "#1c75d8",
+    success: "#29cc7a",
+    successBg: "rgba(41, 204, 122, 0.14)",
+    warning: "#f0b232",
+    warningBg: "rgba(240, 178, 50, 0.16)",
+    error: "#ff5c6c",
+    errorBg: "rgba(255, 92, 108, 0.14)",
+    info: "#5865f2",
 
     // Budget progress
     budgetGreen: "#16a34a",
@@ -22,20 +22,20 @@ export const tokens = {
     budgetRed: "#dc2626",
 
     // Light mode
-    bgLight: "#f6f3ee",
-    surfaceLight: "#ffffff",
-    surfaceMutedLight: "#f0ebe3",
-    borderLight: "#ded7cc",
-    textPrimaryLight: "#12100d",
-    textSecondaryLight: "#625b52",
+    bgLight: "#13151c",
+    surfaceLight: "#20232d",
+    surfaceMutedLight: "#2a2e3a",
+    borderLight: "#383e4d",
+    textPrimaryLight: "#f6f7fb",
+    textSecondaryLight: "#b9becd",
 
     // Dark mode
-    bgDark: "#0f1115",
-    surfaceDark: "#171a20",
-    surfaceMutedDark: "#20242c",
-    borderDark: "#2b303a",
-    textPrimaryDark: "#f7f2ea",
-    textSecondaryDark: "#a7a096",
+    bgDark: "#0f1117",
+    surfaceDark: "#1c1f29",
+    surfaceMutedDark: "#262a36",
+    borderDark: "#353b4a",
+    textPrimaryDark: "#f7f8fc",
+    textSecondaryDark: "#b5bbcb",
   },
 
   font: {
@@ -52,14 +52,14 @@ export const tokens = {
   },
 
   shadows: {
-    xs: "0 1px 1px rgba(18,16,13,0.04)",
-    sm: "0 12px 30px rgba(18,16,13,0.06)",
-    md: "0 18px 50px rgba(18,16,13,0.08)",
-    lg: "0 24px 70px rgba(18,16,13,0.1)",
-    xl: "0 32px 90px rgba(18,16,13,0.12)",
-    card: "0 18px 50px rgba(18,16,13,0.07)",
-    cardHover: "0 24px 70px rgba(18,16,13,0.1)",
-    fab: "rgba(255,90,31,0.32) 0 12px 28px -8px",
+    xs: "0 1px 1px rgba(0,0,0,0.18)",
+    sm: "0 14px 32px rgba(0,0,0,0.22)",
+    md: "0 20px 52px rgba(0,0,0,0.28)",
+    lg: "0 28px 76px rgba(0,0,0,0.34)",
+    xl: "0 36px 100px rgba(0,0,0,0.42)",
+    card: "0 20px 52px rgba(0,0,0,0.28)",
+    cardHover: "0 28px 76px rgba(0,0,0,0.36)",
+    fab: "rgba(255,107,44,0.38) 0 12px 28px -8px",
     bottomSheet: "0 -4px 20px rgba(0,0,0,0.10)",
   },
 

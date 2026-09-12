@@ -34,7 +34,7 @@ interface BreakdownRow {
   percent: number;
 }
 
-const chartColors = ["#ff5a1f", "#12100d", "#1c75d8", "#0b8f5a", "#f4b400", "#46bdc6", "#7c7064", "#c6c91a", "#f06292", "#8a8178"];
+const chartColors = ["#ff6b2c", "#5865f2", "#29cc7a", "#f0b232", "#35c2ff", "#ff5c6c", "#8bdf7a", "#c084fc", "#f472b6", "#94a3b8"];
 
 function formatMonthLabel(monthYear: string): string {
   const [year, month] = monthYear.split("-").map(Number);
@@ -140,7 +140,9 @@ function Metric({ label, value, helper }: { label: string; value: string; helper
         p: 2,
         borderRadius: 1,
         height: "100%",
-        bgcolor: "background.paper",
+        borderColor: "rgba(255,255,255,0.08)",
+        bgcolor: "rgba(32,35,45,0.92)",
+        boxShadow: "0 18px 40px rgba(0,0,0,0.24)",
       }}
     >
       <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
@@ -186,8 +188,10 @@ function SummaryHero({
         gap: { xs: 3, lg: 4 },
         p: { xs: 2, md: 3 },
         borderRadius: 1,
-        bgcolor: (theme) => theme.palette.mode === "dark" ? "#12100d" : "#12100d",
-        color: "#f7f2ea",
+        borderColor: "rgba(255,255,255,0.08)",
+        bgcolor: "#171a23",
+        backgroundImage: "linear-gradient(135deg, rgba(255,107,44,0.2), rgba(88,101,242,0.14) 42%, rgba(255,255,255,0.03))",
+        color: "#f7f8fc",
         overflow: "hidden",
         position: "relative",
         boxShadow: "0 24px 70px rgba(18,16,13,0.16)",
@@ -207,11 +211,11 @@ function SummaryHero({
 
         <Box sx={{ mt: 3, display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" }, gap: 1 }}>
           {[
-            ["Income", currency(totalIncome), "#77e0ac"],
-            ["Expenses", currency(totalSpend), "#ff875c"],
-            ["Planned spend", currency(plannedSpend), "#9ec5ff"],
+            ["Income", currency(totalIncome), "#29cc7a"],
+            ["Expenses", currency(totalSpend), "#ff9a64"],
+            ["Planned spend", currency(plannedSpend), "#8ea0ff"],
           ].map(([label, value, color]) => (
-            <Box key={label} sx={{ border: "1px solid rgba(247,242,234,0.16)", borderRadius: 1, p: 1.5, bgcolor: "rgba(255,255,255,0.05)" }}>
+            <Box key={label} sx={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 1, p: 1.5, bgcolor: "rgba(15,17,23,0.48)" }}>
               <Typography variant="caption" sx={{ color: "rgba(247,242,234,0.58)" }}>{label}</Typography>
               <Typography variant="h5" sx={{ color, mt: 0.5 }}>{value}</Typography>
             </Box>
@@ -220,7 +224,7 @@ function SummaryHero({
       </Box>
 
       <Box sx={{ display: "grid", alignContent: "space-between", gap: 3 }}>
-        <Box sx={{ border: "1px solid rgba(247,242,234,0.16)", borderRadius: 1, p: 2, bgcolor: "rgba(255,255,255,0.045)" }}>
+        <Box sx={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 1, p: 2, bgcolor: "rgba(15,17,23,0.48)" }}>
           <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 2 }}>
             <Typography variant="caption" sx={{ color: "rgba(247,242,234,0.58)" }}>Savings rate</Typography>
             <Typography variant="h3" sx={{ color: savingsRate >= 0 ? "#77e0ac" : "#ff875c" }}>
@@ -237,8 +241,8 @@ function SummaryHero({
 
         <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, minHeight: 240, alignItems: "end" }}>
           {[
-            ["Start", startingBalance, "#9ec5ff"],
-            ["End", endingBalance, endingBalance >= startingBalance ? "#77e0ac" : "#ff875c"],
+            ["Start", startingBalance, "#8ea0ff"],
+            ["End", endingBalance, endingBalance >= startingBalance ? "#29cc7a" : "#ff9a64"],
           ].map(([label, value, color]) => (
             <Box key={label} sx={{ display: "grid", alignItems: "end", justifyItems: "center", gap: 1.25 }}>
               <Box sx={{ width: "44%", minWidth: 54, height: `${Math.max(18, (Number(value) / maxBalance) * 180)}px`, bgcolor: color, borderRadius: "8px 8px 2px 2px" }} />
@@ -274,7 +278,7 @@ function SpendByDateChart({ rows }: { rows: BreakdownRow[] }) {
   const ticks = [0, 0.5, 1];
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 1, p: 2, overflowX: "auto", bgcolor: "background.paper" }}>
+    <Paper variant="outlined" sx={{ borderRadius: 1, p: 2, overflowX: "auto", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
       <Typography variant="h5" sx={{ fontWeight: 900, color: "text.primary", mb: 1 }}>Money spent by date</Typography>
       {rows.length === 0 ? (
         <Typography color="text.secondary">No expenses for this month.</Typography>
@@ -285,24 +289,24 @@ function SpendByDateChart({ rows }: { rows: BreakdownRow[] }) {
             return (
               <g key={tick}>
                 <line x1={left} x2={width - right} y1={y} y2={y} stroke="currentColor" opacity="0.12" />
-                <text x={left - 10} y={y + 4} textAnchor="end" fontSize="12" fill="#777">{currencyWithCents(max * tick)}</text>
+                <text x={left - 10} y={y + 4} textAnchor="end" fontSize="12" fill="#b5bbcb">{currencyWithCents(max * tick)}</text>
               </g>
             );
           })}
-          <line x1={left} x2={width - right} y1={top + plotHeight} y2={top + plotHeight} stroke="#333" />
+          <line x1={left} x2={width - right} y1={top + plotHeight} y2={top + plotHeight} stroke="#535b70" />
           {rows.map((row, index) => {
             const x = rows.length > 1 ? left + index * step : left + plotWidth / 2;
             const barHeight = (row.amount / max) * plotHeight;
             return (
               <g key={row.label}>
-                <rect x={x - barWidth / 2} y={top + plotHeight - barHeight} width={barWidth} height={barHeight} fill="#ff5a1f" rx="4" />
-                <text x={x} y={height - 28} textAnchor="middle" fontSize="12" fill="#777">{formatShortDate(row.label)}</text>
+                <rect x={x - barWidth / 2} y={top + plotHeight - barHeight} width={barWidth} height={barHeight} fill="#ff6b2c" rx="4" />
+                <text x={x} y={height - 28} textAnchor="middle" fontSize="12" fill="#b5bbcb">{formatShortDate(row.label)}</text>
               </g>
             );
           })}
-          <polyline points={points} fill="none" stroke="#12100d" strokeWidth="2.5" />
-          <text x={18} y={top + plotHeight / 2} transform={`rotate(-90 18 ${top + plotHeight / 2})`} textAnchor="middle" fontSize="13" fontWeight="700" fill="#444">Amount</text>
-          <text x={left + plotWidth / 2} y={height - 4} textAnchor="middle" fontSize="13" fontWeight="700" fill="#444">Date</text>
+          <polyline points={points} fill="none" stroke="#8ea0ff" strokeWidth="2.5" />
+          <text x={18} y={top + plotHeight / 2} transform={`rotate(-90 18 ${top + plotHeight / 2})`} textAnchor="middle" fontSize="13" fontWeight="700" fill="#b5bbcb">Amount</text>
+          <text x={left + plotWidth / 2} y={height - 4} textAnchor="middle" fontSize="13" fontWeight="700" fill="#b5bbcb">Date</text>
         </Box>
       )}
     </Paper>
@@ -320,7 +324,7 @@ function BreakdownChart({ title, rows }: { title: string; rows: BreakdownRow[] }
     }).join(", ");
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 1, p: 2, height: "100%", bgcolor: "background.paper" }}>
+    <Paper variant="outlined" sx={{ borderRadius: 1, p: 2, height: "100%", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
       <Typography variant="h5" sx={{ fontWeight: 900, color: "text.primary", mb: 2 }}>{title}</Typography>
       {rows.length === 0 ? (
         <Typography color="text.secondary">No expenses for this month.</Typography>
@@ -365,7 +369,7 @@ function BudgetTable({ title, rows, type }: { title: string; rows: SummaryRow[];
   );
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 1, overflow: "hidden", bgcolor: "background.paper" }}>
+    <Paper variant="outlined" sx={{ borderRadius: 1, overflow: "hidden", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
       <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Typography variant="h5" sx={{ fontWeight: 900, color: type === "expense" ? "primary.main" : "success.main" }}>
           {title}
@@ -434,7 +438,7 @@ export function Summary() {
           <Typography variant="overline" color="primary.main" sx={{ fontWeight: 900 }}>Overview</Typography>
           <Typography variant="h1" sx={{ fontWeight: 900 }}>{formatMonthLabel(month)}</Typography>
         </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1, py: 0.5, border: "1px solid", borderColor: "divider", borderRadius: 1, bgcolor: "background.paper" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1, py: 0.5, border: "1px solid", borderColor: "rgba(255,255,255,0.1)", borderRadius: 1, bgcolor: "rgba(32,35,45,0.92)" }}>
           <IconButton size="small" onClick={prevMonth}>
             <ChevronLeftIcon />
           </IconButton>

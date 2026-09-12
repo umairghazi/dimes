@@ -112,6 +112,17 @@ export const darkTheme = createTheme({
       },
     },
 
+    MuiInput: {
+      styleOverrides: {
+        root: {
+          color: tokens.colors.textPrimaryDark,
+          "&:before": { borderBottomColor: alpha(tokens.colors.textSecondaryDark, 0.32) },
+          "&:hover:not(.Mui-disabled):before": { borderBottomColor: tokens.colors.accentLight },
+          "&:after": { borderBottomColor: tokens.colors.accentLight },
+        },
+      },
+    },
+
     MuiTextField: {
       styleOverrides: {
         root: {

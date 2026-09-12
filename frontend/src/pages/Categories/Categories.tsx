@@ -142,7 +142,17 @@ export function Categories() {
 
   return (
     <Box>
-      <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, mb: 2, borderRadius: 1, bgcolor: "background.paper" }}>
+      <Paper
+        variant="outlined"
+        sx={{
+          p: { xs: 2, md: 3 },
+          mb: 2,
+          borderRadius: 1,
+          borderColor: "rgba(255,255,255,0.08)",
+          bgcolor: "#171a23",
+          backgroundImage: "linear-gradient(135deg, rgba(255,107,44,0.16), rgba(88,101,242,0.12) 46%, rgba(255,255,255,0.03))",
+        }}
+      >
         <Typography variant="overline" color="primary.main" sx={{ fontWeight: 900 }}>Configuration</Typography>
         <Typography variant="h1" sx={{ fontWeight: 900 }}>Categories</Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mt: 1, maxWidth: 620 }}>
@@ -157,7 +167,7 @@ export function Categories() {
           ["Main categories", mainCategoryCount],
         ].map(([label, value]) => (
           <Grid key={label} size={{ xs: 12, md: 4 }}>
-            <Paper variant="outlined" sx={{ p: 1.75, borderRadius: 1, bgcolor: "background.paper" }}>
+            <Paper variant="outlined" sx={{ p: 1.75, borderRadius: 1, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)", boxShadow: "0 18px 40px rgba(0,0,0,0.24)" }}>
               <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>{label}</Typography>
               <Typography variant="h4" sx={{ mt: 0.75, fontWeight: 900 }}>{value}</Typography>
             </Paper>
@@ -175,10 +185,12 @@ export function Categories() {
           sx={{
             overflow: "hidden",
             borderRadius: 1,
-            bgcolor: "background.paper",
+            borderColor: "rgba(255,255,255,0.08)",
+            bgcolor: "rgba(32,35,45,0.94)",
+            boxShadow: "0 20px 52px rgba(0,0,0,0.28)",
           }}
         >
-          <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(15,17,23,0.36)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <Typography variant="h5" sx={{ fontWeight: 900 }}>Category matrix</Typography>
             <Typography variant="caption" color="text.secondary">{rows.length} total</Typography>
           </Box>
@@ -196,7 +208,7 @@ export function Categories() {
                 },
                 "& .MuiTableCell-head": {
                   fontWeight: 900,
-                  bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(32,36,44,0.98)" : "rgba(248,245,240,0.98)",
+                  bgcolor: "#262a36",
                 },
                 "& .MuiInput-underline:before": {
                   borderBottomColor: "transparent",

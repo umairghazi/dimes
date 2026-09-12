@@ -28,10 +28,8 @@ export function AppShell() {
       sx={{
         minHeight: "100vh",
         bgcolor: "background.default",
-        backgroundImage: (theme) =>
-          theme.palette.mode === "dark"
-            ? "linear-gradient(180deg, rgba(255,90,31,0.1) 0%, rgba(15,17,21,0) 360px)"
-            : "linear-gradient(180deg, rgba(255,90,31,0.14) 0%, rgba(246,243,238,0) 380px)",
+        backgroundImage:
+          "linear-gradient(135deg, rgba(255,107,44,0.16) 0%, rgba(88,101,242,0.12) 36%, rgba(15,17,23,0) 62%), linear-gradient(180deg, #151822 0%, #0f1117 42%)",
       }}
     >
       <Box
@@ -42,9 +40,9 @@ export function AppShell() {
           zIndex: (theme) => theme.zIndex.appBar,
           borderBottom: "1px solid",
           borderColor: "divider",
-          bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(15,17,21,0.82)" : "rgba(246,243,238,0.8)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
+          bgcolor: "rgba(13,15,21,0.9)",
+          backdropFilter: "blur(22px) saturate(130%)",
+          WebkitBackdropFilter: "blur(22px) saturate(130%)",
         }}
       >
         <Box
@@ -67,9 +65,10 @@ export function AppShell() {
                 display: "grid",
                 placeItems: "center",
                 borderRadius: 1,
-                bgcolor: "primary.main",
-                color: "primary.contrastText",
+                bgcolor: "#ff6b2c",
+                color: "#101219",
                 fontWeight: 900,
+                boxShadow: "0 0 0 3px rgba(255,107,44,0.18), 0 12px 28px rgba(255,107,44,0.24)",
               }}
             >
               D
@@ -110,13 +109,22 @@ export function AppShell() {
                     flex: { xs: "1 0 auto", md: "0 0 auto" },
                     minHeight: 40,
                     px: { xs: 1.25, md: 1.75 },
-                    color: "text.secondary",
+                    color: "#b5bbcb",
                     borderColor: "transparent",
+                    bgcolor: "rgba(255,255,255,0.04)",
+                    boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.04)",
+                    "&:hover": {
+                      bgcolor: "rgba(255,255,255,0.08)",
+                      borderColor: "rgba(255,255,255,0.08)",
+                    },
                     "&.active": {
-                      bgcolor: "background.paper",
-                      color: "text.primary",
-                      borderColor: "divider",
-                      boxShadow: (theme) => theme.palette.mode === "dark" ? "none" : "0 10px 28px rgba(18,16,13,0.06)",
+                      bgcolor: "#5865f2",
+                      color: "#ffffff",
+                      borderColor: "rgba(255,255,255,0.08)",
+                      boxShadow: "0 16px 34px rgba(88,101,242,0.28)",
+                      "& .MuiButton-startIcon": {
+                        color: "#ffffff",
+                      },
                     },
                   }}
                   variant="outlined"
