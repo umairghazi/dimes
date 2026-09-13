@@ -109,7 +109,7 @@ function parseRows(input: string, fallbackType: ImportType, monthYear: string): 
       amount,
       type,
       categoryName: cells[categoryIndex] || null,
-      groupName: cells[groupIndex] || null,
+      parentName: cells[groupIndex] || null,
       currency: "CAD",
     }];
   });
@@ -150,7 +150,7 @@ export function ImportTransactions() {
         <Typography variant="overline" color="primary.main" sx={{ fontWeight: 900 }}>Sheets import</Typography>
         <Typography variant="h1" sx={{ fontWeight: 900 }}>Paste transactions</Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mt: 1, maxWidth: 720 }}>
-          Paste rows copied from Google Sheets. Missing category groups and categories are created during import.
+          Paste rows copied from Google Sheets. Missing parent and child categories are created during import.
         </Typography>
       </Paper>
 
@@ -221,7 +221,7 @@ export function ImportTransactions() {
       {importMutation.isError && <Alert severity="error" sx={{ mb: 2 }}>Import failed. Check the pasted rows and try again.</Alert>}
       {importMutation.data && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Imported {importMutation.data.transactions.length} transactions. Created {importMutation.data.createdGroups} groups and {importMutation.data.createdCategories} categories.
+          Imported {importMutation.data.transactions.length} transactions. Created {importMutation.data.createdParents} parent categories and {importMutation.data.createdCategories} child categories.
         </Alert>
       )}
 
@@ -240,7 +240,7 @@ export function ImportTransactions() {
                 <TableCell>Description</TableCell>
                 <TableCell align="right" sx={{ width: 120 }}>Amount</TableCell>
                 <TableCell sx={{ width: 120 }}>Type</TableCell>
-                <TableCell sx={{ width: 180 }}>Group</TableCell>
+                <TableCell sx={{ width: 180 }}>Parent</TableCell>
                 <TableCell sx={{ width: 180 }}>Category</TableCell>
               </TableRow>
             </TableHead>
@@ -253,7 +253,7 @@ export function ImportTransactions() {
                   <TableCell>{row.description}</TableCell>
                   <TableCell align="right">{money(row.amount)}</TableCell>
                   <TableCell>{row.type}</TableCell>
-                  <TableCell>{row.groupName || "No group"}</TableCell>
+                  <TableCell>{row.parentName || "No parent"}</TableCell>
                   <TableCell>{row.categoryName || "Uncategorized"}</TableCell>
                 </TableRow>
               ))}

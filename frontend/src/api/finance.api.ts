@@ -30,13 +30,13 @@ export interface ImportTransactionRow {
   amount: number;
   type: "expense" | "income";
   categoryName?: string | null;
-  groupName?: string | null;
+  parentName?: string | null;
   currency?: string;
 }
 
 export interface ImportTransactionsResult {
   transactions: Expense[];
-  createdGroups: number;
+  createdParents: number;
   createdCategories: number;
 }
 

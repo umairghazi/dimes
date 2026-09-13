@@ -69,8 +69,19 @@ function normalizeCategoryName(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+function stripParentPrefix(name: string, parentName: string): string {
+  const escapedParent = parentName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const stripped = name.replace(new RegExp(`^${escapedParent}\\s*(?:/|-|:)?\\s+`, "i"), "").trim();
+  return stripped || name;
+}
+
 function categoryLabel(category: FinanceCategory): string {
-  return category.path.length > 0 ? category.path.map((part) => part.name).join(" / ") : category.name;
+  if (category.path.length === 0) return category.name;
+  return category.path.reduce<string[]>((parts, part) => {
+    const previous = parts[parts.length - 1];
+    parts.push(previous ? stripParentPrefix(part.name, previous) : part.name);
+    return parts;
+  }, []).join(" / ");
 }
 
 function parseAmount(value: string): number | null {

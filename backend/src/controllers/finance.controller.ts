@@ -37,7 +37,7 @@ const importTransactionRowSchema = z.object({
   amount: z.number().positive(),
   type: z.enum(["expense", "income"]),
   categoryName: z.string().nullable().optional(),
-  groupName: z.string().nullable().optional(),
+  parentName: z.string().nullable().optional(),
   currency: z.string().default("CAD"),
 });
 const importTransactionsSchema = z.object({

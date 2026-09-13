@@ -15,13 +15,13 @@ export interface ImportTransactionRow {
   amount: number;
   type: FinanceTransactionType;
   categoryName?: string | null;
-  groupName?: string | null;
+  parentName?: string | null;
   currency?: string;
 }
 
 export interface ImportTransactionsResult {
   transactions: FinanceTransaction[];
-  createdGroups: number;
+  createdParents: number;
   createdCategories: number;
 }
 
@@ -51,7 +51,7 @@ export class TransactionService {
 
   async importRows(userId: string, rows: ImportTransactionRow[]): Promise<ImportTransactionsResult> {
     const categoryCache = new Map<string, string>();
-    let createdGroups = 0;
+    let createdParents = 0;
     let createdCategories = 0;
 
     const existingCategories = await this.categoryRepo.listByUser(userId);
@@ -62,18 +62,18 @@ export class TransactionService {
     const imported: FinanceTransaction[] = [];
     for (const row of rows) {
       const type = row.type;
-      const names = this.normalizeNames(row.categoryName, row.groupName);
+      const names = this.normalizeNames(row.categoryName, row.parentName);
       let parentId: string | null = null;
       let categoryId: string | null = null;
 
-      if (names.groupName) {
-        const parentKey = this.key(type, "none", names.groupName);
+      if (names.parentName) {
+        const parentKey = this.key(type, "none", names.parentName);
         parentId = categoryCache.get(parentKey) ?? null;
         if (!parentId) {
-          const parent = await this.categoryRepo.create(userId, { name: names.groupName, parentId: null, type });
+          const parent = await this.categoryRepo.create(userId, { name: names.parentName, parentId: null, type });
           parentId = parent.id;
           categoryCache.set(parentKey, parent.id);
-          createdGroups += 1;
+          createdParents += 1;
         }
       }
 
@@ -105,7 +105,7 @@ export class TransactionService {
       }));
     }
 
-    return { transactions: imported, createdGroups, createdCategories };
+    return { transactions: imported, createdParents, createdCategories };
   }
 
   private async validateCategory(userId: string, categoryId: string | null | undefined): Promise<void> {
@@ -114,17 +114,22 @@ export class TransactionService {
     if (!exists) throw new AppError("Category not found", 404, "CATEGORY_NOT_FOUND");
   }
 
-  private normalizeNames(categoryName?: string | null, groupName?: string | null): { categoryName: string | null; groupName: string | null } {
+  private normalizeNames(categoryName?: string | null, parentName?: string | null): { categoryName: string | null; parentName: string | null } {
     const cleanCategory = categoryName?.trim() || null;
-    const cleanGroup = groupName?.trim() || null;
-    if (!cleanCategory) return { categoryName: null, groupName: cleanGroup };
+    const cleanParent = parentName?.trim() || null;
+    if (!cleanCategory) return { categoryName: null, parentName: cleanParent };
 
-    if (cleanGroup) return { categoryName: cleanCategory, groupName: cleanGroup };
+    if (cleanParent) {
+      return {
+        categoryName: this.stripParentPrefix(cleanCategory, cleanParent),
+        parentName: cleanParent,
+      };
+    }
 
     const slashParts = cleanCategory.split("/").map((part) => part.trim()).filter(Boolean);
     if (slashParts.length >= 2) {
       return {
-        groupName: slashParts[0],
+        parentName: slashParts[0],
         categoryName: slashParts.slice(1).join(" / "),
       };
     }
@@ -132,12 +137,18 @@ export class TransactionService {
     const dashParts = cleanCategory.split(" - ").map((part) => part.trim()).filter(Boolean);
     if (dashParts.length >= 2) {
       return {
-        groupName: dashParts[0],
+        parentName: dashParts[0],
         categoryName: dashParts.slice(1).join(" - "),
       };
     }
 
-    return { categoryName: cleanCategory, groupName: null };
+    return { categoryName: cleanCategory, parentName: null };
+  }
+
+  private stripParentPrefix(categoryName: string, parentName: string): string {
+    const escapedParent = parentName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const next = categoryName.replace(new RegExp(`^${escapedParent}\\s*(?:/|-|:)?\\s+`, "i"), "").trim();
+    return next || categoryName;
   }
 
   private key(...parts: Array<string | null | undefined>): string {
