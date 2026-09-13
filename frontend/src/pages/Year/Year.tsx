@@ -20,33 +20,16 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useNavigate } from "react-router-dom";
 import { financeApi, YearlySummaryMonth } from "@/api/finance.api";
 import { useMonthStore } from "@/store/monthStore";
+import { MetricCard } from "@/components/finance/MetricCard";
+import { currency, signedCurrency } from "@/components/finance/financeFormat";
 
 function currentYear(): number {
   return new Date().getFullYear();
 }
 
-function currency(value: number | null): string {
+function nullableCurrency(value: number | null): string {
   if (value === null) return "—";
-  return value.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  });
-}
-
-function signedCurrency(value: number): string {
-  const formatted = currency(Math.abs(value));
-  return value > 0 ? `+${formatted}` : value < 0 ? `-${formatted}` : formatted;
-}
-
-function Metric({ label, value, tone = "default" }: { label: string; value: string; tone?: "default" | "good" | "bad" }) {
-  const color = tone === "good" ? "success.main" : tone === "bad" ? "primary.main" : "text.primary";
-  return (
-    <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
-      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>{label}</Typography>
-      <Typography variant="h4" sx={{ mt: 0.75, fontWeight: 900, color }}>{value}</Typography>
-    </Paper>
-  );
+  return currency(value);
 }
 
 function ChartSkeleton({ title }: { title: string }) {
@@ -154,7 +137,7 @@ function BalanceTrendChart({ months }: { months: YearlySummaryMonth[] }) {
             return (
               <g key={month.monthYear}>
                 <circle cx={x} cy={y} r="5" fill="#8ea0ff">
-                  <title>{month.monthLabel} ending balance: {currency(month.endingBalance)}</title>
+                  <title>{month.monthLabel} ending balance: {nullableCurrency(month.endingBalance)}</title>
                 </circle>
                 <text x={x} y={height - 24} textAnchor="middle" fontSize="12" fill="#b5bbcb">{month.monthLabel}</text>
               </g>
@@ -207,10 +190,10 @@ export function Year() {
       {yearlyQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load yearly summary</Alert>}
 
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid size={{ xs: 12, md: 3 }}>{yearlyQuery.isLoading ? <Skeleton height={110} /> : <Metric label="Income" value={currency(data?.totals.income ?? 0)} tone="good" />}</Grid>
-        <Grid size={{ xs: 12, md: 3 }}>{yearlyQuery.isLoading ? <Skeleton height={110} /> : <Metric label="Expenses" value={currency(data?.totals.expenses ?? 0)} tone="bad" />}</Grid>
-        <Grid size={{ xs: 12, md: 3 }}>{yearlyQuery.isLoading ? <Skeleton height={110} /> : <Metric label="Net" value={signedCurrency(data?.totals.net ?? 0)} tone={(data?.totals.net ?? 0) >= 0 ? "good" : "bad"} />}</Grid>
-        <Grid size={{ xs: 12, md: 3 }}>{yearlyQuery.isLoading ? <Skeleton height={110} /> : <Metric label="Latest ending balance" value={currency(latestEndingBalance)} />}</Grid>
+        <Grid size={{ xs: 12, md: 3 }}>{yearlyQuery.isLoading ? <Skeleton height={110} /> : <MetricCard label="Income" value={currency(data?.totals.income ?? 0)} tone="good" />}</Grid>
+        <Grid size={{ xs: 12, md: 3 }}>{yearlyQuery.isLoading ? <Skeleton height={110} /> : <MetricCard label="Expenses" value={currency(data?.totals.expenses ?? 0)} tone="bad" />}</Grid>
+        <Grid size={{ xs: 12, md: 3 }}>{yearlyQuery.isLoading ? <Skeleton height={110} /> : <MetricCard label="Net" value={signedCurrency(data?.totals.net ?? 0)} tone={(data?.totals.net ?? 0) >= 0 ? "good" : "bad"} />}</Grid>
+        <Grid size={{ xs: 12, md: 3 }}>{yearlyQuery.isLoading ? <Skeleton height={110} /> : <MetricCard label="Latest ending balance" value={nullableCurrency(latestEndingBalance)} />}</Grid>
       </Grid>
 
       <Paper variant="outlined" sx={{ borderRadius: 1, overflow: "hidden", mb: 2, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
@@ -244,8 +227,8 @@ export function Year() {
                     <TableCell align="right" sx={{ color: "success.main", fontWeight: 700 }}>{currency(month.income)}</TableCell>
                     <TableCell align="right" sx={{ color: "primary.main", fontWeight: 700 }}>{currency(month.expenses)}</TableCell>
                     <TableCell align="right" sx={{ color: month.net >= 0 ? "success.main" : "primary.main", fontWeight: 800 }}>{signedCurrency(month.net)}</TableCell>
-                    <TableCell align="right">{currency(month.startingBalance)}</TableCell>
-                    <TableCell align="right">{currency(month.endingBalance)}</TableCell>
+                    <TableCell align="right">{nullableCurrency(month.startingBalance)}</TableCell>
+                    <TableCell align="right">{nullableCurrency(month.endingBalance)}</TableCell>
                   </TableRow>
                 ))
               )}

@@ -4,8 +4,9 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
+  FormControlLabel,
   Grid,
-  IconButton,
   InputAdornment,
   Paper,
   Skeleton,
@@ -18,12 +19,14 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import { financeApi, FinanceCategory, MonthlyPlan } from "@/api/finance.api";
 import { Expense } from "@/types/expense.types";
 import { useMonthStore, isCurrentMonthYear } from "@/store/monthStore";
+import { formatMonthLabel, currency, currencyWithCents } from "@/components/finance/financeFormat";
+import { PageHero } from "@/components/finance/PageHero";
+import { MonthSwitcher } from "@/components/finance/MonthSwitcher";
+import { MetricCard, MetricCardSkeleton } from "@/components/finance/MetricCard";
 
 interface SummaryRow {
   category: string;
@@ -52,14 +55,6 @@ interface CategorySpendNode {
 
 const chartColors = ["#ff6b2c", "#5865f2", "#29cc7a", "#f0b232", "#35c2ff", "#ff5c6c", "#8bdf7a", "#c084fc", "#f472b6", "#94a3b8"];
 
-function formatMonthLabel(monthYear: string): string {
-  const [year, month] = monthYear.split("-").map(Number);
-  return new Date(year, month - 1, 1).toLocaleDateString(undefined, {
-    month: "long",
-    year: "numeric",
-  });
-}
-
 function formatShortDate(value: string): string {
   const date = new Date(`${value.slice(0, 10)}T00:00:00`);
   return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" });
@@ -68,23 +63,6 @@ function formatShortDate(value: string): string {
 function formatAxisDate(value: string): string {
   const date = new Date(`${value.slice(0, 10)}T00:00:00`);
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-}
-
-function currency(value: number): string {
-  return value.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  });
-}
-
-function currencyWithCents(value: number): string {
-  return value.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 }
 
 function total(rows: Expense[], type: "expense" | "income"): number {
@@ -120,11 +98,6 @@ function buildRows(transactions: Expense[], plans: MonthlyPlan[], type: "expense
     });
 }
 
-function toDateOnly(value: string): Date {
-  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
-
 function toIsoDate(value: Date): string {
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, "0");
@@ -139,8 +112,7 @@ function addDays(value: Date, days: number): Date {
 }
 
 function spendByDate(transactions: Expense[], monthYear: string): BreakdownRow[] {
-  const expenseRows = transactions.filter((row) => row.type === "expense");
-  if (expenseRows.length === 0) return [];
+  const expenseRows = transactions.filter((row) => row.type === "expense" && row.date.slice(0, 7) === monthYear);
 
   const grouped = new Map<string, number>();
   const counts = new Map<string, number>();
@@ -151,13 +123,8 @@ function spendByDate(transactions: Expense[], monthYear: string): BreakdownRow[]
   });
 
   const [year, month] = monthYear.split("-").map(Number);
-  let start = new Date(year, month - 1, 1);
-  let end = new Date(year, month, 0);
-  [...grouped.keys()].forEach((date) => {
-    const value = toDateOnly(date);
-    if (value < start) start = value;
-    if (value > end) end = value;
-  });
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0);
 
   const totalSpent = [...grouped.values()].reduce((sum, value) => sum + value, 0);
   const rows: BreakdownRow[] = [];
@@ -288,53 +255,6 @@ function DiffText({ value }: { value: number }) {
     <Typography component="span" sx={{ color, fontWeight: 700 }}>
       {value > 0 ? "+" : ""}{currency(value)}
     </Typography>
-  );
-}
-
-function Metric({ label, value, helper }: { label: string; value: string; helper?: string }) {
-  return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 2,
-        borderRadius: 1,
-        height: "100%",
-        borderColor: "rgba(255,255,255,0.08)",
-        bgcolor: "rgba(32,35,45,0.92)",
-        boxShadow: "0 18px 40px rgba(0,0,0,0.24)",
-      }}
-    >
-      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
-        {label}
-      </Typography>
-      <Typography variant="h4" sx={{ mt: 0.75, fontWeight: 900 }}>
-        {value}
-      </Typography>
-      {helper && (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          {helper}
-        </Typography>
-      )}
-    </Paper>
-  );
-}
-
-function MetricSkeleton() {
-  return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 2,
-        borderRadius: 1,
-        height: "100%",
-        borderColor: "rgba(255,255,255,0.08)",
-        bgcolor: "rgba(32,35,45,0.92)",
-      }}
-    >
-      <Skeleton width={96} height={18} />
-      <Skeleton width="68%" height={36} sx={{ mt: 0.75 }} />
-      <Skeleton width="44%" height={18} sx={{ mt: 0.5 }} />
-    </Paper>
   );
 }
 
@@ -962,12 +882,39 @@ function BudgetTableSkeleton({ title, type }: { title: string; type: "expense" |
   );
 }
 
+const summaryWidgetOptions = [
+  { id: "dailySpend", label: "Daily spend" },
+  { id: "categoryDrilldown", label: "Category drilldown" },
+  { id: "categoryTree", label: "Category tree" },
+  { id: "expenseBudget", label: "Expense budget" },
+  { id: "incomeBudget", label: "Income budget" },
+] as const;
+
+type SummaryWidgetId = typeof summaryWidgetOptions[number]["id"];
+
+const defaultSummaryWidgets: SummaryWidgetId[] = summaryWidgetOptions.map((widget) => widget.id);
+const summaryWidgetStorageKey = "dimes.summary.visibleWidgets";
+
+function loadVisibleSummaryWidgets(): Set<SummaryWidgetId> {
+  try {
+    const stored = window.localStorage.getItem(summaryWidgetStorageKey);
+    const parsed = stored ? JSON.parse(stored) : defaultSummaryWidgets;
+    if (!Array.isArray(parsed)) return new Set(defaultSummaryWidgets);
+    const validIds = new Set(summaryWidgetOptions.map((widget) => widget.id));
+    const visible = parsed.filter((id): id is SummaryWidgetId => validIds.has(id));
+    return new Set(visible.length > 0 ? visible : defaultSummaryWidgets);
+  } catch {
+    return new Set(defaultSummaryWidgets);
+  }
+}
+
 export function Summary() {
   const queryClient = useQueryClient();
   const { month, prevMonth, nextMonth } = useMonthStore();
   const isCurrentMonth = isCurrentMonthYear(month);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => new Set());
+  const [visibleWidgets, setVisibleWidgets] = useState<Set<SummaryWidgetId>>(() => loadVisibleSummaryWidgets());
 
   const transactionsQuery = useQuery({
     queryKey: ["finance", "transactions", month],
@@ -1021,26 +968,30 @@ export function Summary() {
       return next;
     });
   };
+  const toggleWidget = (id: SummaryWidgetId) => {
+    setVisibleWidgets((current) => {
+      const next = new Set(current);
+      if (next.has(id) && next.size > 1) next.delete(id);
+      else next.add(id);
+      window.localStorage.setItem(summaryWidgetStorageKey, JSON.stringify([...next]));
+      return next;
+    });
+  };
 
   return (
     <Box>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2, gap: 2, flexWrap: "wrap" }}>
-        <Box>
-          <Typography variant="overline" color="primary.main" sx={{ fontWeight: 900 }}>Overview</Typography>
-          <Typography variant="h1" sx={{ fontWeight: 900 }}>{formatMonthLabel(month)}</Typography>
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1, py: 0.5, border: "1px solid", borderColor: "rgba(255,255,255,0.1)", borderRadius: 1, bgcolor: "rgba(32,35,45,0.92)" }}>
-          <IconButton size="small" onClick={prevMonth}>
-            <ChevronLeftIcon />
-          </IconButton>
-          <Typography variant="subtitle1" sx={{ fontWeight: 760, minWidth: 150, textAlign: "center" }}>
-            {formatMonthLabel(month)}
-          </Typography>
-          <IconButton size="small" onClick={nextMonth} disabled={isCurrentMonth}>
-            <ChevronRightIcon />
-          </IconButton>
-        </Box>
-      </Box>
+      <PageHero
+        eyebrow="Overview"
+        title={formatMonthLabel(month)}
+        actions={(
+          <MonthSwitcher
+            label={formatMonthLabel(month)}
+            onPrevious={prevMonth}
+            onNext={nextMonth}
+            nextDisabled={isCurrentMonth}
+          />
+        )}
+      />
 
       {transactionsQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load transactions</Alert>}
       {plansQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load monthly plans</Alert>}
@@ -1075,24 +1026,40 @@ export function Summary() {
 
       <Grid container spacing={2} sx={{ my: 2 }}>
         <Grid size={{ xs: 12, md: 3 }}>
-          {balanceQuery.isLoading ? <MetricSkeleton /> : <Metric label="Starting Balance" value={currency(startingBalance)} />}
+          {balanceQuery.isLoading ? <MetricCardSkeleton /> : <MetricCard label="Starting Balance" value={currency(startingBalance)} />}
         </Grid>
         <Grid size={{ xs: 12, md: 3 }}>
-          {balanceQuery.isLoading || transactionsQuery.isLoading ? <MetricSkeleton /> : <Metric label="Ending Balance" value={currency(endingBalance)} />}
+          {balanceQuery.isLoading || transactionsQuery.isLoading ? <MetricCardSkeleton /> : <MetricCard label="Ending Balance" value={currency(endingBalance)} />}
         </Grid>
         <Grid size={{ xs: 12, md: 3 }}>
-          {transactionsQuery.isLoading || plansQuery.isLoading ? <MetricSkeleton /> : <Metric label="Income" value={currency(totalIncome)} helper={`${incomeRows.length} categories`} />}
+          {transactionsQuery.isLoading || plansQuery.isLoading ? <MetricCardSkeleton /> : <MetricCard label="Income" value={currency(totalIncome)} helper={`${incomeRows.length} categories`} />}
         </Grid>
         <Grid size={{ xs: 12, md: 3 }}>
-          {transactionsQuery.isLoading ? <MetricSkeleton /> : <Metric label="Expenses" value={currency(totalSpend)} helper={`${transactions.length} rows loaded`} />}
+          {transactionsQuery.isLoading ? <MetricCardSkeleton /> : <MetricCard label="Expenses" value={currency(totalSpend)} helper={`${transactions.length} rows loaded`} />}
         </Grid>
       </Grid>
 
+      <Paper variant="outlined" sx={{ p: 1.5, mb: 2, borderRadius: 1, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 900 }}>
+            Widgets
+          </Typography>
+          {summaryWidgetOptions.map((widget) => (
+            <FormControlLabel
+              key={widget.id}
+              control={<Checkbox size="small" checked={visibleWidgets.has(widget.id)} onChange={() => toggleWidget(widget.id)} />}
+              label={widget.label}
+              sx={{ mr: 0.5, "& .MuiFormControlLabel-label": { fontSize: "0.82rem", fontWeight: 760 } }}
+            />
+          ))}
+        </Box>
+      </Paper>
+
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid size={{ xs: 12 }}>
+        {visibleWidgets.has("dailySpend") && <Grid size={{ xs: 12 }}>
           {transactionsQuery.isLoading ? <ChartSkeleton title="Money spent by date" /> : <SpendByDateChart rows={dailySpend} />}
-        </Grid>
-        <Grid size={{ xs: 12, lg: 5 }}>
+        </Grid>}
+        {visibleWidgets.has("categoryDrilldown") && <Grid size={{ xs: 12, lg: 5 }}>
           {transactionsQuery.isLoading || categoriesQuery.isLoading ? (
             <ChartSkeleton title="Category drilldown" />
           ) : (
@@ -1104,23 +1071,23 @@ export function Summary() {
               onBack={() => setActiveCategoryId(null)}
             />
           )}
-        </Grid>
-        <Grid size={{ xs: 12, lg: 7 }}>
+        </Grid>}
+        {visibleWidgets.has("categoryTree") && <Grid size={{ xs: 12, lg: 7 }}>
           {transactionsQuery.isLoading || categoriesQuery.isLoading ? (
             <BudgetTableSkeleton title="Category Breakdown" type="expense" />
           ) : (
             <CategoryTreeTable nodes={categoryTree} expanded={expandedCategories} onToggle={toggleCategory} />
           )}
-        </Grid>
+        </Grid>}
       </Grid>
 
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, lg: 7 }}>
+        {visibleWidgets.has("expenseBudget") && <Grid size={{ xs: 12, lg: 7 }}>
           {transactionsQuery.isLoading || plansQuery.isLoading ? <BudgetTableSkeleton title="Expenses" type="expense" /> : <BudgetTable title="Expenses" rows={expenseRows} type="expense" />}
-        </Grid>
-        <Grid size={{ xs: 12, lg: 5 }}>
+        </Grid>}
+        {visibleWidgets.has("incomeBudget") && <Grid size={{ xs: 12, lg: 5 }}>
           {transactionsQuery.isLoading || plansQuery.isLoading ? <BudgetTableSkeleton title="Income" type="income" /> : <BudgetTable title="Income" rows={incomeRows} type="income" />}
-        </Grid>
+        </Grid>}
       </Grid>
     </Box>
   );

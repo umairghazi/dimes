@@ -4,25 +4,19 @@ import {
   Alert,
   Box,
   Grid,
-  IconButton,
   Paper,
   Skeleton,
   Typography,
 } from "@mui/material";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { financeApi } from "@/api/finance.api";
 import { useMonthStore, isCurrentMonthYear } from "@/store/monthStore";
 import { Expense } from "@/types/expense.types";
 import { LedgerTable } from "@/components/ledger/LedgerTable";
-
-function formatMonthLabel(monthYear: string): string {
-  const [year, month] = monthYear.split("-").map(Number);
-  return new Date(year, month - 1, 1).toLocaleDateString(undefined, {
-    month: "long",
-    year: "numeric",
-  });
-}
+import { formatMonthLabel, currency } from "@/components/finance/financeFormat";
+import { PageHero } from "@/components/finance/PageHero";
+import { MonthSwitcher } from "@/components/finance/MonthSwitcher";
+import { MetricCard, MetricCardSkeleton } from "@/components/finance/MetricCard";
+import { financeSurfaces } from "@/components/finance/financeStyles";
 
 function monthRange(monthYear: string): { defaultDate: string } {
   const [year, month] = monthYear.split("-").map(Number);
@@ -41,62 +35,8 @@ function sortOldestFirst(rows: Expense[]): Expense[] {
   });
 }
 
-function currency(value: number): string {
-  return value.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  });
-}
-
 function total(rows: Expense[]): number {
   return rows.reduce((sum, row) => sum + row.amount, 0);
-}
-
-function LedgerStat({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" }) {
-  return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 1.75,
-        borderRadius: 1,
-        borderColor: "rgba(255,255,255,0.08)",
-        bgcolor: "rgba(32,35,45,0.92)",
-        minHeight: 88,
-        boxShadow: "0 18px 40px rgba(0,0,0,0.24)",
-      }}
-    >
-      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>{label}</Typography>
-      <Typography
-        variant="h5"
-        sx={{
-          mt: 0.75,
-          fontWeight: 900,
-          color: tone === "good" ? "success.main" : tone === "bad" ? "primary.main" : "text.primary",
-        }}
-      >
-        {value}
-      </Typography>
-    </Paper>
-  );
-}
-
-function LedgerStatSkeleton({ label }: { label: string }) {
-  return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 1.75,
-        borderRadius: 1,
-        borderColor: "rgba(255,255,255,0.08)",
-        bgcolor: "rgba(32,35,45,0.92)",
-        minHeight: 88,
-      }}
-    >
-      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>{label}</Typography>
-      <Skeleton width="68%" height={32} sx={{ mt: 0.75 }} />
-    </Paper>
-  );
 }
 
 function LedgerTableSkeleton({ title, height = 520 }: { title: string; height?: number }) {
@@ -104,10 +44,8 @@ function LedgerTableSkeleton({ title, height = 520 }: { title: string; height?: 
     <Paper
       variant="outlined"
       sx={{
+        ...financeSurfaces.panelMuted,
         overflow: "hidden",
-        borderRadius: 1,
-        borderColor: "rgba(255,255,255,0.08)",
-        bgcolor: "rgba(32,35,45,0.94)",
       }}
     >
       <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(15,17,23,0.36)" }}>
@@ -183,63 +121,32 @@ export function Ledger() {
 
   return (
     <Box sx={{ width: "100%", minWidth: 0 }}>
-      <Paper
-        variant="outlined"
-        sx={{
-          p: { xs: 2, md: 3 },
-          mb: 2,
-          borderRadius: 1,
-          borderColor: "rgba(255,255,255,0.08)",
-          bgcolor: "#171a23",
-          backgroundImage: "linear-gradient(135deg, rgba(88,101,242,0.16), rgba(255,107,44,0.12) 44%, rgba(255,255,255,0.03))",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
-          <Box>
-            <Typography variant="overline" color="primary.main" sx={{ fontWeight: 900 }}>Transactions</Typography>
-            <Typography variant="h1" sx={{ fontWeight: 900 }}>Ledger</Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mt: 1, maxWidth: 620 }}>
-              Fast entry for expenses and income, with inline edits, bulk category cleanup, and paste support.
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 0.5,
-              px: 1,
-              py: 0.5,
-              border: "1px solid",
-              borderColor: "rgba(255,255,255,0.1)",
-              borderRadius: 1,
-              bgcolor: "rgba(15,17,23,0.48)",
-            }}
-          >
-            <IconButton size="small" onClick={prevMonth}>
-              <ChevronLeftIcon />
-            </IconButton>
-            <Typography variant="subtitle1" sx={{ fontWeight: 760, minWidth: 150, textAlign: "center" }}>
-              {formatMonthLabel(month)}
-            </Typography>
-            <IconButton size="small" onClick={nextMonth} disabled={isCurrentMonth}>
-              <ChevronRightIcon />
-            </IconButton>
-          </Box>
-        </Box>
-      </Paper>
+      <PageHero
+        eyebrow="Transactions"
+        title="Ledger"
+        description="Fast entry for expenses and income, with inline edits, bulk category cleanup, and paste support."
+        actions={(
+          <MonthSwitcher
+            label={formatMonthLabel(month)}
+            onPrevious={prevMonth}
+            onNext={nextMonth}
+            nextDisabled={isCurrentMonth}
+          />
+        )}
+      />
 
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12, md: 3 }}>
-          {expensesQuery.isLoading ? <LedgerStatSkeleton label="Expenses" /> : <LedgerStat label="Expenses" value={currency(totalExpenses)} tone="bad" />}
+          {expensesQuery.isLoading ? <MetricCardSkeleton label="Expenses" /> : <MetricCard label="Expenses" value={currency(totalExpenses)} tone="bad" />}
         </Grid>
         <Grid size={{ xs: 12, md: 3 }}>
-          {incomeQuery.isLoading ? <LedgerStatSkeleton label="Income" /> : <LedgerStat label="Income" value={currency(totalIncome)} tone="good" />}
+          {incomeQuery.isLoading ? <MetricCardSkeleton label="Income" /> : <MetricCard label="Income" value={currency(totalIncome)} tone="good" />}
         </Grid>
         <Grid size={{ xs: 12, md: 3 }}>
-          {expensesQuery.isLoading || incomeQuery.isLoading ? <LedgerStatSkeleton label="Net" /> : <LedgerStat label="Net" value={currency(net)} tone={net >= 0 ? "good" : "bad"} />}
+          {expensesQuery.isLoading || incomeQuery.isLoading ? <MetricCardSkeleton label="Net" /> : <MetricCard label="Net" value={currency(net)} tone={net >= 0 ? "good" : "bad"} />}
         </Grid>
         <Grid size={{ xs: 12, md: 3 }}>
-          {expensesQuery.isLoading || incomeQuery.isLoading ? <LedgerStatSkeleton label="Rows" /> : <LedgerStat label="Rows" value={`${expenseRows.length + incomeRows.length}`} />}
+          {expensesQuery.isLoading || incomeQuery.isLoading ? <MetricCardSkeleton label="Rows" /> : <MetricCard label="Rows" value={`${expenseRows.length + incomeRows.length}`} />}
         </Grid>
       </Grid>
 
