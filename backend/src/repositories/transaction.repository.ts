@@ -10,7 +10,6 @@ interface TransactionRow {
   amount: string | number;
   currency: string;
   category_id: string | null;
-  main_category: string | null;
   type: FinanceTransactionType;
   merchant_name: string | null;
   source: string;
@@ -20,10 +19,8 @@ interface TransactionRow {
   created_at: string;
   updated_at: string;
   categories?: {
+    id: string;
     name: string;
-    group_id: string | null;
-    main_category: string | null;
-    category_groups?: { name: string } | null;
   } | null;
 }
 
@@ -39,7 +36,6 @@ export interface CreateTransactionData {
   amount: number;
   currency?: string;
   categoryId?: string | null;
-  mainCategory?: string | null;
   type?: FinanceTransactionType;
   merchantName?: string | null;
   source?: string;
@@ -52,7 +48,6 @@ export type UpdateTransactionData = Partial<CreateTransactionData>;
 
 function toTransaction(row: TransactionRow): FinanceTransaction {
   const categoryName = row.categories?.name ?? "Uncategorized";
-  const groupName = row.categories?.category_groups?.name ?? row.main_category ?? row.categories?.main_category ?? null;
   return {
     id: row.id,
     userId: row.user_id,
@@ -63,8 +58,7 @@ function toTransaction(row: TransactionRow): FinanceTransaction {
     currency: row.currency,
     categoryId: row.category_id,
     category: categoryName,
-    mainCategory: groupName ?? categoryName,
-    categoryGroupId: row.categories?.group_id ?? null,
+    categoryPath: row.categories ? [{ id: row.categories.id, name: row.categories.name }] : [],
     type: row.type,
     merchantName: row.merchant_name,
     source: row.source,
@@ -83,7 +77,7 @@ export class TransactionRepository extends BaseRepository {
 
   async listByUser(userId: string, filters: TransactionFilters = {}): Promise<FinanceTransaction[]> {
     let query = this.table()
-      .select("*, categories(name, group_id, main_category, category_groups(name))")
+      .select("*, categories(id, name)")
       .eq("user_id", userId)
       .order("date", { ascending: false })
       .order("created_at", { ascending: false });
@@ -109,7 +103,6 @@ export class TransactionRepository extends BaseRepository {
           amount: data.amount,
           currency: data.currency ?? "CAD",
           category_id: data.categoryId ?? null,
-          main_category: data.mainCategory ?? null,
           type: data.type ?? "expense",
           merchant_name: data.merchantName ?? null,
           source: data.source ?? "manual",
@@ -117,7 +110,7 @@ export class TransactionRepository extends BaseRepository {
           tags: data.tags ?? [],
           original_description: data.originalDescription ?? null,
         })
-        .select("*, categories(name, group_id, main_category, category_groups(name))")
+        .select("*, categories(id, name)")
         .single(),
     );
 
@@ -132,7 +125,6 @@ export class TransactionRepository extends BaseRepository {
     if (patch.amount !== undefined) data.amount = patch.amount;
     if (patch.currency !== undefined) data.currency = patch.currency;
     if (patch.categoryId !== undefined) data.category_id = patch.categoryId;
-    if (patch.mainCategory !== undefined) data.main_category = patch.mainCategory;
     if (patch.type !== undefined) data.type = patch.type;
     if (patch.merchantName !== undefined) data.merchant_name = patch.merchantName;
     if (patch.source !== undefined) data.source = patch.source;
@@ -146,7 +138,7 @@ export class TransactionRepository extends BaseRepository {
         .update(data)
         .eq("user_id", userId)
         .eq("id", id)
-        .select("*, categories(name, group_id, main_category, category_groups(name))")
+        .select("*, categories(id, name)")
         .single(),
     );
 

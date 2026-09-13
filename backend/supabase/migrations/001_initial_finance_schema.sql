@@ -8,23 +8,11 @@ create table if not exists public.user_profiles (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists public.category_groups (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  name text not null,
-  type text not null default 'expense' check (type in ('expense', 'income')),
-  sort_order integer not null default 0,
-  deleted_at timestamptz,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
 create table if not exists public.categories (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  group_id uuid references public.category_groups(id) on delete set null,
+  parent_id uuid references public.categories(id) on delete set null,
   name text not null,
-  main_category text,
   type text not null default 'expense' check (type in ('expense', 'income')),
   is_fixed boolean not null default false,
   sort_order integer not null default 0,
@@ -42,7 +30,6 @@ create table if not exists public.transactions (
   amount numeric(12, 2) not null check (amount >= 0),
   currency text not null default 'CAD',
   category_id uuid references public.categories(id) on delete set null,
-  main_category text,
   type text not null default 'expense' check (type in ('expense', 'income')),
   merchant_name text,
   source text not null default 'manual',
@@ -80,20 +67,14 @@ create table if not exists public.monthly_balances (
   unique (user_id, month_year)
 );
 
-create index if not exists category_groups_user_id_idx on public.category_groups(user_id);
-create index if not exists category_groups_user_type_idx on public.category_groups(user_id, type);
-create unique index if not exists category_groups_user_name_type_active_idx
-  on public.category_groups(user_id, name, type)
-  where deleted_at is null;
-
 create index if not exists categories_user_id_idx on public.categories(user_id);
 create index if not exists categories_user_type_idx on public.categories(user_id, type);
-create index if not exists categories_user_group_idx on public.categories(user_id, group_id);
-create unique index if not exists categories_user_group_name_type_active_idx
+create index if not exists categories_user_parent_idx on public.categories(user_id, parent_id);
+create unique index if not exists categories_user_parent_name_type_active_idx
   on public.categories(
     user_id,
-    coalesce(group_id, '00000000-0000-0000-0000-000000000000'::uuid),
-    name,
+    coalesce(parent_id, '00000000-0000-0000-0000-000000000000'::uuid),
+    lower(name),
     type
   )
   where deleted_at is null;
@@ -107,7 +88,6 @@ create index if not exists monthly_plans_user_month_idx on public.monthly_plans(
 create index if not exists monthly_balances_user_month_idx on public.monthly_balances(user_id, month_year);
 
 alter table public.user_profiles enable row level security;
-alter table public.category_groups enable row level security;
 alter table public.categories enable row level security;
 alter table public.transactions enable row level security;
 alter table public.monthly_plans enable row level security;
@@ -116,10 +96,6 @@ alter table public.monthly_balances enable row level security;
 create policy "profiles are user-owned" on public.user_profiles
   for all using (auth.uid() = id)
   with check (auth.uid() = id);
-
-create policy "category groups are user-owned" on public.category_groups
-  for all using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
 
 create policy "categories are user-owned" on public.categories
   for all using (auth.uid() = user_id)

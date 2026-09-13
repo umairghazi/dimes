@@ -10,8 +10,7 @@ export interface Expense {
   currency: string;
   category: ExpenseCategory;   // resolved name (always present in API response)
   categoryId?: string | null;
-  categoryGroupId?: string | null;
-  mainCategory?: string;
+  categoryPath?: Array<{ id: string; name: string }>;
   type: "expense" | "income";
   subCategory?: string;
   merchantName?: string;

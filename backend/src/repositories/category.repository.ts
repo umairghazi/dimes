@@ -4,18 +4,16 @@ import { FinanceCategory, FinanceTransactionType } from "../types/finance.types"
 interface CategoryRow {
   id: string;
   user_id: string;
-  group_id: string | null;
+  parent_id: string | null;
   name: string;
-  main_category: string | null;
   type: FinanceTransactionType;
   is_fixed: boolean;
   sort_order: number;
-  category_groups?: { name: string } | null;
 }
 
 export interface CreateCategoryData {
   name: string;
-  groupId?: string | null;
+  parentId?: string | null;
   type?: FinanceTransactionType;
   isFixed?: boolean;
   sortOrder?: number;
@@ -23,17 +21,35 @@ export interface CreateCategoryData {
 
 export type UpdateCategoryData = Partial<CreateCategoryData>;
 
-function toCategory(row: CategoryRow): FinanceCategory {
+function buildPath(row: CategoryRow, byId: Map<string, CategoryRow>): Array<{ id: string; name: string }> {
+  const path: Array<{ id: string; name: string }> = [];
+  const seen = new Set<string>();
+  let current: CategoryRow | undefined = row;
+
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id);
+    path.unshift({ id: current.id, name: current.name });
+    current = current.parent_id ? byId.get(current.parent_id) : undefined;
+  }
+
+  return path;
+}
+
+function toCategory(row: CategoryRow, byId: Map<string, CategoryRow>, childCounts: Map<string, number>): FinanceCategory {
+  const parent = row.parent_id ? byId.get(row.parent_id) : null;
+  const path = buildPath(row, byId);
   return {
     id: row.id,
     userId: row.user_id,
-    groupId: row.group_id,
-    groupName: row.category_groups?.name ?? row.main_category,
+    parentId: row.parent_id,
+    parentName: parent?.name ?? null,
     name: row.name,
-    mainCategory: row.category_groups?.name ?? row.main_category,
     type: row.type,
     isFixed: row.is_fixed,
     sortOrder: row.sort_order,
+    depth: Math.max(0, path.length - 1),
+    path,
+    hasChildren: (childCounts.get(row.id) ?? 0) > 0,
   };
 }
 
@@ -44,23 +60,28 @@ export class CategoryRepository extends BaseRepository {
 
   async listByUser(userId: string, type?: FinanceTransactionType): Promise<FinanceCategory[]> {
     let query = this.table()
-      .select("id, user_id, group_id, name, main_category, type, is_fixed, sort_order, category_groups(name)")
+      .select("id, user_id, parent_id, name, type, is_fixed, sort_order")
       .eq("user_id", userId)
       .is("deleted_at", null)
-      .order("group_id", { ascending: true })
+      .order("parent_id", { ascending: true })
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true });
     if (type) query = query.eq("type", type);
 
     const rows = await this.execute<CategoryRow[]>("list categories", query);
-    return (rows ?? []).map(toCategory);
+    return this.toCategories(rows ?? []);
+  }
+
+  async findById(userId: string, id: string): Promise<FinanceCategory | null> {
+    const categories = await this.listByUser(userId);
+    return categories.find((category) => category.id === id) ?? null;
   }
 
   async existsForUser(userId: string, id: string): Promise<boolean> {
     const row = await this.execute<CategoryRow | null>(
       "find category",
       this.table()
-        .select("id, user_id, group_id, name, main_category, type, is_fixed, sort_order")
+        .select("id, user_id, parent_id, name, type, is_fixed, sort_order")
         .eq("user_id", userId)
         .eq("id", id)
         .is("deleted_at", null)
@@ -75,22 +96,23 @@ export class CategoryRepository extends BaseRepository {
       this.table()
         .insert({
           user_id: userId,
-          group_id: data.groupId ?? null,
+          parent_id: data.parentId ?? null,
           name: data.name,
           type: data.type ?? "expense",
           is_fixed: data.isFixed ?? false,
           sort_order: data.sortOrder ?? 0,
         })
-        .select("id, user_id, group_id, name, main_category, type, is_fixed, sort_order, category_groups(name)")
+        .select("id, user_id, parent_id, name, type, is_fixed, sort_order")
         .single(),
     );
-    return toCategory(row);
+    const categories = await this.listByUser(userId);
+    return categories.find((category) => category.id === row.id) ?? this.toCategories([row])[0];
   }
 
   async update(userId: string, id: string, patch: UpdateCategoryData): Promise<FinanceCategory> {
     const data: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (patch.name !== undefined) data.name = patch.name;
-    if (patch.groupId !== undefined) data.group_id = patch.groupId;
+    if (patch.parentId !== undefined) data.parent_id = patch.parentId;
     if (patch.type !== undefined) data.type = patch.type;
     if (patch.isFixed !== undefined) data.is_fixed = patch.isFixed;
     if (patch.sortOrder !== undefined) data.sort_order = patch.sortOrder;
@@ -102,10 +124,11 @@ export class CategoryRepository extends BaseRepository {
         .eq("user_id", userId)
         .eq("id", id)
         .is("deleted_at", null)
-        .select("id, user_id, group_id, name, main_category, type, is_fixed, sort_order, category_groups(name)")
+        .select("id, user_id, parent_id, name, type, is_fixed, sort_order")
         .single(),
     );
-    return toCategory(row);
+    const categories = await this.listByUser(userId);
+    return categories.find((category) => category.id === row.id) ?? this.toCategories([row])[0];
   }
 
   async delete(userId: string, id: string): Promise<void> {
@@ -118,13 +141,22 @@ export class CategoryRepository extends BaseRepository {
     );
   }
 
-  async clearGroup(userId: string, groupId: string): Promise<void> {
+  async clearParent(userId: string, parentId: string): Promise<void> {
     await this.executeEmpty(
-      "clear category group",
+      "clear category parent",
       this.table()
-        .update({ group_id: null, updated_at: new Date().toISOString() })
+        .update({ parent_id: null, updated_at: new Date().toISOString() })
         .eq("user_id", userId)
-        .eq("group_id", groupId),
+        .eq("parent_id", parentId),
     );
+  }
+
+  private toCategories(rows: CategoryRow[]): FinanceCategory[] {
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    const childCounts = new Map<string, number>();
+    rows.forEach((row) => {
+      if (row.parent_id) childCounts.set(row.parent_id, (childCounts.get(row.parent_id) ?? 0) + 1);
+    });
+    return rows.map((row) => toCategory(row, byId, childCounts));
   }
 }

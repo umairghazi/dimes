@@ -70,7 +70,7 @@ function normalizeCategoryName(value: string): string {
 }
 
 function categoryLabel(category: FinanceCategory): string {
-  return category.groupName ? `${category.groupName} / ${category.name}` : category.name;
+  return category.path.length > 0 ? category.path.map((part) => part.name).join(" / ") : category.name;
 }
 
 function parseAmount(value: string): number | null {

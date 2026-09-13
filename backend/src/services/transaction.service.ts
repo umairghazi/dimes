@@ -5,7 +5,6 @@ import {
   UpdateTransactionData,
 } from "../repositories/transaction.repository";
 import { CategoryRepository } from "../repositories/category.repository";
-import { CategoryGroupRepository } from "../repositories/categoryGroup.repository";
 import { AppError } from "../errors/AppError";
 import { FinanceTransaction, FinanceTransactionType } from "../types/finance.types";
 
@@ -30,7 +29,6 @@ export class TransactionService {
   constructor(
     private readonly transactionRepo = new TransactionRepository(),
     private readonly categoryRepo = new CategoryRepository(),
-    private readonly categoryGroupRepo = new CategoryGroupRepository(),
   ) {}
 
   list(userId: string, filters: TransactionFilters): Promise<FinanceTransaction[]> {
@@ -52,46 +50,40 @@ export class TransactionService {
   }
 
   async importRows(userId: string, rows: ImportTransactionRow[]): Promise<ImportTransactionsResult> {
-    const groupCache = new Map<string, string>();
     const categoryCache = new Map<string, string>();
     let createdGroups = 0;
     let createdCategories = 0;
 
-    const existingGroups = await this.categoryGroupRepo.listByUser(userId);
-    existingGroups.forEach((group) => {
-      groupCache.set(this.key(group.type, group.name), group.id);
-    });
-
     const existingCategories = await this.categoryRepo.listByUser(userId);
     existingCategories.forEach((category) => {
-      categoryCache.set(this.key(category.type, category.groupId ?? "none", category.name), category.id);
+      categoryCache.set(this.key(category.type, category.parentId ?? "none", category.name), category.id);
     });
 
     const imported: FinanceTransaction[] = [];
     for (const row of rows) {
       const type = row.type;
       const names = this.normalizeNames(row.categoryName, row.groupName);
-      let groupId: string | null = null;
+      let parentId: string | null = null;
       let categoryId: string | null = null;
 
       if (names.groupName) {
-        const groupKey = this.key(type, names.groupName);
-        groupId = groupCache.get(groupKey) ?? null;
-        if (!groupId) {
-          const group = await this.categoryGroupRepo.create(userId, { name: names.groupName, type });
-          groupId = group.id;
-          groupCache.set(groupKey, group.id);
+        const parentKey = this.key(type, "none", names.groupName);
+        parentId = categoryCache.get(parentKey) ?? null;
+        if (!parentId) {
+          const parent = await this.categoryRepo.create(userId, { name: names.groupName, parentId: null, type });
+          parentId = parent.id;
+          categoryCache.set(parentKey, parent.id);
           createdGroups += 1;
         }
       }
 
       if (names.categoryName) {
-        const categoryKey = this.key(type, groupId ?? "none", names.categoryName);
+        const categoryKey = this.key(type, parentId ?? "none", names.categoryName);
         categoryId = categoryCache.get(categoryKey) ?? null;
         if (!categoryId) {
           const category = await this.categoryRepo.create(userId, {
             name: names.categoryName,
-            groupId,
+            parentId,
             type,
           });
           categoryId = category.id;

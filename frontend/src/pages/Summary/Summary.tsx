@@ -21,7 +21,7 @@ import {
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
-import { financeApi, MonthlyPlan } from "@/api/finance.api";
+import { financeApi, FinanceCategory, MonthlyPlan } from "@/api/finance.api";
 import { Expense } from "@/types/expense.types";
 import { useMonthStore, isCurrentMonthYear } from "@/store/monthStore";
 
@@ -33,9 +33,21 @@ interface SummaryRow {
 }
 
 interface BreakdownRow {
+  id?: string;
   label: string;
   amount: number;
   percent: number;
+  count?: number;
+  hasChildren?: boolean;
+}
+
+interface CategorySpendNode {
+  id: string;
+  label: string;
+  amount: number;
+  count: number;
+  children: CategorySpendNode[];
+  depth: number;
 }
 
 const chartColors = ["#ff6b2c", "#5865f2", "#29cc7a", "#f0b232", "#35c2ff", "#ff5c6c", "#8bdf7a", "#c084fc", "#f472b6", "#94a3b8"];
@@ -51,6 +63,11 @@ function formatMonthLabel(monthYear: string): string {
 function formatShortDate(value: string): string {
   const date = new Date(`${value.slice(0, 10)}T00:00:00`);
   return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" });
+}
+
+function formatAxisDate(value: string): string {
+  const date = new Date(`${value.slice(0, 10)}T00:00:00`);
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
 function currency(value: number): string {
@@ -103,28 +120,166 @@ function buildRows(transactions: Expense[], plans: MonthlyPlan[], type: "expense
     });
 }
 
-function spendByDate(transactions: Expense[]): BreakdownRow[] {
-  const grouped = new Map<string, number>();
-  transactions.filter((row) => row.type === "expense").forEach((row) => {
-    const key = row.date.slice(0, 10);
-    grouped.set(key, (grouped.get(key) ?? 0) + row.amount);
-  });
-  const totalSpent = [...grouped.values()].reduce((sum, value) => sum + value, 0);
-  return [...grouped.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([label, amount]) => ({ label, amount, percent: totalSpent > 0 ? (amount / totalSpent) * 100 : 0 }));
+function toDateOnly(value: string): Date {
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+  return new Date(year, month - 1, day);
 }
 
-function expenseBreakdown(transactions: Expense[], field: "category" | "mainCategory"): BreakdownRow[] {
+function toIsoDate(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(value: Date, days: number): Date {
+  const next = new Date(value);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function spendByDate(transactions: Expense[], monthYear: string): BreakdownRow[] {
+  const expenseRows = transactions.filter((row) => row.type === "expense");
+  if (expenseRows.length === 0) return [];
+
   const grouped = new Map<string, number>();
-  transactions.filter((row) => row.type === "expense").forEach((row) => {
-    const label = field === "category" ? row.category : row.mainCategory || row.category;
-    grouped.set(label, (grouped.get(label) ?? 0) + row.amount);
+  const counts = new Map<string, number>();
+  expenseRows.forEach((row) => {
+    const key = row.date.slice(0, 10);
+    grouped.set(key, (grouped.get(key) ?? 0) + row.amount);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
   });
+
+  const [year, month] = monthYear.split("-").map(Number);
+  let start = new Date(year, month - 1, 1);
+  let end = new Date(year, month, 0);
+  [...grouped.keys()].forEach((date) => {
+    const value = toDateOnly(date);
+    if (value < start) start = value;
+    if (value > end) end = value;
+  });
+
   const totalSpent = [...grouped.values()].reduce((sum, value) => sum + value, 0);
-  return [...grouped.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([label, amount]) => ({ label, amount, percent: totalSpent > 0 ? (amount / totalSpent) * 100 : 0 }));
+  const rows: BreakdownRow[] = [];
+  for (let cursor = start; cursor <= end; cursor = addDays(cursor, 1)) {
+    const label = toIsoDate(cursor);
+    const amount = grouped.get(label) ?? 0;
+    rows.push({
+      label,
+      amount,
+      count: counts.get(label) ?? 0,
+      percent: totalSpent > 0 ? (amount / totalSpent) * 100 : 0,
+    });
+  }
+
+  return rows;
+}
+
+function buildCategorySpendTree(transactions: Expense[], categories: FinanceCategory[]): CategorySpendNode[] {
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
+  const nodeById = new Map<string, CategorySpendNode>();
+
+  const ensureNode = (category: FinanceCategory): CategorySpendNode => {
+    const existing = nodeById.get(category.id);
+    if (existing) return existing;
+
+    const node: CategorySpendNode = {
+      id: category.id,
+      label: category.name,
+      amount: 0,
+      count: 0,
+      children: [],
+      depth: category.depth,
+    };
+    nodeById.set(category.id, node);
+
+    if (category.parentId) {
+      const parent = categoryById.get(category.parentId);
+      if (parent) ensureNode(parent).children.push(node);
+    }
+
+    return node;
+  };
+
+  categories.filter((category) => category.type === "expense").forEach(ensureNode);
+
+  const uncategorized: CategorySpendNode = {
+    id: "uncategorized",
+    label: "Uncategorized",
+    amount: 0,
+    count: 0,
+    children: [],
+    depth: 0,
+  };
+
+  transactions.filter((row) => row.type === "expense").forEach((row) => {
+    const category = row.categoryId ? categoryById.get(row.categoryId) : null;
+    if (!category) {
+      uncategorized.amount += row.amount;
+      uncategorized.count += 1;
+      return;
+    }
+
+    category.path.forEach((part) => {
+      const node = nodeById.get(part.id);
+      if (node) {
+        node.amount += row.amount;
+        node.count += 1;
+      }
+    });
+  });
+
+  const roots = categories
+    .filter((category) => category.type === "expense" && !category.parentId)
+    .map((category) => nodeById.get(category.id))
+    .filter((node): node is CategorySpendNode => Boolean(node));
+
+  if (uncategorized.amount > 0) roots.push(uncategorized);
+
+  const sortNodes = (nodes: CategorySpendNode[]): CategorySpendNode[] => {
+    nodes.sort((a, b) => b.amount - a.amount || a.label.localeCompare(b.label));
+    nodes.forEach((node) => sortNodes(node.children));
+    return nodes;
+  };
+
+  return sortNodes(roots);
+}
+
+function findCategoryNode(nodes: CategorySpendNode[], id: string | null): CategorySpendNode | null {
+  if (!id) return null;
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    const child = findCategoryNode(node.children, id);
+    if (child) return child;
+  }
+  return null;
+}
+
+function drilldownRows(nodes: CategorySpendNode[], activeId: string | null): BreakdownRow[] {
+  const active = findCategoryNode(nodes, activeId);
+  const rows = active ? active.children : nodes;
+  const totalAmount = rows.reduce((sum, row) => sum + row.amount, 0);
+  return rows
+    .filter((row) => row.amount > 0)
+    .map((row) => ({
+      id: row.id,
+      label: row.label,
+      amount: row.amount,
+      count: row.count,
+      hasChildren: row.children.some((child) => child.amount > 0),
+      percent: totalAmount > 0 ? (row.amount / totalAmount) * 100 : 0,
+    }));
+}
+
+function visibleTreeRows(nodes: CategorySpendNode[], expanded: Set<string>): CategorySpendNode[] {
+  const rows: CategorySpendNode[] = [];
+  const visit = (node: CategorySpendNode) => {
+    if (node.amount <= 0) return;
+    rows.push(node);
+    if (expanded.has(node.id)) node.children.forEach(visit);
+  };
+  nodes.forEach(visit);
+  return rows;
 }
 
 function DiffText({ value }: { value: number }) {
@@ -323,23 +478,25 @@ function SummaryHeroSkeleton() {
 }
 
 function SpendByDateChart({ rows }: { rows: BreakdownRow[] }) {
+  const [tooltip, setTooltip] = useState<{ row: BreakdownRow; x: number; y: number } | null>(null);
   const max = Math.max(...rows.map((row) => row.amount), 1);
   const width = 920;
   const height = 280;
   const left = 72;
   const right = 24;
   const top = 32;
-  const bottom = 58;
+  const bottom = 46;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
-  const step = rows.length > 1 ? plotWidth / (rows.length - 1) : plotWidth;
-  const barWidth = Math.min(78, Math.max(32, plotWidth / Math.max(rows.length, 1) * 0.64));
-  const points = rows.map((row, index) => {
-    const x = rows.length > 1 ? left + index * step : left + plotWidth / 2;
-    const y = top + plotHeight - (row.amount / max) * plotHeight;
-    return `${x},${y}`;
-  }).join(" ");
+  const bandWidth = plotWidth / Math.max(rows.length, 1);
+  const barWidth = Math.min(32, Math.max(6, bandWidth * 0.56));
+  const labelEvery = rows.length <= 16 ? 2 : 7;
   const ticks = [0, 0.5, 1];
+  const tooltipWidth = 188;
+  const tooltipHeight = 76;
+
+  const tooltipX = tooltip ? Math.min(Math.max(tooltip.x + 12, left), width - right - tooltipWidth) : 0;
+  const tooltipY = tooltip ? Math.max(top, tooltip.y - tooltipHeight - 12) : 0;
 
   return (
     <Paper variant="outlined" sx={{ borderRadius: 1, p: 2, overflowX: "auto", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
@@ -359,16 +516,48 @@ function SpendByDateChart({ rows }: { rows: BreakdownRow[] }) {
           })}
           <line x1={left} x2={width - right} y1={top + plotHeight} y2={top + plotHeight} stroke="#535b70" />
           {rows.map((row, index) => {
-            const x = rows.length > 1 ? left + index * step : left + plotWidth / 2;
+            const x = left + bandWidth * index + bandWidth / 2;
             const barHeight = (row.amount / max) * plotHeight;
+            const barTop = top + plotHeight - barHeight;
+            const showLabel = index === 0 || index === rows.length - 1 || index % labelEvery === 0;
             return (
               <g key={row.label}>
-                <rect x={x - barWidth / 2} y={top + plotHeight - barHeight} width={barWidth} height={barHeight} fill="#ff6b2c" rx="4" />
-                <text x={x} y={height - 28} textAnchor="middle" fontSize="12" fill="#b5bbcb">{formatShortDate(row.label)}</text>
+                <rect x={x - barWidth / 2} y={barTop} width={barWidth} height={barHeight} fill="#ff6b2c" rx="4" />
+                <rect
+                  x={left + bandWidth * index}
+                  y={top}
+                  width={bandWidth}
+                  height={plotHeight}
+                  fill="transparent"
+                  onMouseMove={() => setTooltip({ row, x, y: Math.max(barTop, top + 18) })}
+                  onMouseLeave={() => setTooltip(null)}
+                />
+                {showLabel && <text x={x} y={height - 24} textAnchor="middle" fontSize="12" fill="#b5bbcb">{formatAxisDate(row.label)}</text>}
               </g>
             );
           })}
-          <polyline points={points} fill="none" stroke="#8ea0ff" strokeWidth="2.5" />
+          {tooltip && (
+            <g pointerEvents="none">
+              <rect
+                x={tooltipX}
+                y={tooltipY}
+                width={tooltipWidth}
+                height={tooltipHeight}
+                rx="8"
+                fill="#0f1117"
+                stroke="rgba(255,255,255,0.18)"
+              />
+              <text x={tooltipX + 12} y={tooltipY + 22} fontSize="13" fontWeight="800" fill="#f7f8fc">
+                {formatShortDate(tooltip.row.label)}
+              </text>
+              <text x={tooltipX + 12} y={tooltipY + 43} fontSize="13" fontWeight="800" fill="#ff875c">
+                {currencyWithCents(tooltip.row.amount)}
+              </text>
+              <text x={tooltipX + 12} y={tooltipY + 62} fontSize="12" fill="#b5bbcb">
+                {tooltip.row.count ?? 0} txns · {tooltip.row.percent.toFixed(1)}% of spend
+              </text>
+            </g>
+          )}
           <text x={18} y={top + plotHeight / 2} transform={`rotate(-90 18 ${top + plotHeight / 2})`} textAnchor="middle" fontSize="13" fontWeight="700" fill="#b5bbcb">Amount</text>
           <text x={left + plotWidth / 2} y={height - 4} textAnchor="middle" fontSize="13" fontWeight="700" fill="#b5bbcb">Date</text>
         </Box>
@@ -377,7 +566,19 @@ function SpendByDateChart({ rows }: { rows: BreakdownRow[] }) {
   );
 }
 
-function BreakdownChart({ title, rows }: { title: string; rows: BreakdownRow[] }) {
+function BreakdownChart({
+  title,
+  rows,
+  activeLabel,
+  onSelect,
+  onBack,
+}: {
+  title: string;
+  rows: BreakdownRow[];
+  activeLabel?: string | null;
+  onSelect?: (row: BreakdownRow) => void;
+  onBack?: () => void;
+}) {
   const [tooltip, setTooltip] = useState<{ row: BreakdownRow; x: number; y: number } | null>(null);
   let cursor = 0;
   const slices = rows.map((row) => {
@@ -409,9 +610,19 @@ function BreakdownChart({ title, rows }: { title: string; rows: BreakdownRow[] }
 
   return (
     <Paper variant="outlined" sx={{ borderRadius: 1, p: 2, height: "100%", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
-      <Typography variant="h5" sx={{ fontWeight: 900, color: "text.primary", mb: 2 }}>{title}</Typography>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, mb: 2 }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 900, color: "text.primary" }}>{title}</Typography>
+          {activeLabel && <Typography variant="caption" color="text.secondary">Viewing {activeLabel}</Typography>}
+        </Box>
+        {activeLabel && (
+          <Typography component="button" onClick={onBack} sx={{ border: 0, bgcolor: "transparent", color: "primary.main", fontWeight: 800, cursor: "pointer" }}>
+            Back
+          </Typography>
+        )}
+      </Box>
       {rows.length === 0 ? (
-        <Typography color="text.secondary">No expenses for this month.</Typography>
+        <Typography color="text.secondary">No category spend for this view.</Typography>
       ) : (
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "240px 1fr" }, gap: 2, alignItems: "center" }}>
           <Box sx={{ position: "relative", width: 240, height: 240, justifySelf: "center" }}>
@@ -452,10 +663,21 @@ function BreakdownChart({ title, rows }: { title: string; rows: BreakdownRow[] }
           </Box>
           <Box sx={{ display: "grid", gap: 0.75 }}>
             {rows.slice(0, 10).map((row, index) => (
-              <Box key={row.label} sx={{ display: "grid", gridTemplateColumns: "14px 1fr auto", gap: 1, alignItems: "center", py: 0.35 }}>
+              <Box
+                key={row.label}
+                onClick={() => row.hasChildren && onSelect?.(row)}
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "14px 1fr auto",
+                  gap: 1,
+                  alignItems: "center",
+                  py: 0.35,
+                  cursor: row.hasChildren ? "pointer" : "default",
+                }}
+              >
                 <Box sx={{ width: 10, height: 10, bgcolor: chartColors[index % chartColors.length] }} />
                 <Typography variant="body2" sx={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {row.label}
+                  {row.hasChildren ? `${row.label} >` : row.label}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 700 }}>
                   {row.percent.toFixed(1)}%
@@ -653,6 +875,70 @@ function BudgetTable({ title, rows, type }: { title: string; rows: SummaryRow[];
   );
 }
 
+function CategoryTreeTable({
+  nodes,
+  expanded,
+  onToggle,
+}: {
+  nodes: CategorySpendNode[];
+  expanded: Set<string>;
+  onToggle: (id: string) => void;
+}) {
+  const rows = visibleTreeRows(nodes, expanded);
+  const totalAmount = nodes.reduce((sum, node) => sum + node.amount, 0);
+
+  return (
+    <Paper variant="outlined" sx={{ borderRadius: 1, overflow: "hidden", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
+      <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h5" sx={{ fontWeight: 900, color: "primary.main" }}>Category Breakdown</Typography>
+        <Typography variant="caption" color="text.secondary">{rows.length} visible</Typography>
+      </Box>
+      <TableContainer sx={{ maxHeight: "calc(100vh - 360px)" }}>
+        <Table stickyHeader size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Category</TableCell>
+              <TableCell align="right" sx={{ width: 130 }}>Amount</TableCell>
+              <TableCell align="right" sx={{ width: 110 }}>Txns</TableCell>
+              <TableCell align="right" sx={{ width: 110 }}>%</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            <TableRow sx={{ bgcolor: "action.hover" }}>
+              <TableCell sx={{ fontWeight: 800 }}>Total</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 800 }}>{currency(totalAmount)}</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 800 }}>{nodes.reduce((sum, node) => sum + node.count, 0)}</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 800 }}>100%</TableCell>
+            </TableRow>
+            {rows.map((row) => {
+              const hasChildren = row.children.some((child) => child.amount > 0);
+              return (
+                <TableRow key={row.id} hover>
+                  <TableCell sx={{ fontWeight: 650, pl: 1 + row.depth * 2.2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                      {hasChildren ? (
+                        <Typography component="button" onClick={() => onToggle(row.id)} sx={{ border: 0, bgcolor: "transparent", color: "text.secondary", cursor: "pointer", fontWeight: 900, width: 20 }}>
+                          {expanded.has(row.id) ? "-" : "+"}
+                        </Typography>
+                      ) : (
+                        <Box sx={{ width: 20 }} />
+                      )}
+                      <span>{row.label}</span>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="right">{currency(row.amount)}</TableCell>
+                  <TableCell align="right">{row.count}</TableCell>
+                  <TableCell align="right">{totalAmount > 0 ? `${((row.amount / totalAmount) * 100).toFixed(1)}%` : "0%"}</TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Paper>
+  );
+}
+
 function BudgetTableSkeleton({ title, type }: { title: string; type: "expense" | "income" }) {
   return (
     <Paper variant="outlined" sx={{ borderRadius: 1, overflow: "hidden", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
@@ -680,6 +966,8 @@ export function Summary() {
   const queryClient = useQueryClient();
   const { month, prevMonth, nextMonth } = useMonthStore();
   const isCurrentMonth = isCurrentMonthYear(month);
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => new Set());
 
   const transactionsQuery = useQuery({
     queryKey: ["finance", "transactions", month],
@@ -696,6 +984,11 @@ export function Summary() {
     queryFn: () => financeApi.monthlyBalance(month),
   });
 
+  const categoriesQuery = useQuery({
+    queryKey: ["finance", "categories"],
+    queryFn: () => financeApi.categories({ type: "expense" }),
+  });
+
   const balanceMutation = useMutation({
     mutationFn: financeApi.upsertMonthlyBalance,
     onSuccess: () => {
@@ -705,6 +998,7 @@ export function Summary() {
   });
 
   const transactions = transactionsQuery.data?.data ?? [];
+  const categories = categoriesQuery.data ?? [];
   const plans = plansQuery.data ?? [];
   const expenseRows = useMemo(() => buildRows(transactions, plans, "expense"), [transactions, plans]);
   const incomeRows = useMemo(() => buildRows(transactions, plans, "income"), [transactions, plans]);
@@ -715,9 +1009,18 @@ export function Summary() {
   const calculatedEndingBalance = startingBalance + netSavings;
   const endingBalance = balanceQuery.data?.endingBalance ?? calculatedEndingBalance;
   const plannedSpend = expenseRows.reduce((sum, row) => sum + row.planned, 0);
-  const dailySpend = useMemo(() => spendByDate(transactions), [transactions]);
-  const categorySpend = useMemo(() => expenseBreakdown(transactions, "category"), [transactions]);
-  const mainCategorySpend = useMemo(() => expenseBreakdown(transactions, "mainCategory"), [transactions]);
+  const dailySpend = useMemo(() => spendByDate(transactions, month), [transactions, month]);
+  const categoryTree = useMemo(() => buildCategorySpendTree(transactions, categories), [transactions, categories]);
+  const activeCategory = useMemo(() => findCategoryNode(categoryTree, activeCategoryId), [categoryTree, activeCategoryId]);
+  const categorySpend = useMemo(() => drilldownRows(categoryTree, activeCategoryId), [categoryTree, activeCategoryId]);
+  const toggleCategory = (id: string) => {
+    setExpandedCategories((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   return (
     <Box>
@@ -742,6 +1045,7 @@ export function Summary() {
       {transactionsQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load transactions</Alert>}
       {plansQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load monthly plans</Alert>}
       {balanceQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load monthly balance</Alert>}
+      {categoriesQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load categories</Alert>}
 
       {transactionsQuery.isLoading || balanceQuery.isLoading || plansQuery.isLoading ? (
         <SummaryHeroSkeleton />
@@ -788,11 +1092,25 @@ export function Summary() {
         <Grid size={{ xs: 12 }}>
           {transactionsQuery.isLoading ? <ChartSkeleton title="Money spent by date" /> : <SpendByDateChart rows={dailySpend} />}
         </Grid>
-        <Grid size={{ xs: 12, lg: 6 }}>
-          {transactionsQuery.isLoading ? <ChartSkeleton title="Percentage spent on Category" /> : <BreakdownChart title="Percentage spent on Category" rows={categorySpend} />}
+        <Grid size={{ xs: 12, lg: 5 }}>
+          {transactionsQuery.isLoading || categoriesQuery.isLoading ? (
+            <ChartSkeleton title="Category drilldown" />
+          ) : (
+            <BreakdownChart
+              title="Category drilldown"
+              rows={categorySpend}
+              activeLabel={activeCategory?.label ?? null}
+              onSelect={(row) => row.id && setActiveCategoryId(row.id)}
+              onBack={() => setActiveCategoryId(null)}
+            />
+          )}
         </Grid>
-        <Grid size={{ xs: 12, lg: 6 }}>
-          {transactionsQuery.isLoading ? <ChartSkeleton title="Percentage spent on Main Category" /> : <BreakdownChart title="Percentage spent on Main Category" rows={mainCategorySpend} />}
+        <Grid size={{ xs: 12, lg: 7 }}>
+          {transactionsQuery.isLoading || categoriesQuery.isLoading ? (
+            <BudgetTableSkeleton title="Category Breakdown" type="expense" />
+          ) : (
+            <CategoryTreeTable nodes={categoryTree} expanded={expandedCategories} onToggle={toggleCategory} />
+          )}
         </Grid>
       </Grid>
 

@@ -1,14 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { AppError } from "../errors/AppError";
-import { CategoryGroupService } from "../services/categoryGroup.service";
 import { CategoryService } from "../services/category.service";
 import { MonthlySummaryService } from "../services/monthlySummary.service";
 import { TransactionService } from "../services/transaction.service";
 
 const transactionService = new TransactionService();
 const categoryService = new CategoryService();
-const categoryGroupService = new CategoryGroupService();
 const monthlySummaryService = new MonthlySummaryService();
 
 const monthQuerySchema = z.object({
@@ -23,7 +21,6 @@ const createTransactionSchema = z.object({
   amount: z.number().positive(),
   currency: z.string().default("CAD"),
   categoryId: z.string().uuid().nullable().optional(),
-  mainCategory: z.string().nullable().optional(),
   type: z.enum(["expense", "income"]).default("expense"),
   merchantName: z.string().nullable().optional(),
   source: z.string().default("manual"),
@@ -54,18 +51,12 @@ const monthlyBalanceSchema = z.object({
 });
 const categorySchema = z.object({
   name: z.string().trim().min(1),
-  groupId: z.string().uuid().nullable().optional(),
+  parentId: z.string().uuid().nullable().optional(),
   type: z.enum(["expense", "income"]).default("expense"),
   isFixed: z.boolean().default(false),
   sortOrder: z.number().int().default(0),
 });
 const updateCategorySchema = categorySchema.partial();
-const categoryGroupSchema = z.object({
-  name: z.string().trim().min(1),
-  type: z.enum(["expense", "income"]).default("expense"),
-  sortOrder: z.number().int().default(0),
-});
-const updateCategoryGroupSchema = categoryGroupSchema.partial();
 
 function requireUser(req: Request): { id: string; email: string } {
   if (!req.user) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
@@ -132,49 +123,6 @@ export async function listCategories(req: Request, res: Response, next: NextFunc
     const { type } = monthQuerySchema.pick({ type: true }).parse(req.query);
     const data = await categoryService.list(user.id, type);
     res.json(data);
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function listCategoryGroups(req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const user = requireUser(req);
-    const { type } = monthQuerySchema.pick({ type: true }).parse(req.query);
-    const data = await categoryGroupService.list(user.id, type);
-    res.json(data);
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function createCategoryGroup(req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const user = requireUser(req);
-    const data = categoryGroupSchema.parse(req.body);
-    const row = await categoryGroupService.create(user.id, data);
-    res.status(201).json(row);
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function updateCategoryGroup(req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const user = requireUser(req);
-    const patch = updateCategoryGroupSchema.parse(req.body);
-    const row = await categoryGroupService.update(user.id, req.params.id as string, patch);
-    res.json(row);
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function deleteCategoryGroup(req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const user = requireUser(req);
-    await categoryGroupService.delete(user.id, req.params.id as string);
-    res.status(204).send();
   } catch (err) {
     next(err);
   }

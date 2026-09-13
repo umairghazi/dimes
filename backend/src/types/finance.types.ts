@@ -10,8 +10,7 @@ export interface FinanceTransaction {
   currency: string;
   categoryId: string | null;
   category: string;
-  mainCategory: string;
-  categoryGroupId: string | null;
+  categoryPath: Array<{ id: string; name: string }>;
   type: FinanceTransactionType;
   merchantName: string | null;
   source: string;
@@ -22,24 +21,18 @@ export interface FinanceTransaction {
   updatedAt: string;
 }
 
-export interface FinanceCategoryGroup {
-  id: string;
-  userId: string;
-  name: string;
-  type: FinanceTransactionType;
-  sortOrder: number;
-}
-
 export interface FinanceCategory {
   id: string;
   userId: string;
-  groupId: string | null;
-  groupName: string | null;
+  parentId: string | null;
+  parentName: string | null;
   name: string;
-  mainCategory: string | null;
   type: FinanceTransactionType;
   isFixed: boolean;
   sortOrder: number;
+  depth: number;
+  path: Array<{ id: string; name: string }>;
+  hasChildren: boolean;
 }
 
 export interface MonthlyPlan {
