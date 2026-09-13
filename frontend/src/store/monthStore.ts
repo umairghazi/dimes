@@ -7,12 +7,15 @@ function currentMonthYear(): string {
 
 interface MonthStore {
   month: string;
+  setMonth: (month: string) => void;
   prevMonth: () => void;
   nextMonth: () => void;
 }
 
 export const useMonthStore = create<MonthStore>((set) => ({
   month: currentMonthYear(),
+
+  setMonth: (month) => set({ month }),
 
   prevMonth: () =>
     set((s) => {

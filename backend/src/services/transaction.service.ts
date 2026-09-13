@@ -6,7 +6,7 @@ import {
 } from "../repositories/transaction.repository";
 import { CategoryRepository } from "../repositories/category.repository";
 import { AppError } from "../errors/AppError";
-import { FinanceTransaction, FinanceTransactionType } from "../types/finance.types";
+import { FinanceTransaction, FinanceTransactionType, monthFromDate } from "../types/finance.types";
 
 export interface ImportTransactionRow {
   date: string;
@@ -23,6 +23,8 @@ export interface ImportTransactionsResult {
   transactions: FinanceTransaction[];
   createdParents: number;
   createdCategories: number;
+  skippedDuplicates: number;
+  processedRows: number;
 }
 
 export class TransactionService {
@@ -53,6 +55,17 @@ export class TransactionService {
     const categoryCache = new Map<string, string>();
     let createdParents = 0;
     let createdCategories = 0;
+    let skippedDuplicates = 0;
+
+    const months = [...new Set(rows.map((row) => row.monthYear ?? monthFromDate(row.date)))];
+    const existingTransactions = await this.transactionRepo.listByMonths(userId, months);
+    const seenTransactions = new Set(existingTransactions.map((transaction) => this.transactionKey({
+      date: transaction.date,
+      monthYear: transaction.monthYear,
+      description: transaction.description,
+      amount: transaction.amount,
+      type: transaction.type,
+    })));
 
     const existingCategories = await this.categoryRepo.listByUser(userId);
     existingCategories.forEach((category) => {
@@ -62,6 +75,19 @@ export class TransactionService {
     const imported: FinanceTransaction[] = [];
     for (const row of rows) {
       const type = row.type;
+      const monthYear = row.monthYear ?? monthFromDate(row.date);
+      const transactionKey = this.transactionKey({
+        date: row.date,
+        monthYear,
+        description: row.description,
+        amount: row.amount,
+        type,
+      });
+      if (seenTransactions.has(transactionKey)) {
+        skippedDuplicates += 1;
+        continue;
+      }
+
       const names = this.normalizeNames(row.categoryName, row.parentName);
       let parentId: string | null = null;
       let categoryId: string | null = null;
@@ -94,7 +120,7 @@ export class TransactionService {
 
       imported.push(await this.transactionRepo.create(userId, {
         date: row.date,
-        monthYear: row.monthYear,
+        monthYear,
         description: row.description,
         amount: row.amount,
         currency: row.currency ?? "CAD",
@@ -103,9 +129,16 @@ export class TransactionService {
         source: "import",
         tags: ["sheets-import"],
       }));
+      seenTransactions.add(transactionKey);
     }
 
-    return { transactions: imported, createdParents, createdCategories };
+    return {
+      transactions: imported,
+      createdParents,
+      createdCategories,
+      skippedDuplicates,
+      processedRows: rows.length,
+    };
   }
 
   private async validateCategory(userId: string, categoryId: string | null | undefined): Promise<void> {
@@ -153,5 +186,21 @@ export class TransactionService {
 
   private key(...parts: Array<string | null | undefined>): string {
     return parts.map((part) => (part ?? "").trim().toLowerCase().replace(/\s+/g, " ")).join("::");
+  }
+
+  private transactionKey(row: {
+    date: string;
+    monthYear: string;
+    description: string;
+    amount: number;
+    type: FinanceTransactionType;
+  }): string {
+    return this.key(
+      row.date.slice(0, 10),
+      row.monthYear,
+      row.description,
+      row.amount.toFixed(2),
+      row.type,
+    );
   }
 }

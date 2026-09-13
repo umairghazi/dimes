@@ -7,6 +7,7 @@ import {
   deleteTransaction,
   getMonthlyBalance,
   getSummary,
+  getYearlySummary,
   importTransactions,
   listMonthlyPlans,
   listCategories,
@@ -31,5 +32,6 @@ router.get("/plans", authenticate, listMonthlyPlans);
 router.get("/balance", authenticate, getMonthlyBalance);
 router.put("/balance", authenticate, upsertMonthlyBalance);
 router.get("/summary", authenticate, getSummary);
+router.get("/yearly-summary", authenticate, getYearlySummary);
 
 export default router;

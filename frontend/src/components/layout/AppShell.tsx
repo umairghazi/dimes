@@ -1,5 +1,6 @@
 import { Box, Button, IconButton, Tooltip, Typography } from "@mui/material";
 import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
+import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
@@ -21,6 +22,7 @@ export function AppShell() {
   const navItems = [
     { label: "Overview", path: "/", icon: AnalyticsOutlinedIcon },
     { label: "Ledger", path: "/ledger", icon: ReceiptLongOutlinedIcon },
+    { label: "Year", path: "/year", icon: BarChartOutlinedIcon },
     { label: "Import", path: "/import", icon: UploadFileOutlinedIcon },
     { label: "Categories", path: "/categories", icon: SellOutlinedIcon },
   ];

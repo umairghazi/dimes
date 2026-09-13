@@ -91,6 +91,39 @@ export class TransactionRepository extends BaseRepository {
     return (rows ?? []).map(toTransaction);
   }
 
+  async listByYear(userId: string, year: number): Promise<FinanceTransaction[]> {
+    const from = `${year}-01`;
+    const to = `${year}-12`;
+    const rows = await this.execute<TransactionRow[]>(
+      "list yearly transactions",
+      this.table()
+        .select("*, categories(id, name)")
+        .eq("user_id", userId)
+        .gte("month_year", from)
+        .lte("month_year", to)
+        .order("month_year", { ascending: true })
+        .order("date", { ascending: true }),
+    );
+
+    return (rows ?? []).map(toTransaction);
+  }
+
+  async listByMonths(userId: string, months: string[]): Promise<FinanceTransaction[]> {
+    if (months.length === 0) return [];
+
+    const rows = await this.execute<TransactionRow[]>(
+      "list transactions by months",
+      this.table()
+        .select("*, categories(id, name)")
+        .eq("user_id", userId)
+        .in("month_year", months)
+        .order("month_year", { ascending: true })
+        .order("date", { ascending: true }),
+    );
+
+    return (rows ?? []).map(toTransaction);
+  }
+
   async create(userId: string, data: CreateTransactionData): Promise<FinanceTransaction> {
     const row = await this.execute<TransactionRow>(
       "create transaction",

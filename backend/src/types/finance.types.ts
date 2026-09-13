@@ -62,6 +62,26 @@ export interface MonthlySummary {
   balance: MonthlyBalance | null;
 }
 
+export interface YearlySummaryMonth {
+  monthYear: string;
+  monthLabel: string;
+  income: number;
+  expenses: number;
+  net: number;
+  startingBalance: number | null;
+  endingBalance: number | null;
+}
+
+export interface YearlySummary {
+  year: number;
+  months: YearlySummaryMonth[];
+  totals: {
+    income: number;
+    expenses: number;
+    net: number;
+  };
+}
+
 export function money(value: string | number | null): number {
   if (value === null) return 0;
   const numberValue = typeof value === "number" ? value : Number(value);

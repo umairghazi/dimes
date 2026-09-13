@@ -119,6 +119,16 @@ function money(value: number): string {
   return value.toLocaleString("en-US", { style: "currency", currency: "CAD" });
 }
 
+function importRowKey(row: ImportTransactionRow): string {
+  return [
+    row.date.slice(0, 10),
+    row.monthYear ?? row.date.slice(0, 7),
+    row.description.trim().toLowerCase().replace(/\s+/g, " "),
+    row.amount.toFixed(2),
+    row.type,
+  ].join("::");
+}
+
 export function ImportTransactions() {
   const queryClient = useQueryClient();
   const { month, prevMonth, nextMonth } = useMonthStore();
@@ -126,6 +136,23 @@ export function ImportTransactions() {
   const [text, setText] = useState("");
   const [type, setType] = useState<ImportType>("expense");
   const parsedRows = useMemo(() => parseRows(text, type, month), [text, type, month]);
+  const duplicateLines = useMemo(() => {
+    const seen = new Map<string, number>();
+    const duplicates = new Set<number>();
+
+    parsedRows.forEach((row) => {
+      const key = importRowKey(row);
+      const firstLine = seen.get(key);
+      if (firstLine !== undefined) {
+        duplicates.add(firstLine);
+        duplicates.add(row.sourceLine);
+      } else {
+        seen.set(key, row.sourceLine);
+      }
+    });
+
+    return duplicates;
+  }, [parsedRows]);
 
   const importMutation = useMutation({
     mutationFn: () => financeApi.importTransactions(parsedRows),
@@ -219,9 +246,14 @@ export function ImportTransactions() {
       </Paper>
 
       {importMutation.isError && <Alert severity="error" sx={{ mb: 2 }}>Import failed. Check the pasted rows and try again.</Alert>}
+      {duplicateLines.size > 0 && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {duplicateLines.size} pasted rows look duplicated. The server will skip transactions that already exist or repeat in this batch.
+        </Alert>
+      )}
       {importMutation.data && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Imported {importMutation.data.transactions.length} transactions. Created {importMutation.data.createdParents} parent categories and {importMutation.data.createdCategories} child categories.
+          Processed {importMutation.data.processedRows} rows. Imported {importMutation.data.transactions.length} transactions and skipped {importMutation.data.skippedDuplicates} duplicates. Created {importMutation.data.createdParents} parent categories and {importMutation.data.createdCategories} child categories.
         </Alert>
       )}
 
@@ -245,18 +277,35 @@ export function ImportTransactions() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {parsedRows.slice(0, 100).map((row) => (
-                <TableRow key={`${row.sourceLine}-${row.description}`} hover>
-                  <TableCell>{row.sourceLine}</TableCell>
-                  <TableCell>{row.date}</TableCell>
-                  <TableCell>{formatMonthLabel(row.monthYear ?? month)}</TableCell>
-                  <TableCell>{row.description}</TableCell>
-                  <TableCell align="right">{money(row.amount)}</TableCell>
-                  <TableCell>{row.type}</TableCell>
-                  <TableCell>{row.parentName || "No parent"}</TableCell>
-                  <TableCell>{row.categoryName || "Uncategorized"}</TableCell>
-                </TableRow>
-              ))}
+              {parsedRows.slice(0, 100).map((row) => {
+                const isDuplicate = duplicateLines.has(row.sourceLine);
+
+                return (
+                  <TableRow
+                    key={`${row.sourceLine}-${row.description}`}
+                    hover
+                    sx={isDuplicate ? { bgcolor: "rgba(255, 184, 77, 0.08)" } : undefined}
+                  >
+                    <TableCell>
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
+                        <span>{row.sourceLine}</span>
+                        {isDuplicate && (
+                          <Typography variant="caption" color="warning.main" sx={{ fontWeight: 800 }}>
+                            Duplicate
+                          </Typography>
+                        )}
+                      </Box>
+                    </TableCell>
+                    <TableCell>{row.date}</TableCell>
+                    <TableCell>{formatMonthLabel(row.monthYear ?? month)}</TableCell>
+                    <TableCell>{row.description}</TableCell>
+                    <TableCell align="right">{money(row.amount)}</TableCell>
+                    <TableCell>{row.type}</TableCell>
+                    <TableCell>{row.parentName || "No parent"}</TableCell>
+                    <TableCell>{row.categoryName || "Uncategorized"}</TableCell>
+                  </TableRow>
+                );
+              })}
               {parsedRows.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={8}>

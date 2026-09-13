@@ -46,6 +46,20 @@ export class MonthlyBalanceRepository extends BaseRepository {
     return row ? toBalance(row) : null;
   }
 
+  async listByYear(userId: string, year: number): Promise<MonthlyBalance[]> {
+    const rows = await this.execute<BalanceRow[]>(
+      "list yearly balances",
+      this.table()
+        .select("*")
+        .eq("user_id", userId)
+        .gte("month_year", `${year}-01`)
+        .lte("month_year", `${year}-12`)
+        .order("month_year", { ascending: true }),
+    );
+
+    return (rows ?? []).map(toBalance);
+  }
+
   async upsert(userId: string, data: UpsertMonthlyBalanceData): Promise<MonthlyBalance> {
     const row = await this.execute<BalanceRow>(
       "upsert monthly balance",

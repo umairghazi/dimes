@@ -38,6 +38,8 @@ export interface ImportTransactionsResult {
   transactions: Expense[];
   createdParents: number;
   createdCategories: number;
+  skippedDuplicates: number;
+  processedRows: number;
 }
 
 export interface MonthlyPlan {
@@ -72,6 +74,26 @@ export interface FinanceSummary {
   transactions: Expense[];
   plans: MonthlyPlan[];
   balance: MonthlyBalance | null;
+}
+
+export interface YearlySummaryMonth {
+  monthYear: string;
+  monthLabel: string;
+  income: number;
+  expenses: number;
+  net: number;
+  startingBalance: number | null;
+  endingBalance: number | null;
+}
+
+export interface YearlySummary {
+  year: number;
+  months: YearlySummaryMonth[];
+  totals: {
+    income: number;
+    expenses: number;
+    net: number;
+  };
 }
 
 export const financeApi = {
@@ -117,4 +139,7 @@ export const financeApi = {
 
   summary: (month: string) =>
     apiClient.get<FinanceSummary>("/finance/summary", { params: { month } }).then((r) => r.data),
+
+  yearlySummary: (year: number) =>
+    apiClient.get<YearlySummary>("/finance/yearly-summary", { params: { year } }).then((r) => r.data),
 };

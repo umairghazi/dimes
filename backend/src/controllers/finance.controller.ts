@@ -13,6 +13,9 @@ const monthQuerySchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/).optional(),
   type: z.enum(["expense", "income"]).optional(),
 });
+const yearQuerySchema = z.object({
+  year: z.coerce.number().int().min(2000).max(2100),
+});
 
 const createTransactionSchema = z.object({
   date: z.string().min(1),
@@ -165,6 +168,17 @@ export async function getSummary(req: Request, res: Response, next: NextFunction
     const user = requireUser(req);
     const { month } = monthQuerySchema.required({ month: true }).parse(req.query);
     const data = await monthlySummaryService.get(user.id, month);
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getYearlySummary(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = requireUser(req);
+    const { year } = yearQuerySchema.parse(req.query);
+    const data = await monthlySummaryService.getYear(user.id, year);
     res.json(data);
   } catch (err) {
     next(err);
