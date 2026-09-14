@@ -13,7 +13,9 @@ import {
   listCategories,
   listTransactions,
   updateCategory,
+  deleteMonthlyPlan,
   upsertMonthlyBalance,
+  upsertMonthlyPlan,
   updateTransaction,
 } from "../controllers/finance.controller";
 
@@ -29,6 +31,8 @@ router.post("/categories", authenticate, createCategory);
 router.patch("/categories/:id", authenticate, updateCategory);
 router.delete("/categories/:id", authenticate, deleteCategory);
 router.get("/plans", authenticate, listMonthlyPlans);
+router.put("/plans", authenticate, upsertMonthlyPlan);
+router.delete("/plans/:id", authenticate, deleteMonthlyPlan);
 router.get("/balance", authenticate, getMonthlyBalance);
 router.put("/balance", authenticate, upsertMonthlyBalance);
 router.get("/summary", authenticate, getSummary);

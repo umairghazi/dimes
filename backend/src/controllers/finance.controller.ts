@@ -52,6 +52,15 @@ const monthlyBalanceSchema = z.object({
   endingBalance: z.number().min(0).nullable().optional(),
   currency: z.string().default("CAD"),
 });
+const monthlyPlanSchema = z.object({
+  monthYear: z.string().regex(/^\d{4}-\d{2}$/),
+  categoryId: z.string().uuid().nullable().optional(),
+  categoryName: z.string().trim().min(1),
+  type: z.enum(["expense", "income"]),
+  plannedAmount: z.number().min(0),
+  currency: z.string().default("CAD"),
+  carryForward: z.boolean().default(false),
+});
 const categorySchema = z.object({
   name: z.string().trim().min(1),
   parentId: z.string().uuid().nullable().optional(),
@@ -191,6 +200,27 @@ export async function listMonthlyPlans(req: Request, res: Response, next: NextFu
     const { month } = monthQuerySchema.required({ month: true }).parse(req.query);
     const data = await monthlySummaryService.listPlans(user.id, month);
     res.json(data);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function upsertMonthlyPlan(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = requireUser(req);
+    const data = monthlyPlanSchema.parse(req.body);
+    const row = await monthlySummaryService.upsertPlan(user.id, data);
+    res.json(row);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteMonthlyPlan(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = requireUser(req);
+    await monthlySummaryService.deletePlan(user.id, req.params.id as string);
+    res.status(204).send();
   } catch (err) {
     next(err);
   }

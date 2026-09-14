@@ -32,6 +32,22 @@ export class MonthlySummaryService {
     return this.monthlyPlanRepo.listByMonth(userId, month);
   }
 
+  async upsertPlan(userId: string, data: {
+    monthYear: string;
+    categoryId?: string | null;
+    categoryName: string;
+    type: "expense" | "income";
+    plannedAmount: number;
+    currency?: string;
+    carryForward?: boolean;
+  }) {
+    return this.monthlyPlanRepo.upsert(userId, data);
+  }
+
+  async deletePlan(userId: string, id: string) {
+    return this.monthlyPlanRepo.delete(userId, id);
+  }
+
   async getBalance(userId: string, month: string) {
     return this.monthlyBalanceRepo.getByMonth(userId, month);
   }

@@ -1,4 +1,4 @@
-import { Box, Button, IconButton, Tooltip, Typography } from "@mui/material";
+import { Box, Button, Tooltip, Typography } from "@mui/material";
 import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
@@ -12,6 +12,7 @@ import { useAuthStore } from "@/store/authStore";
 export function AppShell() {
   const navigate = useNavigate();
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const user = useAuthStore((state) => state.user);
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -139,11 +140,44 @@ export function AppShell() {
             })}
           </Box>
 
-          <Tooltip title="Sign out">
-            <IconButton onClick={() => void signOut()} sx={{ justifySelf: "end" }}>
-              <LogoutOutlinedIcon />
-            </IconButton>
-          </Tooltip>
+          <Box sx={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+            {user?.email && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  display: { xs: "none", lg: "block" },
+                  maxWidth: 220,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {user.email}
+              </Typography>
+            )}
+            <Tooltip title="Sign out">
+              <Button
+                variant="outlined"
+                color="inherit"
+                size="small"
+                startIcon={<LogoutOutlinedIcon fontSize="small" />}
+                onClick={() => void signOut()}
+                sx={{
+                  minHeight: 38,
+                  color: "#f7f8fc",
+                  borderColor: "rgba(255,255,255,0.12)",
+                  bgcolor: "rgba(255,255,255,0.05)",
+                  "&:hover": {
+                    borderColor: "rgba(255,107,44,0.55)",
+                    bgcolor: "rgba(255,107,44,0.12)",
+                  },
+                }}
+              >
+                Logout
+              </Button>
+            </Tooltip>
+          </Box>
         </Box>
       </Box>
 

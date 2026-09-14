@@ -54,6 +54,16 @@ export interface MonthlyPlan {
   carryForward: boolean;
 }
 
+export interface MonthlyPlanInput {
+  monthYear: string;
+  categoryId?: string | null;
+  categoryName: string;
+  type: "expense" | "income";
+  plannedAmount: number;
+  currency?: string;
+  carryForward?: boolean;
+}
+
 export interface MonthlyBalance {
   id: string;
   userId: string;
@@ -140,6 +150,11 @@ export const financeApi = {
 
   monthlyPlans: (month: string) =>
     apiClient.get<MonthlyPlan[]>("/finance/plans", { params: { month } }).then((r) => r.data),
+
+  upsertMonthlyPlan: (data: MonthlyPlanInput) =>
+    apiClient.put<MonthlyPlan>("/finance/plans", data).then((r) => r.data),
+
+  deleteMonthlyPlan: (id: string) => apiClient.delete(`/finance/plans/${id}`),
 
   monthlyBalance: (month: string) =>
     apiClient.get<MonthlyBalance | null>("/finance/balance", { params: { month } }).then((r) => r.data),

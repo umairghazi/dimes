@@ -45,4 +45,44 @@ export class MonthlyPlanRepository extends BaseRepository {
 
     return (rows ?? []).map(toPlan);
   }
+
+  async upsert(userId: string, data: {
+    monthYear: string;
+    categoryId?: string | null;
+    categoryName: string;
+    type: FinanceTransactionType;
+    plannedAmount: number;
+    currency?: string;
+    carryForward?: boolean;
+  }): Promise<MonthlyPlan> {
+    const row = await this.execute<PlanRow>(
+      "upsert monthly plan",
+      this.table()
+        .upsert({
+          user_id: userId,
+          month_year: data.monthYear,
+          category_id: data.categoryId ?? null,
+          category_name: data.categoryName,
+          type: data.type,
+          planned_amount: data.plannedAmount,
+          currency: data.currency ?? "CAD",
+          carry_forward: data.carryForward ?? false,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,month_year,category_name,type" })
+        .select("*")
+        .single(),
+    );
+
+    return toPlan(row);
+  }
+
+  async delete(userId: string, id: string): Promise<void> {
+    await this.executeEmpty(
+      "delete monthly plan",
+      this.table()
+        .delete()
+        .eq("user_id", userId)
+        .eq("id", id),
+    );
+  }
 }

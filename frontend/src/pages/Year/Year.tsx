@@ -91,7 +91,35 @@ function IncomeExpenseChart({ months }: { months: YearlySummaryMonth[] }) {
   );
 }
 
+interface BalanceChartPoint {
+  month: YearlySummaryMonth;
+  x: number;
+  y: number;
+  value: number;
+}
+
+function smoothPath(points: BalanceChartPoint[]): string {
+  if (points.length === 0) return "";
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+
+  return points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point.x} ${point.y}`;
+
+    const previous = points[index - 1];
+    const next = points[index + 1] ?? point;
+    const beforePrevious = points[index - 2] ?? previous;
+    const tension = 0.18;
+    const cp1x = previous.x + (point.x - beforePrevious.x) * tension;
+    const cp1y = previous.y + (point.y - beforePrevious.y) * tension;
+    const cp2x = point.x - (next.x - previous.x) * tension;
+    const cp2y = point.y - (next.y - previous.y) * tension;
+
+    return `${path} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${point.x} ${point.y}`;
+  }, "");
+}
+
 function BalanceTrendChart({ months }: { months: YearlySummaryMonth[] }) {
+  const [tooltip, setTooltip] = useState<BalanceChartPoint | null>(null);
   const points = months.filter((month) => month.endingBalance !== null);
   const width = 920;
   const height = 300;
@@ -103,12 +131,20 @@ function BalanceTrendChart({ months }: { months: YearlySummaryMonth[] }) {
   const plotHeight = height - top - bottom;
   const max = Math.max(...points.map((month) => month.endingBalance ?? 0), 1);
   const band = plotWidth / 12;
-  const line = points.map((month) => {
+  const chartPoints: BalanceChartPoint[] = points.map((month) => {
     const index = months.findIndex((candidate) => candidate.monthYear === month.monthYear);
     const x = left + band * index + band / 2;
     const y = top + plotHeight - ((month.endingBalance ?? 0) / max) * plotHeight;
-    return `${x},${y}`;
-  }).join(" ");
+    return { month, x, y, value: month.endingBalance ?? 0 };
+  });
+  const line = smoothPath(chartPoints);
+  const area = chartPoints.length > 0
+    ? `${line} L ${chartPoints[chartPoints.length - 1].x} ${top + plotHeight} L ${chartPoints[0].x} ${top + plotHeight} Z`
+    : "";
+  const tooltipWidth = 168;
+  const tooltipHeight = 64;
+  const tooltipX = tooltip ? Math.min(Math.max(tooltip.x + 12, left), width - right - tooltipWidth) : 0;
+  const tooltipY = tooltip ? Math.max(top, tooltip.y - tooltipHeight - 12) : 0;
 
   return (
     <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, overflowX: "auto", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
@@ -127,23 +163,156 @@ function BalanceTrendChart({ months }: { months: YearlySummaryMonth[] }) {
             );
           })}
           <line x1={left} x2={width - right} y1={top + plotHeight} y2={top + plotHeight} stroke="#535b70" />
-          <polyline points={line} fill="none" stroke="#8ea0ff" strokeWidth="3" />
+          {area && <path d={area} fill="rgba(142,160,255,0.12)" />}
+          <path d={line} fill="none" stroke="#8ea0ff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
           {months.map((month, index) => {
             const x = left + band * index + band / 2;
             if (month.endingBalance === null) {
               return <text key={month.monthYear} x={x} y={height - 24} textAnchor="middle" fontSize="12" fill="#b5bbcb">{month.monthLabel}</text>;
             }
             const y = top + plotHeight - (month.endingBalance / max) * plotHeight;
+            const point = chartPoints.find((candidate) => candidate.month.monthYear === month.monthYear);
             return (
               <g key={month.monthYear}>
-                <circle cx={x} cy={y} r="5" fill="#8ea0ff">
-                  <title>{month.monthLabel} ending balance: {nullableCurrency(month.endingBalance)}</title>
-                </circle>
+                <circle cx={x} cy={y} r="5" fill={tooltip?.month.monthYear === month.monthYear ? "#f7f8fc" : "#8ea0ff"} />
+                <circle
+                  cx={x}
+                  cy={y}
+                  r="18"
+                  fill="transparent"
+                  onMouseEnter={() => point && setTooltip(point)}
+                  onMouseMove={() => point && setTooltip(point)}
+                  onMouseLeave={() => setTooltip(null)}
+                />
                 <text x={x} y={height - 24} textAnchor="middle" fontSize="12" fill="#b5bbcb">{month.monthLabel}</text>
               </g>
             );
           })}
+          {tooltip && (
+            <g pointerEvents="none">
+              <rect
+                x={tooltipX}
+                y={tooltipY}
+                width={tooltipWidth}
+                height={tooltipHeight}
+                rx="8"
+                fill="#0f1117"
+                stroke="rgba(255,255,255,0.18)"
+              />
+              <text x={tooltipX + 12} y={tooltipY + 23} fontSize="13" fontWeight="800" fill="#f7f8fc">
+                {tooltip.month.monthLabel}
+              </text>
+              <text x={tooltipX + 12} y={tooltipY + 46} fontSize="14" fontWeight="900" fill="#8ea0ff">
+                {nullableCurrency(tooltip.value)}
+              </text>
+            </g>
+          )}
           <text x={left + plotWidth / 2} y={height - 4} textAnchor="middle" fontSize="13" fontWeight="700" fill="#b5bbcb">Month</text>
+        </Box>
+      )}
+    </Paper>
+  );
+}
+
+function BalanceCashflowComboChart({ months }: { months: YearlySummaryMonth[] }) {
+  const [tooltip, setTooltip] = useState<BalanceChartPoint | null>(null);
+  const balanceMonths = months.filter((month) => month.endingBalance !== null);
+  const width = 920;
+  const height = 340;
+  const left = 76;
+  const right = 28;
+  const top = 34;
+  const bottom = 58;
+  const plotWidth = width - left - right;
+  const plotHeight = height - top - bottom;
+  const balanceMax = Math.max(...balanceMonths.map((month) => month.endingBalance ?? 0), 1);
+  const netMax = Math.max(...months.map((month) => Math.abs(month.net)), 1);
+  const band = plotWidth / 12;
+  const barWidth = Math.min(34, band * 0.42);
+  const zeroY = top + plotHeight / 2;
+  const barScale = (plotHeight * 0.42) / netMax;
+  const balancePoints: BalanceChartPoint[] = balanceMonths.map((month) => {
+    const index = months.findIndex((candidate) => candidate.monthYear === month.monthYear);
+    const x = left + band * index + band / 2;
+    const y = top + plotHeight - ((month.endingBalance ?? 0) / balanceMax) * plotHeight;
+    return { month, x, y, value: month.endingBalance ?? 0 };
+  });
+  const line = smoothPath(balancePoints);
+  const tooltipWidth = 192;
+  const tooltipHeight = 86;
+  const tooltipX = tooltip ? Math.min(Math.max(tooltip.x + 12, left), width - right - tooltipWidth) : 0;
+  const tooltipY = tooltip ? Math.max(top, tooltip.y - tooltipHeight - 12) : 0;
+
+  return (
+    <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, overflowX: "auto", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
+      <Typography variant="h5" sx={{ fontWeight: 900, mb: 0.5 }}>Balance vs monthly cashflow</Typography>
+      <Typography variant="caption" color="text.secondary">Bars show monthly net cashflow. Line shows ending account balance.</Typography>
+      {balanceMonths.length === 0 ? (
+        <Typography color="text.secondary" sx={{ mt: 2 }}>No balances entered for this year.</Typography>
+      ) : (
+        <Box component="svg" viewBox={`0 0 ${width} ${height}`} sx={{ width: "100%", minWidth: 760, display: "block", mt: 1 }}>
+          {[0, 0.5, 1].map((tick) => {
+            const y = top + plotHeight - tick * plotHeight;
+            return (
+              <g key={tick}>
+                <line x1={left} x2={width - right} y1={y} y2={y} stroke="currentColor" opacity="0.1" />
+                <text x={left - 10} y={y + 4} textAnchor="end" fontSize="12" fill="#b5bbcb">{currency(balanceMax * tick)}</text>
+              </g>
+            );
+          })}
+          <line x1={left} x2={width - right} y1={zeroY} y2={zeroY} stroke="#535b70" strokeDasharray="4 6" />
+          {months.map((month, index) => {
+            const x = left + band * index + band / 2;
+            const heightValue = Math.abs(month.net) * barScale;
+            const y = month.net >= 0 ? zeroY - heightValue : zeroY;
+            const fill = month.net >= 0 ? "#29cc7a" : "#ff6b2c";
+            return (
+              <g key={month.monthYear}>
+                <rect x={x - barWidth / 2} y={y} width={barWidth} height={heightValue} rx="5" fill={fill} opacity="0.58">
+                  <title>{month.monthLabel} net cashflow: {signedCurrency(month.net)}</title>
+                </rect>
+                <text x={x} y={height - 25} textAnchor="middle" fontSize="12" fill="#b5bbcb">{month.monthLabel}</text>
+              </g>
+            );
+          })}
+          <path d={line} fill="none" stroke="#8ea0ff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+          {balancePoints.map((point) => (
+            <g key={point.month.monthYear}>
+              <circle cx={point.x} cy={point.y} r="5" fill={tooltip?.month.monthYear === point.month.monthYear ? "#f7f8fc" : "#8ea0ff"} />
+              <circle
+                cx={point.x}
+                cy={point.y}
+                r="18"
+                fill="transparent"
+                onMouseEnter={() => setTooltip(point)}
+                onMouseMove={() => setTooltip(point)}
+                onMouseLeave={() => setTooltip(null)}
+              />
+            </g>
+          ))}
+          {tooltip && (
+            <g pointerEvents="none">
+              <rect
+                x={tooltipX}
+                y={tooltipY}
+                width={tooltipWidth}
+                height={tooltipHeight}
+                rx="8"
+                fill="#0f1117"
+                stroke="rgba(255,255,255,0.18)"
+              />
+              <text x={tooltipX + 12} y={tooltipY + 22} fontSize="13" fontWeight="800" fill="#f7f8fc">
+                {tooltip.month.monthLabel}
+              </text>
+              <text x={tooltipX + 12} y={tooltipY + 44} fontSize="13" fontWeight="900" fill="#8ea0ff">
+                Balance {nullableCurrency(tooltip.value)}
+              </text>
+              <text x={tooltipX + 12} y={tooltipY + 65} fontSize="12" fill={tooltip.month.net >= 0 ? "#29cc7a" : "#ff875c"}>
+                Net {signedCurrency(tooltip.month.net)}
+              </text>
+            </g>
+          )}
+          <text x={left + plotWidth / 2} y={height - 5} textAnchor="middle" fontSize="13" fontWeight="700" fill="#b5bbcb">Month</text>
         </Box>
       )}
     </Paper>
@@ -350,6 +519,9 @@ export function Year() {
         </Grid>
         <Grid size={{ xs: 12, lg: 6 }}>
           {yearlyQuery.isLoading ? <ChartSkeleton title="Ending account balance" /> : <BalanceTrendChart months={months} />}
+        </Grid>
+        <Grid size={{ xs: 12 }}>
+          {yearlyQuery.isLoading ? <ChartSkeleton title="Balance vs monthly cashflow" /> : <BalanceCashflowComboChart months={months} />}
         </Grid>
       </Grid>
     </Box>

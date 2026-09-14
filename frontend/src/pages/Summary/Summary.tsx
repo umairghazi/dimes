@@ -20,7 +20,7 @@ import {
   Typography,
 } from "@mui/material";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
-import { financeApi, FinanceCategory, MonthlyPlan } from "@/api/finance.api";
+import { financeApi, FinanceCategory, MonthlyPlan, MonthlyPlanInput } from "@/api/finance.api";
 import { Expense } from "@/types/expense.types";
 import { useMonthStore, isCurrentMonthYear } from "@/store/monthStore";
 import { formatMonthLabel, currency, currencyWithCents } from "@/components/finance/financeFormat";
@@ -29,6 +29,7 @@ import { MonthSwitcher } from "@/components/finance/MonthSwitcher";
 import { MetricCard, MetricCardSkeleton } from "@/components/finance/MetricCard";
 
 interface SummaryRow {
+  categoryId?: string | null;
   category: string;
   planned: number;
   actual: number;
@@ -77,10 +78,12 @@ function actualsByCategory(rows: Expense[], type: "expense" | "income"): Map<str
   return actuals;
 }
 
-function buildRows(transactions: Expense[], plans: MonthlyPlan[], type: "expense" | "income"): SummaryRow[] {
+function buildRows(transactions: Expense[], plans: MonthlyPlan[], type: "expense" | "income", categories: FinanceCategory[] = []): SummaryRow[] {
   const actuals = actualsByCategory(transactions, type);
   const planned = plans.filter((plan) => plan.type === type);
-  const names = new Set([...actuals.keys(), ...planned.map((plan) => plan.categoryName)]);
+  const typedCategories = categories.filter((category) => category.type === type);
+  const categoryByName = new Map(typedCategories.map((category) => [category.name, category]));
+  const names = new Set([...actuals.keys(), ...planned.map((plan) => plan.categoryName), ...typedCategories.map((category) => category.name)]);
 
   return [...names]
     .sort((a, b) => a.localeCompare(b))
@@ -89,7 +92,9 @@ function buildRows(transactions: Expense[], plans: MonthlyPlan[], type: "expense
         .filter((plan) => plan.categoryName === category)
         .reduce((sum, plan) => sum + plan.plannedAmount, 0);
       const actual = actuals.get(category) ?? 0;
+      const categoryPlan = planned.find((plan) => plan.categoryName === category);
       return {
+        categoryId: categoryPlan?.categoryId ?? categoryByName.get(category)?.id ?? transactions.find((transaction) => transaction.type === type && transaction.category === category)?.categoryId ?? null,
         category,
         planned: plannedAmount,
         actual,
@@ -795,6 +800,103 @@ function BudgetTable({ title, rows, type }: { title: string; rows: SummaryRow[];
   );
 }
 
+function MonthlyPlanEditor({
+  title,
+  month,
+  rows,
+  type,
+  isSaving,
+  onSave,
+}: {
+  title: string;
+  month: string;
+  rows: SummaryRow[];
+  type: "expense" | "income";
+  isSaving: boolean;
+  onSave: (data: MonthlyPlanInput) => Promise<void>;
+}) {
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setDrafts({});
+  }, [month, rows]);
+
+  const valueFor = (row: SummaryRow): string => drafts[row.category] ?? String(row.planned || "");
+  const saveRow = async (row: SummaryRow) => {
+    const raw = valueFor(row).trim();
+    const plannedAmount = raw ? Number(raw) : 0;
+    if (!Number.isFinite(plannedAmount) || plannedAmount < 0) return;
+    if (plannedAmount === row.planned) return;
+
+    await onSave({
+      monthYear: month,
+      categoryId: row.categoryId ?? null,
+      categoryName: row.category,
+      type,
+      plannedAmount,
+      currency: "CAD",
+      carryForward: false,
+    });
+  };
+
+  return (
+    <Paper variant="outlined" sx={{ borderRadius: 1, overflow: "hidden", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
+      <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h5" sx={{ fontWeight: 900, color: type === "expense" ? "primary.main" : "success.main" }}>
+          {title}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">{isSaving ? "Saving..." : `${rows.length} categories`}</Typography>
+      </Box>
+      <TableContainer sx={{ maxHeight: 440 }}>
+        <Table stickyHeader size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Category</TableCell>
+              <TableCell align="right" sx={{ width: 150 }}>Planned</TableCell>
+              <TableCell align="right" sx={{ width: 120 }}>Actual</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={row.category} hover>
+                <TableCell sx={{ fontWeight: 700 }}>{row.category}</TableCell>
+                <TableCell align="right">
+                  <TextField
+                    type="number"
+                    size="small"
+                    variant="standard"
+                    value={valueFor(row)}
+                    placeholder="0"
+                    disabled={isSaving}
+                    slotProps={{ htmlInput: { min: 0, step: "0.01", style: { textAlign: "right" } } }}
+                    onChange={(event) => setDrafts((current) => ({ ...current, [row.category]: event.target.value }))}
+                    onBlur={() => void saveRow(row)}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter") return;
+                      event.preventDefault();
+                      void saveRow(row);
+                    }}
+                  />
+                </TableCell>
+                <TableCell align="right">{currency(row.actual)}</TableCell>
+              </TableRow>
+            ))}
+            {rows.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={3}>
+                  <Typography color="text.secondary" sx={{ py: 3, textAlign: "center" }}>
+                    Add categories or transactions to create monthly plans.
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Paper>
+  );
+}
+
 function CategoryTreeTable({
   nodes,
   expanded,
@@ -884,6 +986,7 @@ function BudgetTableSkeleton({ title, type }: { title: string; type: "expense" |
 
 const summaryWidgetOptions = [
   { id: "dailySpend", label: "Daily spend" },
+  { id: "monthlyPlans", label: "Monthly plans" },
   { id: "categoryDrilldown", label: "Category drilldown" },
   { id: "categoryTree", label: "Category tree" },
   { id: "expenseBudget", label: "Expense budget" },
@@ -936,6 +1039,11 @@ export function Summary() {
     queryFn: () => financeApi.categories({ type: "expense" }),
   });
 
+  const allCategoriesQuery = useQuery({
+    queryKey: ["finance", "categories", "all"],
+    queryFn: () => financeApi.categories(),
+  });
+
   const balanceMutation = useMutation({
     mutationFn: financeApi.upsertMonthlyBalance,
     onSuccess: () => {
@@ -944,11 +1052,21 @@ export function Summary() {
     },
   });
 
+  const planMutation = useMutation({
+    mutationFn: financeApi.upsertMonthlyPlan,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["finance", "plans", month] });
+      queryClient.invalidateQueries({ queryKey: ["finance", "summary", month] });
+      queryClient.invalidateQueries({ queryKey: ["finance", "yearly-summary"] });
+    },
+  });
+
   const transactions = transactionsQuery.data?.data ?? [];
   const categories = categoriesQuery.data ?? [];
+  const allCategories = allCategoriesQuery.data ?? [];
   const plans = plansQuery.data ?? [];
-  const expenseRows = useMemo(() => buildRows(transactions, plans, "expense"), [transactions, plans]);
-  const incomeRows = useMemo(() => buildRows(transactions, plans, "income"), [transactions, plans]);
+  const expenseRows = useMemo(() => buildRows(transactions, plans, "expense", allCategories), [transactions, plans, allCategories]);
+  const incomeRows = useMemo(() => buildRows(transactions, plans, "income", allCategories), [transactions, plans, allCategories]);
   const totalSpend = total(transactions, "expense");
   const totalIncome = total(transactions, "income");
   const netSavings = totalIncome - totalSpend;
@@ -1056,6 +1174,38 @@ export function Summary() {
       </Paper>
 
       <Grid container spacing={2} sx={{ mb: 2 }}>
+        {visibleWidgets.has("monthlyPlans") && (
+          <>
+            <Grid size={{ xs: 12, lg: 7 }}>
+              {plansQuery.isLoading || transactionsQuery.isLoading || allCategoriesQuery.isLoading ? (
+                <BudgetTableSkeleton title="Edit expense plans" type="expense" />
+              ) : (
+                <MonthlyPlanEditor
+                  title="Edit expense plans"
+                  month={month}
+                  rows={expenseRows}
+                  type="expense"
+                  isSaving={planMutation.isPending}
+                  onSave={async (data) => { await planMutation.mutateAsync(data); }}
+                />
+              )}
+            </Grid>
+            <Grid size={{ xs: 12, lg: 5 }}>
+              {plansQuery.isLoading || transactionsQuery.isLoading || allCategoriesQuery.isLoading ? (
+                <BudgetTableSkeleton title="Edit income plans" type="income" />
+              ) : (
+                <MonthlyPlanEditor
+                  title="Edit income plans"
+                  month={month}
+                  rows={incomeRows}
+                  type="income"
+                  isSaving={planMutation.isPending}
+                  onSave={async (data) => { await planMutation.mutateAsync(data); }}
+                />
+              )}
+            </Grid>
+          </>
+        )}
         {visibleWidgets.has("dailySpend") && <Grid size={{ xs: 12 }}>
           {transactionsQuery.isLoading ? <ChartSkeleton title="Money spent by date" /> : <SpendByDateChart rows={dailySpend} />}
         </Grid>}
@@ -1080,6 +1230,8 @@ export function Summary() {
           )}
         </Grid>}
       </Grid>
+
+      {planMutation.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to save monthly plan</Alert>}
 
       <Grid container spacing={2}>
         {visibleWidgets.has("expenseBudget") && <Grid size={{ xs: 12, lg: 7 }}>
