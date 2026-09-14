@@ -24,6 +24,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { financeApi, FinanceCategory } from "@/api/finance.api";
 import { PageHero } from "@/components/finance/PageHero";
 import { MetricCard, MetricCardSkeleton } from "@/components/finance/MetricCard";
+import { categoryLabel } from "@/components/finance/categoryLabels";
 
 type CategoryType = "expense" | "income";
 
@@ -40,21 +41,6 @@ const blankCategoryDraft: CategoryDraft = {
   type: "expense",
   sortOrder: "0",
 };
-
-function categoryPath(category: FinanceCategory): string {
-  if (category.path.length === 0) return category.name;
-  return category.path.reduce<string[]>((parts, part) => {
-    const previous = parts[parts.length - 1];
-    parts.push(previous ? stripParentPrefix(part.name, previous) : part.name);
-    return parts;
-  }, []).join(" / ");
-}
-
-function stripParentPrefix(name: string, parentName: string): string {
-  const escapedParent = parentName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const stripped = name.replace(new RegExp(`^${escapedParent}\\s*(?:/|-|:)?\\s+`, "i"), "").trim();
-  return stripped || name;
-}
 
 function categoryValue(row: FinanceCategory, field: keyof CategoryDraft): string {
   if (field === "parentId") return row.parentId ?? "";
@@ -123,7 +109,7 @@ export function Categories() {
     () => [...(categoriesQuery.data ?? [])].sort((a, b) => {
       if (a.type !== b.type) return a.type.localeCompare(b.type);
       if (a.path.length !== b.path.length) return a.path.length - b.path.length;
-      const path = categoryPath(a).localeCompare(categoryPath(b));
+      const path = categoryLabel(a).localeCompare(categoryLabel(b));
       if (path !== 0) return path;
       if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
       return a.name.localeCompare(b.name);
@@ -240,7 +226,7 @@ export function Categories() {
                     <Select size="small" variant="standard" fullWidth displayEmpty value={categoryDraft.parentId} onChange={(event) => setCategoryDraft((value) => ({ ...value, parentId: event.target.value }))}>
                       <MenuItem value="">No parent</MenuItem>
                       {parentOptions(categoryDraft.type).map((category) => (
-                        <MenuItem key={category.id} value={category.id}>{categoryPath(category)}</MenuItem>
+                        <MenuItem key={category.id} value={category.id}>{categoryLabel(category)}</MenuItem>
                       ))}
                     </Select>
                   </TableCell>
@@ -279,7 +265,7 @@ export function Categories() {
                       <Select size="small" variant="standard" fullWidth displayEmpty value={getCategoryCell(row, "parentId")} onChange={(event) => void updateCategoryMutation.mutateAsync({ id: row.id, patch: { parentId: event.target.value } })}>
                         <MenuItem value="">No parent</MenuItem>
                         {parentOptions(row.type, row.id).map((category) => (
-                          <MenuItem key={category.id} value={category.id}>{categoryPath(category)}</MenuItem>
+                          <MenuItem key={category.id} value={category.id}>{categoryLabel(category)}</MenuItem>
                         ))}
                       </Select>
                     </TableCell>

@@ -72,9 +72,19 @@ export interface YearlySummaryMonth {
   endingBalance: number | null;
 }
 
+export interface YearlyCategorySummary {
+  categoryId: string | null;
+  categoryName: string;
+  categoryPath: Array<{ id: string; name: string }>;
+  amount: number;
+  count: number;
+  depth: number;
+}
+
 export interface YearlySummary {
   year: number;
   months: YearlySummaryMonth[];
+  categorySpend: YearlyCategorySummary[];
   totals: {
     income: number;
     expenses: number;

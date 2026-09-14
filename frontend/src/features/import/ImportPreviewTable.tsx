@@ -17,7 +17,7 @@ export function ImportPreviewTable({ rows, duplicateLines, fallbackMonth }: Impo
         <Typography variant="caption" color="text.secondary">{rows.length} rows</Typography>
       </Box>
       <TableContainer sx={{ maxHeight: "calc(100vh - 520px)" }}>
-        <Table stickyHeader size="small" sx={{ minWidth: 860 }}>
+        <Table stickyHeader size="small" sx={{ minWidth: 760 }}>
           <TableHead>
             <TableRow>
               <TableCell sx={{ width: 80 }}>Line</TableCell>
@@ -26,8 +26,7 @@ export function ImportPreviewTable({ rows, duplicateLines, fallbackMonth }: Impo
               <TableCell>Description</TableCell>
               <TableCell align="right" sx={{ width: 120 }}>Amount</TableCell>
               <TableCell sx={{ width: 120 }}>Type</TableCell>
-              <TableCell sx={{ width: 180 }}>Parent</TableCell>
-              <TableCell sx={{ width: 180 }}>Category</TableCell>
+              <TableCell sx={{ width: 260 }}>Category path</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -55,14 +54,13 @@ export function ImportPreviewTable({ rows, duplicateLines, fallbackMonth }: Impo
                   <TableCell>{row.description}</TableCell>
                   <TableCell align="right">{currencyWithCents(row.amount)}</TableCell>
                   <TableCell>{row.type}</TableCell>
-                  <TableCell>{row.parentName || "No parent"}</TableCell>
                   <TableCell>{row.categoryName || "Uncategorized"}</TableCell>
                 </TableRow>
               );
             })}
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8}>
+                <TableCell colSpan={7}>
                   <Typography color="text.secondary" sx={{ py: 3, textAlign: "center" }}>
                     Paste transactions to preview import rows.
                   </Typography>
@@ -75,4 +73,3 @@ export function ImportPreviewTable({ rows, duplicateLines, fallbackMonth }: Impo
     </Paper>
   );
 }
-

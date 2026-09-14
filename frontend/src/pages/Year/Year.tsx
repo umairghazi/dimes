@@ -18,7 +18,7 @@ import {
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useNavigate } from "react-router-dom";
-import { financeApi, YearlySummaryMonth } from "@/api/finance.api";
+import { financeApi, YearlyCategorySummary, YearlySummaryMonth } from "@/api/finance.api";
 import { useMonthStore } from "@/store/monthStore";
 import { MetricCard } from "@/components/finance/MetricCard";
 import { currency, signedCurrency } from "@/components/finance/financeFormat";
@@ -150,6 +150,106 @@ function BalanceTrendChart({ months }: { months: YearlySummaryMonth[] }) {
   );
 }
 
+interface YearlyCategoryTreeNode {
+  row: YearlyCategorySummary;
+  children: YearlyCategoryTreeNode[];
+}
+
+function categoryKey(row: YearlyCategorySummary): string {
+  return row.categoryId ?? "uncategorized";
+}
+
+function toCategoryTreeRows(rows: YearlyCategorySummary[]): YearlyCategorySummary[] {
+  const nodes = new Map<string, YearlyCategoryTreeNode>();
+
+  rows.forEach((row) => {
+    nodes.set(categoryKey(row), { row, children: [] });
+  });
+
+  const roots: YearlyCategoryTreeNode[] = [];
+  nodes.forEach((node) => {
+    const parentPart = node.row.categoryPath[node.row.depth - 1];
+    const parentNode = parentPart ? nodes.get(parentPart.id) : null;
+    if (parentNode) parentNode.children.push(node);
+    else roots.push(node);
+  });
+
+  const sortNodes = (items: YearlyCategoryTreeNode[]) => {
+    items.sort((a, b) => b.row.amount - a.row.amount || a.row.categoryName.localeCompare(b.row.categoryName));
+    items.forEach((item) => sortNodes(item.children));
+  };
+  sortNodes(roots);
+
+  const flattened: YearlyCategorySummary[] = [];
+  const visit = (node: YearlyCategoryTreeNode) => {
+    flattened.push(node.row);
+    node.children.forEach(visit);
+  };
+  roots.forEach(visit);
+  return flattened;
+}
+
+function CategorySpendTable({
+  rows,
+  totalExpenses,
+  isLoading,
+}: {
+  rows: YearlyCategorySummary[];
+  totalExpenses: number;
+  isLoading: boolean;
+}) {
+  const treeRows = useMemo(() => toCategoryTreeRows(rows), [rows]);
+
+  return (
+    <Paper variant="outlined" sx={{ borderRadius: 1, overflow: "hidden", mb: 2, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
+      <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h5" sx={{ fontWeight: 900, color: "text.primary" }}>Yearly spend by category</Typography>
+        <Typography variant="caption" color="text.secondary">{treeRows.length} categories</Typography>
+      </Box>
+      <TableContainer sx={{ maxHeight: 520 }}>
+        <Table stickyHeader size="small" sx={{ minWidth: 720 }}>
+          <TableHead>
+            <TableRow>
+              <TableCell>Category</TableCell>
+              <TableCell align="right" sx={{ width: 140 }}>Amount</TableCell>
+              <TableCell align="right" sx={{ width: 100 }}>Txns</TableCell>
+              <TableCell align="right" sx={{ width: 100 }}>%</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 6 }, (_, index) => (
+                <TableRow key={index}>
+                  <TableCell colSpan={4}><Skeleton height={28} /></TableCell>
+                </TableRow>
+              ))
+            ) : treeRows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4}>
+                  <Typography color="text.secondary" sx={{ py: 3, textAlign: "center" }}>
+                    No expenses imported for this year.
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              treeRows.map((row) => (
+                <TableRow key={row.categoryId ?? "uncategorized"} hover>
+                  <TableCell sx={{ fontWeight: row.depth === 0 ? 850 : 650, pl: 1 + row.depth * 2.25 }}>
+                    {row.categoryName}
+                  </TableCell>
+                  <TableCell align="right" sx={{ color: "primary.main", fontWeight: 800 }}>{currency(row.amount)}</TableCell>
+                  <TableCell align="right">{row.count}</TableCell>
+                  <TableCell align="right">{totalExpenses > 0 ? `${((row.amount / totalExpenses) * 100).toFixed(1)}%` : "0%"}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Paper>
+  );
+}
+
 export function Year() {
   const navigate = useNavigate();
   const setMonth = useMonthStore((state) => state.setMonth);
@@ -162,6 +262,7 @@ export function Year() {
 
   const data = yearlyQuery.data;
   const months = data?.months ?? [];
+  const categorySpend = data?.categorySpend ?? [];
   const latestEndingBalance = useMemo(() => [...months].reverse().find((month) => month.endingBalance !== null)?.endingBalance ?? null, [months]);
 
   const openMonth = (monthYear: string) => {
@@ -236,6 +337,12 @@ export function Year() {
           </Table>
         </TableContainer>
       </Paper>
+
+      <CategorySpendTable
+        rows={categorySpend}
+        totalExpenses={data?.totals.expenses ?? 0}
+        isLoading={yearlyQuery.isLoading}
+      />
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 6 }}>

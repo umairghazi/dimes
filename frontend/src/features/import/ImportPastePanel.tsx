@@ -40,7 +40,7 @@ export function ImportPastePanel({
         <Box>
           <Typography variant="h5" sx={{ fontWeight: 900 }}>Paste area</Typography>
           <Typography variant="caption" color="text.secondary">
-            Supports headers like Date, Description, Amount, Category, Main Category. Imported rows report into {formatMonthLabel(month)}.
+            Supports headers like Date, Description, Amount, Category. Use spaced dashes for drilldown, like Home - Mortgage. Slashes stay part of the category name. Imported rows report into {formatMonthLabel(month)}.
           </Typography>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -84,4 +84,3 @@ export function ImportPastePanel({
     </Paper>
   );
 }
-

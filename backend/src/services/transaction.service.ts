@@ -88,34 +88,27 @@ export class TransactionService {
         continue;
       }
 
-      const names = this.normalizeNames(row.categoryName, row.parentName);
+      const categoryPath = this.normalizeCategoryPath(row.categoryName);
       let parentId: string | null = null;
       let categoryId: string | null = null;
 
-      if (names.parentName) {
-        const parentKey = this.key(type, "none", names.parentName);
-        parentId = categoryCache.get(parentKey) ?? null;
-        if (!parentId) {
-          const parent = await this.categoryRepo.create(userId, { name: names.parentName, parentId: null, type });
-          parentId = parent.id;
-          categoryCache.set(parentKey, parent.id);
-          createdParents += 1;
-        }
-      }
-
-      if (names.categoryName) {
-        const categoryKey = this.key(type, parentId ?? "none", names.categoryName);
-        categoryId = categoryCache.get(categoryKey) ?? null;
-        if (!categoryId) {
+      for (const [index, categoryName] of categoryPath.entries()) {
+        const categoryKey = this.key(type, parentId ?? "none", categoryName);
+        let nextCategoryId = categoryCache.get(categoryKey) ?? null;
+        if (!nextCategoryId) {
           const category = await this.categoryRepo.create(userId, {
-            name: names.categoryName,
+            name: categoryName,
             parentId,
             type,
           });
-          categoryId = category.id;
+          nextCategoryId = category.id;
           categoryCache.set(categoryKey, category.id);
-          createdCategories += 1;
+          if (index === 0) createdParents += 1;
+          else createdCategories += 1;
         }
+
+        parentId = nextCategoryId;
+        categoryId = nextCategoryId;
       }
 
       imported.push(await this.transactionRepo.create(userId, {
@@ -147,41 +140,27 @@ export class TransactionService {
     if (!exists) throw new AppError("Category not found", 404, "CATEGORY_NOT_FOUND");
   }
 
-  private normalizeNames(categoryName?: string | null, parentName?: string | null): { categoryName: string | null; parentName: string | null } {
-    const cleanCategory = categoryName?.trim() || null;
-    const cleanParent = parentName?.trim() || null;
-    if (!cleanCategory) return { categoryName: null, parentName: cleanParent };
-
-    if (cleanParent) {
-      return {
-        categoryName: this.stripParentPrefix(cleanCategory, cleanParent),
-        parentName: cleanParent,
-      };
-    }
-
-    const slashParts = cleanCategory.split("/").map((part) => part.trim()).filter(Boolean);
-    if (slashParts.length >= 2) {
-      return {
-        parentName: slashParts[0],
-        categoryName: slashParts.slice(1).join(" / "),
-      };
-    }
-
-    const dashParts = cleanCategory.split(" - ").map((part) => part.trim()).filter(Boolean);
-    if (dashParts.length >= 2) {
-      return {
-        parentName: dashParts[0],
-        categoryName: dashParts.slice(1).join(" - "),
-      };
-    }
-
-    return { categoryName: cleanCategory, parentName: null };
+  private normalizeCategoryPath(categoryName?: string | null): string[] {
+    return this.compactPath(this.hierarchyParts(categoryName));
   }
 
-  private stripParentPrefix(categoryName: string, parentName: string): string {
-    const escapedParent = parentName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const next = categoryName.replace(new RegExp(`^${escapedParent}\\s*(?:/|-|:)?\\s+`, "i"), "").trim();
-    return next || categoryName;
+  private hierarchyParts(value?: string | null): string[] {
+    return (value ?? "")
+      .split(/\s+-\s+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+  }
+
+  private compactPath(parts: string[]): string[] {
+    return parts.reduce<string[]>((path, part) => {
+      const previous = path[path.length - 1];
+      if (!previous || !this.sameName(previous, part)) path.push(part);
+      return path;
+    }, []);
+  }
+
+  private sameName(first: string, second: string): boolean {
+    return this.key(first) === this.key(second);
   }
 
   private key(...parts: Array<string | null | undefined>): string {

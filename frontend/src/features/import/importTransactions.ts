@@ -6,9 +6,9 @@ export interface ParsedImportRow extends ImportTransactionRow {
   sourceLine: number;
 }
 
-export const importSample = `Date\tDescription\tAmount\tCategory\tMain Category
-01 Sep 26\tFood Basics\t57.13\tGroceries\tFood
-02 Sep 26\tPCC24\t535.00\tMaintenance Fee\tHome`;
+export const importSample = `Date\tDescription\tAmount\tCategory
+01 Sep 26\tFood Basics\t57.13\tGroceries
+02 Sep 26\tPCC24\t535.00\tHome - Maintenance Fee`;
 
 function parseAmount(value: string): number | null {
   const normalized = value.replace(/[$,\s]/g, "").replace(/^\((.*)\)$/, "$1");
@@ -57,7 +57,6 @@ export function parseImportRows(input: string, fallbackType: ImportType, monthYe
   const descriptionIndex = header ? indexFor(headers, ["description", "desc", "merchant"]) : fallbackType === "expense" ? 1 : 2;
   const amountIndex = header ? indexFor(headers, ["amount", "actual"]) : fallbackType === "expense" ? 2 : 1;
   const categoryIndex = header ? indexFor(headers, ["category"]) : 3;
-  const parentIndex = header ? indexFor(headers, ["maincategory", "group", "categorygroup"]) : 4;
   const typeIndex = header ? indexFor(headers, ["type"]) : -1;
 
   return dataLines.flatMap((line, index) => {
@@ -78,7 +77,7 @@ export function parseImportRows(input: string, fallbackType: ImportType, monthYe
       amount,
       type,
       categoryName: cells[categoryIndex] || null,
-      parentName: cells[parentIndex] || null,
+      parentName: null,
       currency: "CAD",
     }];
   });
@@ -111,4 +110,3 @@ export function findDuplicateImportLines(rows: ParsedImportRow[]): Set<number> {
 
   return duplicates;
 }
-

@@ -61,7 +61,7 @@ export function ImportTransactions() {
       )}
       {importMutation.data && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Processed {importMutation.data.processedRows} rows. Imported {importMutation.data.transactions.length} transactions and skipped {importMutation.data.skippedDuplicates} duplicates. Created {importMutation.data.createdParents} parent categories and {importMutation.data.createdCategories} child categories.
+          Processed {importMutation.data.processedRows} rows. Imported {importMutation.data.transactions.length} transactions and skipped {importMutation.data.skippedDuplicates} duplicates. Created {importMutation.data.createdParents} root categories and {importMutation.data.createdCategories} nested categories.
         </Alert>
       )}
 
@@ -69,4 +69,3 @@ export function ImportTransactions() {
     </Box>
   );
 }
-
