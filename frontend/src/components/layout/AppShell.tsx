@@ -1,80 +1,209 @@
 import { useState } from "react";
-import { Box, Drawer, useMediaQuery, useTheme } from "@mui/material";
-import { Outlet } from "react-router-dom";
-import { Sidebar } from "./Sidebar";
-import { BottomNav } from "./BottomNav";
-import { TopBar } from "./TopBar";
-import { QuickAddSheet } from "@/components/quickAdd/QuickAddSheet";
-import { tokens } from "@/styles/theme/tokens";
+import { Box, Button, Tooltip, Typography } from "@mui/material";
+import { beginActivity } from "@/store/activityStore";
+import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
+import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
+import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
+import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
+import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase/client";
+import { useAuthStore } from "@/store/authStore";
 
 export function AppShell() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
-  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+  const navigate = useNavigate();
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const user = useAuthStore((state) => state.user);
+  const [signingOut, setSigningOut] = useState(false);
 
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const signOut = async () => {
+    setSigningOut(true);
+    const finish = beginActivity();
+    try {
+    await supabase.auth.signOut();
+    clearAuth();
+    navigate("/login", { replace: true });
+    } finally {
+      finish();
+      setSigningOut(false);
+    }
+  };
+
+  const navItems = [
+    { label: "Overview", path: "/", icon: AnalyticsOutlinedIcon },
+    { label: "Ledger", path: "/ledger", icon: ReceiptLongOutlinedIcon },
+    { label: "Year", path: "/year", icon: BarChartOutlinedIcon },
+    { label: "Import", path: "/import", icon: UploadFileOutlinedIcon },
+    { label: "Categories", path: "/categories", icon: SellOutlinedIcon },
+  ];
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
-      {/* Desktop: permanent sidebar */}
-      {isDesktop && <Sidebar rail={false} />}
+    <Box
+      sx={{
+        minHeight: "100vh",
+        bgcolor: "background.default",
+        backgroundImage:
+          "linear-gradient(135deg, rgba(255,107,44,0.16) 0%, rgba(88,101,242,0.12) 36%, rgba(15,17,23,0) 62%), linear-gradient(180deg, #151822 0%, #0f1117 42%)",
+      }}
+    >
+      <Box
+        component="header"
+        sx={{
+          position: "sticky",
+          top: 0,
+          zIndex: (theme) => theme.zIndex.appBar,
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          bgcolor: "rgba(13,15,21,0.9)",
+          backdropFilter: "blur(22px) saturate(130%)",
+          WebkitBackdropFilter: "blur(22px) saturate(130%)",
+        }}
+      >
+        <Box
+          sx={{
+            maxWidth: 1680,
+            mx: "auto",
+            px: { xs: 1.5, md: 3 },
+            py: 1.25,
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr auto", md: "auto 1fr auto" },
+            alignItems: "center",
+            gap: { xs: 1, md: 3 },
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minWidth: 0 }}>
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                display: "grid",
+                placeItems: "center",
+                borderRadius: 1,
+                bgcolor: "#ff6b2c",
+                color: "#101219",
+                fontWeight: 900,
+                boxShadow: "0 0 0 3px rgba(255,107,44,0.18), 0 12px 28px rgba(255,107,44,0.24)",
+              }}
+            >
+              D
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="h6" sx={{ lineHeight: 1, fontWeight: 900 }}>
+                Dimes
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }}>
+                Personal finance workspace
+              </Typography>
+            </Box>
+          </Box>
 
-      {/* Tablet: icon-only rail */}
-      {isTablet && <Sidebar rail={true} />}
-
-      {/* Mobile: hamburger drawer */}
-      {isMobile && (
-        <>
-          <TopBar
-            showMenu
-            onMenuClick={() => setMobileDrawerOpen(true)}
-          />
-          <Drawer
-            open={mobileDrawerOpen}
-            onClose={() => setMobileDrawerOpen(false)}
-            ModalProps={{ keepMounted: true }}
+          <Box
+            component="nav"
+            sx={{
+              gridColumn: { xs: "1 / -1", md: "auto" },
+              gridRow: { xs: 2, md: "auto" },
+              display: "flex",
+              alignItems: "center",
+              justifyContent: { xs: "stretch", md: "center" },
+              gap: 0.75,
+              minWidth: 0,
+              overflowX: "auto",
+            }}
           >
-            <Sidebar rail={false} />
-          </Drawer>
-        </>
-      )}
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Button
+                  key={item.path}
+                  component={NavLink}
+                  to={item.path}
+                  end={item.path === "/"}
+                  startIcon={<Icon fontSize="small" />}
+                  sx={{
+                    flex: { xs: "1 0 auto", md: "0 0 auto" },
+                    minHeight: 40,
+                    px: { xs: 1.25, md: 1.75 },
+                    color: "#b5bbcb",
+                    borderColor: "transparent",
+                    bgcolor: "rgba(255,255,255,0.04)",
+                    boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.04)",
+                    "&:hover": {
+                      bgcolor: "rgba(255,255,255,0.08)",
+                      borderColor: "rgba(255,255,255,0.08)",
+                    },
+                    "&.active": {
+                      bgcolor: "#5865f2",
+                      color: "#ffffff",
+                      borderColor: "rgba(255,255,255,0.08)",
+                      boxShadow: "0 16px 34px rgba(88,101,242,0.28)",
+                      "& .MuiButton-startIcon": {
+                        color: "#ffffff",
+                      },
+                    },
+                  }}
+                  variant="outlined"
+                >
+                  {item.label}
+                </Button>
+              );
+            })}
+          </Box>
 
-      {/* Main content area */}
+          <Box sx={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+            {user?.email && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  display: { xs: "none", lg: "block" },
+                  maxWidth: 220,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {user.email}
+              </Typography>
+            )}
+            <Tooltip title="Sign out">
+              <Button
+                variant="outlined"
+                color="inherit"
+                size="small"
+                startIcon={<LogoutOutlinedIcon fontSize="small" />}
+                onClick={() => void signOut()}
+                loading={signingOut}
+                sx={{
+                  minHeight: 38,
+                  color: "#f7f8fc",
+                  borderColor: "rgba(255,255,255,0.12)",
+                  bgcolor: "rgba(255,255,255,0.05)",
+                  "&:hover": {
+                    borderColor: "rgba(255,107,44,0.55)",
+                    bgcolor: "rgba(255,107,44,0.12)",
+                  },
+                }}
+              >
+                Logout
+              </Button>
+            </Tooltip>
+          </Box>
+        </Box>
+      </Box>
+
       <Box
         component="main"
         sx={{
-          flexGrow: 1,
-          pt: isMobile ? `${tokens.topBar.height}px` : 0,
-          pb: isMobile ? `${tokens.bottomNav.height + 16}px` : 0,
-          minHeight: "100vh",
-          bgcolor: "background.default",
-          overflow: "auto",
+          width: "100%",
+          maxWidth: 1680,
+          mx: "auto",
+          px: { xs: 1.5, md: 3 },
+          py: { xs: 2, md: 3 },
         }}
       >
         <Outlet />
       </Box>
-
-      {/* Mobile bottom nav with FAB */}
-      {isMobile && <BottomNav onAddClick={() => setQuickAddOpen(true)} />}
-
-      {/* Desktop floating FAB is rendered inside QuickAddSheet */}
-      {!isMobile && (
-        <Box
-          sx={{
-            position: "fixed",
-            bottom: 32,
-            right: 32,
-            zIndex: 1100,
-          }}
-        >
-          {/* Desktop FAB rendered by QuickAddFAB component */}
-        </Box>
-      )}
-
-      {/* Quick Add sheet/dialog */}
-      <QuickAddSheet open={quickAddOpen} onClose={() => setQuickAddOpen(false)} />
     </Box>
   );
 }

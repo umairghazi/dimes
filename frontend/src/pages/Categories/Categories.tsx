@@ -1,532 +1,297 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Box,
-  Typography,
-  Button,
-  TextField,
-  IconButton,
   Alert,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Autocomplete,
+  Box,
   Grid,
-  Card,
-  CardContent,
-  InputAdornment,
-  Tooltip,
+  IconButton,
+  MenuItem,
+  Paper,
+  Select,
   Skeleton,
-  ToggleButtonGroup,
-  ToggleButton,
-  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Tooltip,
+  Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import CheckIcon from "@mui/icons-material/Check";
-import CloseIcon from "@mui/icons-material/Close";
-import RepeatIcon from "@mui/icons-material/Repeat";
-import GridViewIcon from "@mui/icons-material/GridView";
-import ViewListIcon from "@mui/icons-material/ViewList";
-import { useCategories } from "@/hooks/useCategories";
-import { useBudgets } from "@/hooks/useBudgets";
-import { useAnalytics } from "@/hooks/useAnalytics";
-import { usePreferencesStore } from "@/store/preferencesStore";
-import { UserCategory } from "@/types/category.types";
-import { Budget } from "@/types/budget.types";
-import { BudgetProgressBar } from "@/components/charts/BudgetProgressBar";
-import { CategoryCompactView } from "@/components/settings/CategoryCompactView";
+import { financeApi, FinanceCategory } from "@/api/finance.api";
+import { PageHero } from "@/components/finance/PageHero";
+import { MetricCard, MetricCardSkeleton } from "@/components/finance/MetricCard";
+import { categoryLabel } from "@/components/finance/categoryLabels";
 
-function currentMonthYear() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+type CategoryType = "expense" | "income";
+
+interface CategoryDraft {
+  name: string;
+  parentId: string;
+  type: CategoryType;
+  sortOrder: string;
 }
 
-// ── main page ─────────────────────────────────────────────────────────────────
+const blankCategoryDraft: CategoryDraft = {
+  name: "",
+  parentId: "",
+  type: "expense",
+  sortOrder: "0",
+};
+
+function categoryValue(row: FinanceCategory, field: keyof CategoryDraft): string {
+  if (field === "parentId") return row.parentId ?? "";
+  if (field === "sortOrder") return String(row.sortOrder ?? 0);
+  return row[field];
+}
+
+function MatrixSkeleton() {
+  return (
+    <Paper variant="outlined" sx={{ overflow: "hidden", borderRadius: 1, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.94)" }}>
+      <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(15,17,23,0.36)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h5" sx={{ fontWeight: 900 }}>Category tree</Typography>
+        <Skeleton width={70} height={18} />
+      </Box>
+      <Box sx={{ p: 1.5, display: "grid", gap: 1 }}>
+        {[0, 1, 2, 3, 4, 5].map((row) => (
+          <Box key={row} sx={{ display: "grid", gridTemplateColumns: "1fr 240px 120px 90px 48px", gap: 1, alignItems: "center" }}>
+            <Skeleton height={24} />
+            <Skeleton height={24} />
+            <Skeleton height={24} />
+            <Skeleton height={24} />
+            <Skeleton height={24} />
+          </Box>
+        ))}
+      </Box>
+    </Paper>
+  );
+}
 
 export function Categories() {
-  const { categories, tree, loading: catLoading, error: catError, addCategory, updateCategory, deleteCategory } =
-    useCategories();
-  const { budgets, loading: budgetLoading, createBudget, updateBudget, deleteBudget } = useBudgets();
-  const { summary } = useAnalytics();
-  const { currency } = usePreferencesStore();
+  const queryClient = useQueryClient();
+  const [categoryDraft, setCategoryDraft] = useState<CategoryDraft>(blankCategoryDraft);
+  const [categoryEditing, setCategoryEditing] = useState<Record<string, Partial<CategoryDraft>>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
 
-  const monthYear = currentMonthYear();
+  const categoriesQuery = useQuery({
+    queryKey: ["finance", "categories"],
+    queryFn: () => financeApi.categories(),
+  });
 
-  const budgetMap = new Map<string, Budget>(
-    budgets.filter((b) => b.monthYear === monthYear).map((b) => [b.category, b]),
-  );
-  const spentMap = new Map<string, number>(
-    (summary?.byCategory ?? []).map((c) => [c.category, c.amount]),
-  );
-
-  // ── add category dialog ──
-  const [addOpen, setAddOpen] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newGroup, setNewGroup] = useState("");
-  const [newType, setNewType] = useState<"expense" | "income">("expense");
-  const [saving, setSaving] = useState(false);
-  const [addError, setAddError] = useState<string | null>(null);
-
-  // ── edit category dialog ──
-  const [editTarget, setEditTarget] = useState<UserCategory | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editGroup, setEditGroup] = useState("");
-  const [editType, setEditType] = useState<"expense" | "income">("expense");
-  const [editSaving, setEditSaving] = useState(false);
-
-  // ── delete confirm dialog ──
-  const [deleteTarget, setDeleteTarget] = useState<UserCategory | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  const existingGroups = Array.from(
-    new Set(categories.map((c) => c.group).filter(Boolean) as string[]),
-  ).sort();
-
-  const handleAdd = async () => {
-    const name = newName.trim();
-    if (!name) return;
-    setSaving(true);
-    setAddError(null);
-    try {
-      await addCategory(name, newGroup.trim() || undefined, newType);
-      setNewName("");
-      setNewGroup("");
-      setNewType("expense");
-      setAddOpen(false);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed to create category";
-      setAddError(msg.includes("already exists") ? "Category already exists" : msg);
-    } finally {
-      setSaving(false);
-    }
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["finance"] });
   };
 
-  const openEdit = (cat: UserCategory) => {
-    setEditTarget(cat);
-    setEditName(cat.group ? cat.name.replace(`${cat.group} - `, "") : cat.name);
-    setEditGroup(cat.group ?? "");
-    setEditType((cat.type as "expense" | "income") ?? "expense");
-  };
+  const createCategoryMutation = useMutation({
+    mutationFn: financeApi.createCategory,
+    onSuccess: invalidate,
+  });
 
-  const handleEdit = async () => {
-    if (!editTarget) return;
-    setEditSaving(true);
-    try {
-      await updateCategory(editTarget.id, {
-        name: editName.trim(),
-        group: editGroup.trim() || null,
-        type: editType,
-      });
-      setEditTarget(null);
-    } finally {
-      setEditSaving(false);
-    }
-  };
+  const updateCategoryMutation = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: Partial<CategoryDraft> }) =>
+      financeApi.updateCategory(id, {
+        ...patch,
+        parentId: patch.parentId === "" ? null : patch.parentId,
+        sortOrder: patch.sortOrder === undefined ? undefined : Number(patch.sortOrder),
+      }),
+    onSuccess: invalidate,
+  });
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      const budget = budgetMap.get(deleteTarget.name);
-      if (budget) await deleteBudget(budget.id);
-      await deleteCategory(deleteTarget.id);
-      setDeleteTarget(null);
-    } finally {
-      setDeleting(false);
-    }
-  };
+  const deleteCategoryMutation = useMutation({
+    mutationFn: financeApi.deleteCategory,
+    onSuccess: invalidate,
+  });
 
-  const handleSetBudget = async (categoryName: string, amount: number) => {
-    const existing = budgetMap.get(categoryName);
-    if (existing) {
-      await updateBudget(existing.id, { limitAmount: amount });
-    } else {
-      await createBudget({ category: categoryName, monthYear, limitAmount: amount, currency, carryForward: true });
-    }
-  };
-
-  const handleClearBudget = async (categoryName: string) => {
-    const existing = budgetMap.get(categoryName);
-    if (existing) await deleteBudget(existing.id);
-  };
-
-  const handleToggleCarryForward = async (categoryName: string) => {
-    const existing = budgetMap.get(categoryName);
-    if (existing) await updateBudget(existing.id, { carryForward: !existing.carryForward });
-  };
-
-  const handleToggleFixed = async (cat: UserCategory) => {
-    await updateCategory(cat.id, { isFixed: !cat.isFixed });
-  };
-
-  const loading = catLoading || budgetLoading;
-
-  const [view, setView] = useState<"cards" | "compact">(() =>
-    (localStorage.getItem("categories-view") as "cards" | "compact") ?? "cards"
+  const categories = useMemo(
+    () => [...(categoriesQuery.data ?? [])].sort((a, b) => {
+      if (a.type !== b.type) return a.type.localeCompare(b.type);
+      if (a.path.length !== b.path.length) return a.path.length - b.path.length;
+      const path = categoryLabel(a).localeCompare(categoryLabel(b));
+      if (path !== 0) return path;
+      if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+      return a.name.localeCompare(b.name);
+    }),
+    [categoriesQuery.data],
   );
 
-  const handleViewChange = (_: React.MouseEvent, v: "cards" | "compact" | null) => {
-    if (!v) return;
-    setView(v);
-    localStorage.setItem("categories-view", v);
+  const parentOptions = (type: CategoryType, currentId?: string) => {
+    const blocked = new Set([
+      currentId,
+      ...categories
+        .filter((category) => currentId && category.path.some((part) => part.id === currentId))
+        .map((category) => category.id),
+    ]);
+    return categories.filter((category) => category.type === type && !blocked.has(category.id));
   };
+
+  const setCategoryCell = (id: string, field: keyof CategoryDraft, value: string) => {
+    setCategoryEditing((current) => ({ ...current, [id]: { ...current[id], [field]: value } }));
+  };
+
+  const getCategoryCell = (row: FinanceCategory, field: keyof CategoryDraft): string => {
+    return categoryEditing[row.id]?.[field] ?? categoryValue(row, field);
+  };
+
+  const commitCategoryCell = async (row: FinanceCategory, field: keyof CategoryDraft) => {
+    const next = categoryEditing[row.id]?.[field];
+    if (next === undefined) return;
+    const current = categoryValue(row, field);
+
+    setCategoryEditing((state) => {
+      const nextRow = { ...state[row.id] };
+      delete nextRow[field];
+      return { ...state, [row.id]: nextRow };
+    });
+
+    if (next === current || (field !== "parentId" && !String(next).trim())) return;
+    setSavingId(row.id);
+    try {
+      await updateCategoryMutation.mutateAsync({ id: row.id, patch: { [field]: next } });
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const createCategory = async () => {
+    if (!categoryDraft.name.trim()) return;
+    await createCategoryMutation.mutateAsync({
+      name: categoryDraft.name.trim(),
+      parentId: categoryDraft.parentId || null,
+      type: categoryDraft.type,
+      sortOrder: Number(categoryDraft.sortOrder) || 0,
+    });
+    setCategoryDraft({ ...blankCategoryDraft, type: categoryDraft.type, parentId: categoryDraft.parentId });
+  };
+
+  const expenseCount = categories.filter((row) => row.type === "expense").length;
+  const incomeCount = categories.filter((row) => row.type === "income").length;
+  const rootCount = categories.filter((row) => !row.parentId).length;
+  const loading = categoriesQuery.isLoading;
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>Categories</Typography>
-        <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
-          <ToggleButtonGroup value={view} exclusive onChange={handleViewChange} size="small">
-            <ToggleButton value="cards" aria-label="card view">
-              <Tooltip title="Card view"><GridViewIcon fontSize="small" /></Tooltip>
-            </ToggleButton>
-            <ToggleButton value="compact" aria-label="compact view">
-              <Tooltip title="Compact view"><ViewListIcon fontSize="small" /></Tooltip>
-            </ToggleButton>
-          </ToggleButtonGroup>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddOpen(true)}>
-            Add Category
-          </Button>
-        </Box>
-      </Box>
+    <Box>
+      <PageHero
+        eyebrow="Configuration"
+        title="Categories"
+        description="Manage categories as a tree. Transactions point to the most specific category, and reports roll up to every parent."
+        variant="warm"
+      />
 
-      {catError && <Alert severity="error" sx={{ mb: 2 }}>{catError}</Alert>}
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        {[
+          ["Root categories", rootCount],
+          ["Expense categories", expenseCount],
+          ["Income categories", incomeCount],
+        ].map(([label, value]) => (
+          <Grid key={label} size={{ xs: 12, md: 4 }}>
+            {loading ? (
+              <MetricCardSkeleton label={String(label)} />
+            ) : (
+              <MetricCard label={String(label)} value={String(value)} />
+            )}
+          </Grid>
+        ))}
+      </Grid>
+
+      {categoriesQuery.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load categories</Alert>}
 
       {loading ? (
-        <Grid container spacing={2}>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
-              <Skeleton variant="rectangular" height={160} sx={{ borderRadius: 2 }} />
-            </Grid>
-          ))}
-        </Grid>
-      ) : categories.length === 0 ? (
-        <Box
-          sx={{
-            py: 8,
-            textAlign: "center",
-            border: "2px dashed",
-            borderColor: "divider",
-            borderRadius: 2,
-          }}
-        >
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>No categories yet</Typography>
-          <Typography color="text.secondary" sx={{ mb: 3 }}>
-            Add categories to organise your expenses and set monthly budgets.
-          </Typography>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddOpen(true)}>
-            Add your first category
-          </Button>
-        </Box>
-      ) : view === "compact" ? (
-        <CategoryCompactView
-          tree={tree}
-          budgetMap={budgetMap}
-          spentMap={spentMap}
-          onEdit={openEdit}
-          onDelete={(cat) => setDeleteTarget(cat)}
-          onSetBudget={(name, amount) => void handleSetBudget(name, amount)}
-          onClearBudget={(name) => void handleClearBudget(name)}
-          onToggleCarryForward={(name) => void handleToggleCarryForward(name)}
-          onToggleFixed={(cat) => void handleToggleFixed(cat)}
-          onAddInGroup={(group) => { setNewGroup(group); setAddOpen(true); }}
-        />
+        <MatrixSkeleton />
       ) : (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          {tree.map((group) => (
-            <Box key={group.group ?? "__standalone__"}>
-              {group.group !== null && (
-                <Typography
-                  variant="overline"
-                  color="text.secondary"
-                  sx={{ fontWeight: 600, mb: 1, display: "block" }}
-                >
-                  {group.group}
-                </Typography>
-              )}
-              <Grid container spacing={2}>
-                {group.items.map((cat) => (
-                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={cat.id}>
-                    <CategoryCard
-                      cat={cat}
-                      budget={budgetMap.get(cat.name) ?? null}
-                      spent={spentMap.get(cat.name) ?? 0}
-                      onEdit={() => openEdit(cat)}
-                      onDelete={() => setDeleteTarget(cat)}
-                      onSetBudget={(amount) => void handleSetBudget(cat.name, amount)}
-                      onClearBudget={() => void handleClearBudget(cat.name)}
-                      onToggleCarryForward={() => void handleToggleCarryForward(cat.name)}
-                    />
-                  </Grid>
+        <Paper variant="outlined" sx={{ overflow: "hidden", borderRadius: 1, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.94)", boxShadow: "0 20px 52px rgba(0,0,0,0.28)" }}>
+          <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(15,17,23,0.36)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="h5" sx={{ fontWeight: 900 }}>Category tree</Typography>
+            <Typography variant="caption" color="text.secondary">{categories.length} total</Typography>
+          </Box>
+          <TableContainer sx={{ maxHeight: "calc(100vh - 330px)" }}>
+            <Table stickyHeader size="small" sx={{ tableLayout: "fixed", minWidth: 860 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Category</TableCell>
+                  <TableCell sx={{ width: 280 }}>Parent</TableCell>
+                  <TableCell sx={{ width: 130 }}>Type</TableCell>
+                  <TableCell align="right" sx={{ width: 90 }}>Sort</TableCell>
+                  <TableCell sx={{ width: 48 }} />
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                <TableRow sx={{ bgcolor: "action.hover" }}>
+                  <TableCell>
+                    <TextField size="small" variant="standard" fullWidth placeholder="Add category" value={categoryDraft.name} onChange={(event) => setCategoryDraft((value) => ({ ...value, name: event.target.value }))} />
+                  </TableCell>
+                  <TableCell>
+                    <Select size="small" variant="standard" fullWidth displayEmpty value={categoryDraft.parentId} onChange={(event) => setCategoryDraft((value) => ({ ...value, parentId: event.target.value }))}>
+                      <MenuItem value="">No parent</MenuItem>
+                      {parentOptions(categoryDraft.type).map((category) => (
+                        <MenuItem key={category.id} value={category.id}>{categoryLabel(category)}</MenuItem>
+                      ))}
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Select size="small" variant="standard" fullWidth value={categoryDraft.type} onChange={(event) => setCategoryDraft((value) => ({ ...value, type: event.target.value as CategoryType, parentId: "" }))}>
+                      <MenuItem value="expense">Expense</MenuItem>
+                      <MenuItem value="income">Income</MenuItem>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <TextField type="number" size="small" variant="standard" fullWidth value={categoryDraft.sortOrder} slotProps={{ htmlInput: { style: { textAlign: "right" } } }} onChange={(event) => setCategoryDraft((value) => ({ ...value, sortOrder: event.target.value }))} />
+                  </TableCell>
+                  <TableCell align="center">
+                    <Tooltip title="Add category">
+                      <IconButton size="small" color="primary" loading={createCategoryMutation.isPending} onClick={() => void createCategory()}>
+                        <AddIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+
+                {categories.map((row) => (
+                  <TableRow key={row.id} hover sx={{ opacity: savingId === row.id ? 0.55 : 1 }}>
+                    <TableCell>
+                      <TextField
+                        size="small"
+                        variant="standard"
+                        fullWidth
+                        value={getCategoryCell(row, "name")}
+                        onChange={(event) => setCategoryCell(row.id, "name", event.target.value)}
+                        onBlur={() => void commitCategoryCell(row, "name")}
+                        sx={{ pl: Math.min(row.depth, 5) * 2 }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Select size="small" variant="standard" fullWidth displayEmpty value={getCategoryCell(row, "parentId")} onChange={(event) => void updateCategoryMutation.mutateAsync({ id: row.id, patch: { parentId: event.target.value } })}>
+                        <MenuItem value="">No parent</MenuItem>
+                        {parentOptions(row.type, row.id).map((category) => (
+                          <MenuItem key={category.id} value={category.id}>{categoryLabel(category)}</MenuItem>
+                        ))}
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Select size="small" variant="standard" fullWidth value={getCategoryCell(row, "type")} onChange={(event) => void updateCategoryMutation.mutateAsync({ id: row.id, patch: { type: event.target.value as CategoryType, parentId: "" } })}>
+                        <MenuItem value="expense">Expense</MenuItem>
+                        <MenuItem value="income">Income</MenuItem>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <TextField type="number" size="small" variant="standard" fullWidth value={getCategoryCell(row, "sortOrder")} slotProps={{ htmlInput: { style: { textAlign: "right" } } }} onChange={(event) => setCategoryCell(row.id, "sortOrder", event.target.value)} onBlur={() => void commitCategoryCell(row, "sortOrder")} />
+                    </TableCell>
+                    <TableCell align="center">
+                      <Tooltip title="Delete category">
+                        <IconButton size="small" loading={savingId === row.id || (deleteCategoryMutation.isPending && deleteCategoryMutation.variables === row.id)} onClick={() => void deleteCategoryMutation.mutateAsync(row.id)}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </Grid>
-            </Box>
-          ))}
-        </Box>
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       )}
-
-      {/* Add dialog */}
-      <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Add Category</DialogTitle>
-        <DialogContent sx={{ pt: "16px !important", display: "flex", flexDirection: "column", gap: 2 }}>
-          {addError && <Alert severity="error">{addError}</Alert>}
-          <ToggleButtonGroup
-            value={newType}
-            exclusive
-            onChange={(_, v) => { if (v) setNewType(v as "expense" | "income"); }}
-            fullWidth
-            size="small"
-          >
-            <ToggleButton value="expense">Expense</ToggleButton>
-            <ToggleButton value="income">Income</ToggleButton>
-          </ToggleButtonGroup>
-          <TextField
-            label="Category name"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            autoFocus
-            fullWidth
-            placeholder={newType === "income" ? "e.g. Salary, Freelance" : "e.g. Groceries"}
-            onKeyDown={(e) => { if (e.key === "Enter") void handleAdd(); }}
-          />
-          <Autocomplete
-            freeSolo
-            options={existingGroups}
-            value={newGroup}
-            onInputChange={(_, val) => setNewGroup(val)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Parent group (optional)"
-                placeholder="e.g. Car, Bill, Home"
-                helperText="Groups related categories together"
-              />
-            )}
-          />
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
-          <Button variant="outlined" onClick={() => { setAddOpen(false); setAddError(null); }}>Cancel</Button>
-          <Button variant="contained" onClick={() => void handleAdd()} disabled={saving || !newName.trim()}>
-            {saving ? "Saving..." : "Add"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Edit dialog */}
-      <Dialog open={!!editTarget} onClose={() => setEditTarget(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>Edit Category</DialogTitle>
-        <DialogContent sx={{ pt: "16px !important", display: "flex", flexDirection: "column", gap: 2 }}>
-          <ToggleButtonGroup
-            value={editType}
-            exclusive
-            onChange={(_, v) => { if (v) setEditType(v as "expense" | "income"); }}
-            fullWidth
-            size="small"
-          >
-            <ToggleButton value="expense">Expense</ToggleButton>
-            <ToggleButton value="income">Income</ToggleButton>
-          </ToggleButtonGroup>
-          <TextField
-            label="Category name"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            autoFocus
-            fullWidth
-            onKeyDown={(e) => { if (e.key === "Enter") void handleEdit(); }}
-          />
-          <Autocomplete
-            freeSolo
-            options={existingGroups}
-            value={editGroup}
-            onInputChange={(_, val) => setEditGroup(val)}
-            renderInput={(params) => (
-              <TextField {...params} label="Parent group (optional)" />
-            )}
-          />
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
-          <Button variant="outlined" onClick={() => setEditTarget(null)}>Cancel</Button>
-          <Button variant="contained" onClick={() => void handleEdit()} disabled={editSaving || !editName.trim()}>
-            {editSaving ? "Saving..." : "Save"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Delete confirm */}
-      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>Delete Category</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Delete <strong>{deleteTarget?.name}</strong>? Existing expenses won&apos;t be affected.
-            {budgetMap.has(deleteTarget?.name ?? "") && " Its budget will also be removed."}
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
-          <Button variant="outlined" onClick={() => setDeleteTarget(null)}>Cancel</Button>
-          <Button variant="contained" color="error" onClick={() => void handleDelete()} disabled={deleting}>
-            {deleting ? "Deleting..." : "Delete"}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
-  );
-}
-
-// ── CategoryCard ──────────────────────────────────────────────────────────────
-
-interface CategoryCardProps {
-  cat: UserCategory;
-  budget: Budget | null;
-  spent: number;
-  onEdit: () => void;
-  onDelete: () => void;
-  onSetBudget: (amount: number) => void;
-  onClearBudget: () => void;
-  onToggleCarryForward: () => void;
-}
-
-function CategoryCard({ cat, budget, spent, onEdit, onDelete, onSetBudget, onClearBudget, onToggleCarryForward }: CategoryCardProps) {
-  const [budgetEditing, setBudgetEditing] = useState(false);
-  const [budgetInput, setBudgetInput] = useState("");
-  const [budgetSaving, setBudgetSaving] = useState(false);
-
-  const percent = budget ? (spent / budget.limitAmount) * 100 : 0;
-  const remaining = budget ? budget.limitAmount - spent : 0;
-
-  const startBudgetEdit = () => {
-    setBudgetInput(budget ? String(budget.limitAmount) : "");
-    setBudgetEditing(true);
-  };
-
-  const saveBudget = async () => {
-    const amount = parseFloat(budgetInput);
-    if (!isNaN(amount) && amount >= 0) {
-      setBudgetSaving(true);
-      try { onSetBudget(amount); } finally { setBudgetSaving(false); }
-    }
-    setBudgetEditing(false);
-    setBudgetInput("");
-  };
-
-  return (
-    <Card sx={{ height: "100%" }}>
-      <CardContent>
-        {/* Header */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
-          <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
-              {cat.group && (
-                <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.4 }}>
-                  {cat.group}
-                </Typography>
-              )}
-              {cat.type === "income" && (
-                <Chip label="Income" size="small" color="success" variant="outlined" sx={{ height: 18, fontSize: "0.65rem", "& .MuiChip-label": { px: 0.75 } }} />
-              )}
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 600 }} noWrap>
-              {cat.group ? cat.name.replace(`${cat.group} - `, "") : cat.name}
-            </Typography>
-          </Box>
-          <Box sx={{ display: "flex", flexShrink: 0, ml: 1 }}>
-            <Tooltip title="Edit category">
-              <IconButton size="small" onClick={onEdit} sx={{ color: "text.secondary" }}>
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete category">
-              <IconButton size="small" color="error" onClick={onDelete}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        </Box>
-
-        {/* Budget section */}
-        {budgetEditing ? (
-          <Box sx={{ display: "flex", gap: 1, alignItems: "center", mt: 1 }}>
-            <TextField
-              size="small"
-              type="number"
-              value={budgetInput}
-              onChange={(e) => setBudgetInput(e.target.value)}
-              autoFocus
-              fullWidth
-              label="Monthly limit"
-              slotProps={{
-                input: { startAdornment: <InputAdornment position="start">$</InputAdornment> },
-                htmlInput: { min: 0 },
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") void saveBudget();
-                if (e.key === "Escape") { setBudgetEditing(false); setBudgetInput(""); }
-              }}
-            />
-            <IconButton size="small" color="primary" onClick={() => void saveBudget()} disabled={budgetSaving}>
-              {budgetSaving ? <CircularProgress size={16} /> : <CheckIcon fontSize="small" />}
-            </IconButton>
-            <IconButton size="small" onClick={() => { setBudgetEditing(false); setBudgetInput(""); }}>
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </Box>
-        ) : budget ? (
-          <>
-            <BudgetProgressBar spent={spent} limit={budget.limitAmount} currency={budget.currency} />
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                Limit: ${budget.limitAmount.toFixed(2)}/mo
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{ fontWeight: 600 }}
-                color={percent >= 90 ? "error.main" : percent >= 70 ? "warning.main" : "text.secondary"}
-              >
-                ${remaining.toFixed(2)} left
-              </Typography>
-            </Box>
-            <Box sx={{ display: "flex", gap: 1, mt: 1.5, alignItems: "center" }}>
-              <Button size="small" variant="outlined" onClick={startBudgetEdit} sx={{ fontSize: "0.75rem" }}>
-                Edit limit
-              </Button>
-              <Button
-                size="small"
-                variant="text"
-                color="error"
-                onClick={onClearBudget}
-                sx={{ fontSize: "0.75rem" }}
-              >
-                Remove
-              </Button>
-              <Tooltip title={budget.carryForward ? "Repeats monthly — click to stop" : "Click to repeat every month"}>
-                <IconButton size="small" onClick={onToggleCarryForward} sx={{ ml: "auto", color: budget.carryForward ? "primary.main" : "text.disabled" }}>
-                  <RepeatIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </>
-        ) : (
-          <Box
-            sx={{
-              mt: 1,
-              py: 2,
-              border: "1px dashed",
-              borderColor: "divider",
-              borderRadius: 1,
-              textAlign: "center",
-              cursor: "pointer",
-              "&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
-            }}
-            onClick={startBudgetEdit}
-          >
-            <Typography variant="body2" color="text.disabled">
-              + Set monthly budget
-            </Typography>
-          </Box>
-        )}
-      </CardContent>
-    </Card>
   );
 }

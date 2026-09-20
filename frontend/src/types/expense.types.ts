@@ -1,18 +1,25 @@
 export type ExpenseCategory = string;
+export type TransactionType = "expense" | "income" | "expense_refund";
+
+export function expenseAmount(row: { type: TransactionType; amount: number }): number {
+  return row.type === "expense_refund" ? -row.amount : row.type === "expense" ? row.amount : 0;
+}
 
 export interface Expense {
   id: string;
   userId: string;
   date: string;
+  monthYear: string;
   description: string;
   amount: number;
   currency: string;
   category: ExpenseCategory;   // resolved name (always present in API response)
   categoryId?: string | null;
-  type: "expense" | "income";
+  categoryPath?: Array<{ id: string; name: string }>;
+  type: TransactionType;
   subCategory?: string;
   merchantName?: string;
-  source: "manual" | "csv-upload";
+  source: string;
   isRecurring: boolean;
   tags: string[];
   originalDescription?: string;
@@ -27,7 +34,7 @@ export interface ExpenseFilters {
   source?: string;
   isRecurring?: boolean;
   search?: string;
-  type?: "expense" | "income";
+  type?: TransactionType;
 }
 
 export interface PaginatedExpenses {

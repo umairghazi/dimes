@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Checkbox,
+  CircularProgress,
   IconButton,
   MenuItem,
   Paper,
@@ -20,8 +21,9 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SellIcon from "@mui/icons-material/Sell";
-import { Expense } from "@/types/expense.types";
-import { UserCategory } from "@/types/category.types";
+import { FinanceCategory } from "@/api/finance.api";
+import { Expense, TransactionType } from "@/types/expense.types";
+import { categoryLabel } from "@/components/finance/categoryLabels";
 
 type LedgerKind = "expense" | "income";
 
@@ -36,14 +38,16 @@ interface LedgerTableProps {
   title: string;
   kind: LedgerKind;
   rows: Expense[];
-  categories: UserCategory[];
+  categories: FinanceCategory[];
   defaultDate: string;
-  onCreate: (draft: { date: string; description: string; amount: number; categoryId?: string | null; type: LedgerKind }) => Promise<void>;
+  isSaving?: boolean;
+  onCreate: (draft: { date: string; description: string; amount: number; categoryId?: string | null; type: TransactionType }) => Promise<void>;
   onUpdate: (id: string, patch: Partial<Expense> & { categoryId?: string | null }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
 
 interface ParsedPasteRow {
+  type: TransactionType;
   date: string;
   description: string;
   amount: number;
@@ -70,9 +74,9 @@ function normalizeCategoryName(value: string): string {
 }
 
 function parseAmount(value: string): number | null {
-  const clean = value.replace(/[$,\s]/g, "").replace(/^\((.*)\)$/, "$1");
+  const clean = value.replace(/[$,\s]/g, "").replace(/^\((.*)\)$/, "-$1");
   const amount = Number(clean);
-  return Number.isFinite(amount) && amount > 0 ? amount : null;
+  return clean !== "" && Number.isFinite(amount) && amount !== 0 ? amount : null;
 }
 
 function parseDate(value: string): string | null {
@@ -91,8 +95,13 @@ function parseDate(value: string): string | null {
   return `${year}-${month}-${day}`;
 }
 
-function parsePastedRows(text: string, kind: LedgerKind, categories: UserCategory[]): ParsedPasteRow[] {
-  const categoryByName = new Map(categories.map((c) => [normalizeCategoryName(c.name), c.id]));
+function parsePastedRows(text: string, kind: LedgerKind, categories: FinanceCategory[]): ParsedPasteRow[] {
+  const categoryByName = new Map(
+    categories.flatMap((c) => [
+      [normalizeCategoryName(c.name), c.id],
+      [normalizeCategoryName(categoryLabel(c)), c.id],
+    ]),
+  );
   const parsedRows: ParsedPasteRow[] = [];
 
   text
@@ -108,11 +117,13 @@ function parsePastedRows(text: string, kind: LedgerKind, categories: UserCategor
       const category = fourthRaw ?? "";
 
       if (!date || amount === null || !description?.trim()) return;
+      if (kind === "income" && amount < 0) return;
 
       parsedRows.push({
         date,
         description: description.trim(),
-        amount,
+        amount: Math.abs(amount),
+        type: kind === "expense" && amount < 0 ? "expense_refund" : kind,
         categoryId: categoryByName.get(normalizeCategoryName(category)) ?? null,
       });
     });
@@ -126,6 +137,7 @@ export function LedgerTable({
   rows,
   categories,
   defaultDate,
+  isSaving = false,
   onCreate,
   onUpdate,
   onDelete,
@@ -136,6 +148,7 @@ export function LedgerTable({
   const [pasteCount, setPasteCount] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [bulkCategoryId, setBulkCategoryId] = useState("");
+  const [draftType, setDraftType] = useState<TransactionType>(kind);
 
   const options = useMemo(
     () => categories.filter((c) => (c.type ?? "expense") === kind),
@@ -250,7 +263,7 @@ export function LedgerTable({
       description: draft.description.trim(),
       amount,
       categoryId: draft.categoryId || null,
-      type: kind,
+      type: draftType,
     });
     setDraft(blankDraft(draft.date));
   };
@@ -264,7 +277,7 @@ export function LedgerTable({
 
     event.preventDefault();
     for (const row of parsed) {
-      await onCreate({ ...row, type: kind });
+      await onCreate(row);
     }
     setPasteCount(parsed.length);
     setDraft(blankDraft(parsed[parsed.length - 1]?.date ?? draft.date));
@@ -277,12 +290,31 @@ export function LedgerTable({
   };
 
   return (
-    <Paper variant="outlined" sx={{ overflow: "hidden", borderRadius: 1 }}>
-      <Box sx={{ px: 1.5, py: 1.25, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5 }}>
-        <Typography variant="h6" sx={{ fontWeight: 800, color: kind === "expense" ? "error.main" : "success.main" }}>
-          {title}
-        </Typography>
-        {selectedCount > 0 ? (
+    <Paper
+      variant="outlined"
+      sx={{
+        overflow: "hidden",
+        borderRadius: 1,
+        borderColor: "rgba(255,255,255,0.08)",
+        bgcolor: "rgba(32,35,45,0.94)",
+        boxShadow: "0 20px 52px rgba(0,0,0,0.28)",
+      }}
+    >
+      <Box aria-busy={isSaving} sx={{ px: 1.5, py: 1.25, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5, borderBottom: "1px solid", borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(15,17,23,0.36)" }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 900, color: kind === "expense" ? "primary.main" : "success.main" }}>
+            {title}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {kind === "expense" ? "Date, description, amount, category" : "Date, amount, description, category"}
+          </Typography>
+        </Box>
+        {isSaving ? (
+          <Box role="status" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <CircularProgress size={14} />
+            <Typography variant="caption">Saving...</Typography>
+          </Box>
+        ) : selectedCount > 0 ? (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
             <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
               {selectedCount} selected
@@ -297,7 +329,7 @@ export function LedgerTable({
               <MenuItem value="">Uncategorized</MenuItem>
               {options.map((category) => (
                 <MenuItem key={category.id} value={category.id}>
-                  {category.name}
+                  {categoryLabel(category)}
                 </MenuItem>
               ))}
             </Select>
@@ -319,11 +351,48 @@ export function LedgerTable({
         )}
       </Box>
 
-      <TableContainer sx={{ maxHeight: "calc(100vh - 220px)" }}>
-        <Table stickyHeader size="small" sx={{ tableLayout: "fixed" }}>
+      <Box component="fieldset" disabled={isSaving} sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}>
+      <TableContainer sx={{ maxHeight: "calc(100vh - 218px)", overflowX: "auto" }}>
+        <Table
+          stickyHeader
+          size="small"
+          sx={{
+            tableLayout: "fixed",
+            minWidth: 730,
+            "& .MuiTableCell-root": {
+              borderColor: "rgba(255,255,255,0.065)",
+              px: 0.9,
+              py: 0.45,
+              height: 38,
+            },
+            "& .MuiTableCell-head": {
+              bgcolor: "#262a36",
+              color: "text.secondary",
+              fontWeight: 900,
+              textTransform: "none",
+            },
+            "& .MuiTableRow-root:hover .MuiTableCell-body": {
+              backgroundColor: "rgba(88,101,242,0.12)",
+            },
+            "& .MuiInputBase-root": {
+              fontSize: "0.875rem",
+              color: "text.primary",
+              fontWeight: 580,
+            },
+            "& .MuiInputBase-input": {
+              py: 0.25,
+            },
+            "& .MuiInput-underline:before": {
+              borderBottomColor: "transparent",
+            },
+            "& .MuiInput-underline:hover:before": {
+              borderBottomColor: "divider",
+            },
+          }}
+        >
           <TableHead>
             <TableRow>
-              <TableCell padding="checkbox" sx={{ width: 42 }}>
+              <TableCell padding="checkbox" sx={{ width: 34 }}>
                 <Checkbox
                   size="small"
                   checked={allVisibleSelected}
@@ -331,20 +400,21 @@ export function LedgerTable({
                   onChange={(e) => toggleAll(e.target.checked)}
                 />
               </TableCell>
-              <TableCell sx={{ width: 118 }}>Date</TableCell>
+              <TableCell sx={{ width: 150 }}>Date</TableCell>
               {kind === "expense" ? (
                 <>
-                  <TableCell>Description</TableCell>
-                  <TableCell align="right" sx={{ width: 112 }}>Amount</TableCell>
+                  <TableCell sx={{ width: 230 }}>Description</TableCell>
+                  <TableCell align="right" sx={{ width: 110 }}>Amount</TableCell>
                 </>
               ) : (
                 <>
-                  <TableCell align="right" sx={{ width: 112 }}>Amount</TableCell>
-                  <TableCell>Description</TableCell>
+                  <TableCell align="right" sx={{ width: 110 }}>Amount</TableCell>
+                  <TableCell sx={{ width: 230 }}>Description</TableCell>
                 </>
               )}
-              <TableCell sx={{ width: 220 }}>Category</TableCell>
-              <TableCell sx={{ width: 42 }} />
+              <TableCell sx={{ width: 260 }}>Category</TableCell>
+              {kind === "expense" && <TableCell sx={{ width: 120 }}>Type</TableCell>}
+              <TableCell sx={{ width: 38 }} />
             </TableRow>
           </TableHead>
 
@@ -366,6 +436,7 @@ export function LedgerTable({
                     variant="standard"
                     fullWidth
                     value={displayValue(row, "date")}
+                    slotProps={{ htmlInput: { style: { minWidth: 126 } } }}
                     onChange={(e) => setCell(row.id, "date", e.target.value)}
                     onBlur={() => void commitCell(row, "date")}
                     onKeyDown={(e) => void handleKeyDown(e, row, "date")}
@@ -446,22 +517,30 @@ export function LedgerTable({
                     <MenuItem value="">Uncategorized</MenuItem>
                     {options.map((category) => (
                       <MenuItem key={category.id} value={category.id}>
-                        {category.name}
+                        {categoryLabel(category)}
                       </MenuItem>
                     ))}
                   </Select>
                 </TableCell>
+                {kind === "expense" && <TableCell>
+                  <Select size="small" variant="standard" fullWidth value={row.type}
+                    inputProps={{ "aria-label": "Transaction type" }}
+                    onChange={(event) => void onUpdate(row.id, { type: event.target.value as TransactionType })}>
+                    <MenuItem value="expense">Expense</MenuItem>
+                    <MenuItem value="expense_refund">Refund</MenuItem>
+                  </Select>
+                </TableCell>}
                 <TableCell align="center">
                   <Tooltip title="Delete row">
                     <IconButton size="small" onClick={() => void onDelete(row.id)}>
-                      <DeleteIcon fontSize="small" />
+                      {savingId === row.id ? <CircularProgress size={16} /> : <DeleteIcon fontSize="small" />}
                     </IconButton>
                   </Tooltip>
                 </TableCell>
               </TableRow>
             ))}
 
-            <TableRow sx={{ bgcolor: "action.hover" }}>
+            <TableRow sx={{ bgcolor: "rgba(255,107,44,0.08)" }}>
               <TableCell padding="checkbox" />
               <TableCell>
                 <TextField
@@ -470,6 +549,7 @@ export function LedgerTable({
                   variant="standard"
                   fullWidth
                   value={draft.date}
+                  slotProps={{ htmlInput: { style: { minWidth: 126 } } }}
                   onChange={(e) => setDraft((d) => ({ ...d, date: e.target.value }))}
                   onKeyDown={maybeAddOnEnter}
                   onPaste={handlePaste}
@@ -546,11 +626,19 @@ export function LedgerTable({
                   <MenuItem value="">Uncategorized</MenuItem>
                   {options.map((category) => (
                     <MenuItem key={category.id} value={category.id}>
-                      {category.name}
+                      {categoryLabel(category)}
                     </MenuItem>
                   ))}
                 </Select>
               </TableCell>
+              {kind === "expense" && <TableCell>
+                <Select size="small" variant="standard" fullWidth value={draftType}
+                  inputProps={{ "aria-label": "New transaction type" }}
+                  onChange={(event) => setDraftType(event.target.value as TransactionType)}>
+                  <MenuItem value="expense">Expense</MenuItem>
+                  <MenuItem value="expense_refund">Refund</MenuItem>
+                </Select>
+              </TableCell>}
               <TableCell align="center">
                 <Tooltip title="Add row">
                   <IconButton size="small" color="primary" onClick={() => void addDraft()}>
@@ -562,6 +650,7 @@ export function LedgerTable({
           </TableBody>
         </Table>
       </TableContainer>
+      </Box>
     </Paper>
   );
 }

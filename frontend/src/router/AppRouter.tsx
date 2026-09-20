@@ -1,23 +1,23 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { AppShell } from "@/components/layout/AppShell";
-import { Dashboard } from "@/pages/Dashboard/Dashboard";
-import { Expenses } from "@/pages/Expenses/Expenses";
+import { AppProgress } from "@/components/layout/AppProgress";
 import { Ledger } from "@/pages/Ledger/Ledger";
 import { Summary } from "@/pages/Summary/Summary";
-import { Upload } from "@/pages/Upload/Upload";
-import { Settings } from "@/pages/Settings/Settings";
 import { Categories } from "@/pages/Categories/Categories";
-import { Analytics } from "@/pages/Analytics/Analytics";
+import { ImportTransactions } from "@/pages/Import/ImportTransactions";
+import { Year } from "@/pages/Year/Year";
 import { Login } from "@/pages/Auth/Login";
 import { Register } from "@/pages/Auth/Register";
 
 export function AppRouter() {
   return (
     <BrowserRouter>
+      <AppProgress />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/signup" element={<Register />} />
         <Route
           element={
             <ProtectedRoute>
@@ -25,15 +25,11 @@ export function AppRouter() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Dashboard />} />
-          <Route path="summary" element={<Summary />} />
+          <Route index element={<Summary />} />
           <Route path="ledger" element={<Ledger />} />
-          <Route path="expenses" element={<Expenses />} />
-          <Route path="upload" element={<Upload />} />
-          <Route path="budgets" element={<Navigate to="/categories" replace />} />
+          <Route path="year" element={<Year />} />
+          <Route path="import" element={<ImportTransactions />} />
           <Route path="categories" element={<Categories />} />
-          <Route path="analytics" element={<Analytics />} />
-          <Route path="settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

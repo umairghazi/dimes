@@ -31,7 +31,7 @@ export const lightTheme = createTheme({
     ...typography,
   },
 
-  shape: { borderRadius: 10 },
+  shape: { borderRadius: 8 },
 
   shadows: [
     "none",
@@ -62,11 +62,17 @@ export const lightTheme = createTheme({
   ],
 
   components: {
+    MuiButtonBase: {
+      defaultProps: {
+        disableRipple: true,
+      }
+    },
     MuiCssBaseline: {
       styleOverrides: {
         "*, *::before, *::after": { boxSizing: "border-box" },
         body: {
           fontFamily: tokens.font.sans,
+          background: tokens.colors.bgLight,
           WebkitFontSmoothing: "antialiased",
           MozOsxFontSmoothing: "grayscale",
           textRendering: "optimizeLegibility",
@@ -94,16 +100,15 @@ export const lightTheme = createTheme({
       styleOverrides: {
         root: {
           textTransform: "none",
-          fontWeight: 600,
-          letterSpacing: "0.01em",
+          fontWeight: 720,
+          letterSpacing: "0",
           borderRadius: tokens.radii.md,
           transition: "all 0.15s ease",
         },
         contained: {
           boxShadow: "none",
           "&:hover": {
-            boxShadow: tokens.shadows.md,
-            transform: "translateY(-1px)",
+            boxShadow: tokens.shadows.sm,
           },
           "&:active": {
             transform: "translateY(0)",
@@ -120,6 +125,17 @@ export const lightTheme = createTheme({
         sizeLarge: {
           padding: "10px 24px",
           fontSize: "0.9375rem",
+        },
+      },
+    },
+
+    MuiInput: {
+      styleOverrides: {
+        root: {
+          color: tokens.colors.textPrimaryLight,
+          "&:before": { borderBottomColor: alpha(tokens.colors.textSecondaryLight, 0.32) },
+          "&:hover:not(.Mui-disabled):before": { borderBottomColor: tokens.colors.accentLight },
+          "&:after": { borderBottomColor: tokens.colors.accentLight },
         },
       },
     },
@@ -152,9 +168,9 @@ export const lightTheme = createTheme({
     MuiChip: {
       styleOverrides: {
         root: {
-          fontWeight: 600,
+          fontWeight: 680,
           fontSize: "0.75rem",
-          letterSpacing: "0.01em",
+          letterSpacing: "0",
           borderRadius: tokens.radii.pill,
           border: `1px solid ${tokens.colors.borderLight}`,
         },
@@ -185,9 +201,11 @@ export const lightTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: "none",
+          borderRadius: tokens.radii.lg,
         },
         outlined: {
-          borderColor: tokens.colors.borderLight,
+          borderColor: alpha("#ffffff", 0.08),
+          boxShadow: tokens.shadows.sm,
         },
       },
     },
@@ -196,12 +214,12 @@ export const lightTheme = createTheme({
       styleOverrides: {
         root: {
           "& .MuiTableCell-head": {
-            fontWeight: 700,
+            fontWeight: 760,
             fontSize: "0.75rem",
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
+            letterSpacing: "0",
+            textTransform: "none",
             color: tokens.colors.textSecondaryLight,
-            backgroundColor: tokens.colors.bgLight,
+            backgroundColor: tokens.colors.surfaceMutedLight,
             borderBottom: `1px solid ${tokens.colors.borderLight}`,
           },
         },
@@ -212,6 +230,9 @@ export const lightTheme = createTheme({
       styleOverrides: {
         root: {
           "&:last-child td": { borderBottom: 0 },
+          "&:hover td": {
+            backgroundColor: "rgba(88, 101, 242, 0.12)",
+          },
           "& .MuiTableCell-body": {
             borderColor: tokens.colors.borderLight,
           },
@@ -225,10 +246,10 @@ export const lightTheme = createTheme({
           borderRadius: tokens.radii.md,
           transition: "all 0.15s ease",
           "&.Mui-selected": {
-            backgroundColor: tokens.colors.accentBg,
+            backgroundColor: "#12100d",
             color: tokens.colors.accent,
             "& .MuiListItemIcon-root": { color: tokens.colors.accent },
-            "&:hover": { backgroundColor: alpha(tokens.colors.accent, 0.12) },
+            "&:hover": { backgroundColor: "#12100d" },
           },
         },
       },
@@ -239,9 +260,9 @@ export const lightTheme = createTheme({
         root: {
           height: tokens.bottomNav.height,
           borderTop: `1px solid ${tokens.colors.borderLight}`,
-          backgroundColor: alpha(tokens.colors.surfaceLight, 0.9),
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
+          backgroundColor: alpha(tokens.colors.surfaceLight, 0.86),
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter: "blur(18px)",
         },
       },
     },

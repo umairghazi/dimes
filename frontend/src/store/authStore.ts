@@ -1,16 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
-interface AuthUser {
-  id: string;
-  email: string;
-}
+import { Session, User } from "@supabase/supabase-js";
 
 interface AuthState {
-  user: AuthUser | null;
-  accessToken: string | null;
-  setAuth: (user: AuthUser, accessToken: string) => void;
-  setAccessToken: (token: string) => void;
+  user: User | null;
+  session: Session | null;
+  initialized: boolean;
+  setSession: (session: Session | null) => void;
+  setInitialized: (initialized: boolean) => void;
   clearAuth: () => void;
   isAuthenticated: () => boolean;
 }
@@ -19,11 +16,12 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
-      accessToken: null,
-      setAuth: (user, accessToken) => set({ user, accessToken }),
-      setAccessToken: (accessToken) => set({ accessToken }),
-      clearAuth: () => set({ user: null, accessToken: null }),
-      isAuthenticated: () => !!get().user && !!get().accessToken,
+      session: null,
+      initialized: false,
+      setSession: (session) => set({ session, user: session?.user ?? null }),
+      setInitialized: (initialized) => set({ initialized }),
+      clearAuth: () => set({ user: null, session: null }),
+      isAuthenticated: () => !!get().session?.access_token,
     }),
     {
       name: "auth-storage",
