@@ -53,7 +53,7 @@ export function ImportPreviewTable({ rows, duplicateLines, fallbackMonth }: Impo
                   <TableCell>{formatMonthLabel(row.monthYear ?? fallbackMonth)}</TableCell>
                   <TableCell>{row.description}</TableCell>
                   <TableCell align="right">{currencyWithCents(row.amount)}</TableCell>
-                  <TableCell>{row.type}</TableCell>
+                  <TableCell>{row.type === "expense_refund" ? "Expense refund" : row.type}</TableCell>
                   <TableCell>{row.categoryName || "Uncategorized"}</TableCell>
                 </TableRow>
               );

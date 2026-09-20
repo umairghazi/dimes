@@ -11,9 +11,9 @@ export const importSample = `Date\tDescription\tAmount\tCategory
 02 Sep 26\tPCC24\t535.00\tHome - Maintenance Fee`;
 
 function parseAmount(value: string): number | null {
-  const normalized = value.replace(/[$,\s]/g, "").replace(/^\((.*)\)$/, "$1");
+  const normalized = value.replace(/[$,\s]/g, "").replace(/^\((.*)\)$/, "-$1");
   const amount = Number(normalized);
-  return Number.isFinite(amount) && amount > 0 ? amount : null;
+  return normalized !== "" && Number.isFinite(amount) && amount !== 0 ? amount : null;
 }
 
 function parseDate(value: string): string | null {
@@ -67,14 +67,16 @@ export function parseImportRows(input: string, fallbackType: ImportType, monthYe
     if (!date || amount === null || !description) return [];
 
     const typeValue = (typeIndex >= 0 ? cells[typeIndex] : fallbackType).toLowerCase();
-    const type: ImportType = typeValue.includes("income") ? "income" : typeValue.includes("expense") ? "expense" : fallbackType;
+    const baseType = typeValue.includes("income") ? "income" : typeValue.includes("expense") || typeValue.includes("refund") ? "expense" : fallbackType;
+    if (baseType === "income" && amount < 0) return [];
+    const type = baseType === "expense" && (amount < 0 || typeValue.includes("refund")) ? "expense_refund" : baseType;
 
     return [{
       sourceLine: header ? index + 2 : index + 1,
       date,
       monthYear,
       description,
-      amount,
+      amount: Math.abs(amount),
       type,
       categoryName: cells[categoryIndex] || null,
       parentName: null,

@@ -38,12 +38,14 @@ export class TransactionService {
   }
 
   async create(userId: string, data: CreateTransactionData): Promise<FinanceTransaction> {
-    await this.validateCategory(userId, data.categoryId);
+    await this.validateCategory(userId, data.categoryId, data.type ?? "expense");
     return this.transactionRepo.create(userId, data);
   }
 
   async update(userId: string, id: string, patch: UpdateTransactionData): Promise<FinanceTransaction> {
-    await this.validateCategory(userId, patch.categoryId);
+    const existing = await this.transactionRepo.findById(userId, id);
+    if (!existing) throw new AppError("Transaction not found", 404, "TRANSACTION_NOT_FOUND");
+    await this.validateCategory(userId, patch.categoryId !== undefined ? patch.categoryId : existing.categoryId, patch.type ?? existing.type);
     return this.transactionRepo.update(userId, id, patch);
   }
 
@@ -75,6 +77,7 @@ export class TransactionService {
     const imported: FinanceTransaction[] = [];
     for (const row of rows) {
       const type = row.type;
+      const categoryType = type === "expense_refund" ? "expense" : type;
       const monthYear = row.monthYear ?? monthFromDate(row.date);
       const transactionKey = this.transactionKey({
         date: row.date,
@@ -93,13 +96,13 @@ export class TransactionService {
       let categoryId: string | null = null;
 
       for (const [index, categoryName] of categoryPath.entries()) {
-        const categoryKey = this.key(type, parentId ?? "none", categoryName);
+        const categoryKey = this.key(categoryType, parentId ?? "none", categoryName);
         let nextCategoryId = categoryCache.get(categoryKey) ?? null;
         if (!nextCategoryId) {
           const category = await this.categoryRepo.create(userId, {
             name: categoryName,
             parentId,
-            type,
+            type: categoryType,
           });
           nextCategoryId = category.id;
           categoryCache.set(categoryKey, category.id);
@@ -134,10 +137,13 @@ export class TransactionService {
     };
   }
 
-  private async validateCategory(userId: string, categoryId: string | null | undefined): Promise<void> {
+  private async validateCategory(userId: string, categoryId: string | null | undefined, type: FinanceTransactionType): Promise<void> {
     if (!categoryId) return;
-    const exists = await this.categoryRepo.existsForUser(userId, categoryId);
-    if (!exists) throw new AppError("Category not found", 404, "CATEGORY_NOT_FOUND");
+    const category = await this.categoryRepo.findById(userId, categoryId);
+    if (!category) throw new AppError("Category not found", 404, "CATEGORY_NOT_FOUND");
+    if (category.type !== (type === "expense_refund" ? "expense" : type)) {
+      throw new AppError("Transaction and category types do not match", 400, "CATEGORY_TYPE_MISMATCH");
+    }
   }
 
   private normalizeCategoryPath(categoryName?: string | null): string[] {

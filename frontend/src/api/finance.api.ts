@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import { Expense } from "@/types/expense.types";
+import { Expense, TransactionType } from "@/types/expense.types";
 
 export interface FinanceCategory {
   id: string;
@@ -28,7 +28,7 @@ export interface ImportTransactionRow {
   monthYear?: string;
   description: string;
   amount: number;
-  type: "expense" | "income";
+  type: TransactionType;
   categoryName?: string | null;
   parentName?: string | null;
   currency?: string;
@@ -117,7 +117,7 @@ export interface YearlySummary {
 }
 
 export const financeApi = {
-  transactions: (params: { month?: string; type?: "expense" | "income" }) =>
+  transactions: (params: { month?: string; type?: TransactionType }) =>
     apiClient.get<{ data: Expense[]; total: number }>("/finance/transactions", { params }).then((r) => r.data),
 
   createTransaction: (data: Partial<Expense> & {
@@ -125,7 +125,7 @@ export const financeApi = {
     monthYear?: string;
     description: string;
     amount: number;
-    type: "expense" | "income";
+    type: TransactionType;
     categoryId?: string | null;
   }) => apiClient.post<Expense>("/finance/transactions", data).then((r) => r.data),
 

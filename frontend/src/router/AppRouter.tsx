@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { AppShell } from "@/components/layout/AppShell";
+import { AppProgress } from "@/components/layout/AppProgress";
 import { Ledger } from "@/pages/Ledger/Ledger";
 import { Summary } from "@/pages/Summary/Summary";
 import { Categories } from "@/pages/Categories/Categories";
@@ -12,6 +13,7 @@ import { Register } from "@/pages/Auth/Register";
 export function AppRouter() {
   return (
     <BrowserRouter>
+      <AppProgress />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />

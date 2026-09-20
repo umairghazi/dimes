@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Box, Button, Tooltip, Typography } from "@mui/material";
+import { beginActivity } from "@/store/activityStore";
 import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
@@ -13,11 +15,19 @@ export function AppShell() {
   const navigate = useNavigate();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const user = useAuthStore((state) => state.user);
+  const [signingOut, setSigningOut] = useState(false);
 
   const signOut = async () => {
+    setSigningOut(true);
+    const finish = beginActivity();
+    try {
     await supabase.auth.signOut();
     clearAuth();
     navigate("/login", { replace: true });
+    } finally {
+      finish();
+      setSigningOut(false);
+    }
   };
 
   const navItems = [
@@ -163,6 +173,7 @@ export function AppShell() {
                 size="small"
                 startIcon={<LogoutOutlinedIcon fontSize="small" />}
                 onClick={() => void signOut()}
+                loading={signingOut}
                 sx={{
                   minHeight: 38,
                   color: "#f7f8fc",

@@ -51,6 +51,9 @@ function IncomeExpenseChart({ months }: { months: YearlySummaryMonth[] }) {
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
   const max = Math.max(...months.flatMap((month) => [month.income, month.expenses]), 1);
+  const min = Math.min(...months.flatMap((month) => [month.income, month.expenses]), 0);
+  const valueY = (value: number) => top + (max - value) / (max - min) * plotHeight;
+  const zeroY = valueY(0);
   const band = plotWidth / 12;
   const barWidth = Math.min(24, band * 0.28);
   const ticks = [0, 0.5, 1];
@@ -64,21 +67,21 @@ function IncomeExpenseChart({ months }: { months: YearlySummaryMonth[] }) {
           return (
             <g key={tick}>
               <line x1={left} x2={width - right} y1={y} y2={y} stroke="currentColor" opacity="0.12" />
-              <text x={left - 10} y={y + 4} textAnchor="end" fontSize="12" fill="#b5bbcb">{currency(max * tick)}</text>
+              <text x={left - 10} y={y + 4} textAnchor="end" fontSize="12" fill="#b5bbcb">{currency(min + (max - min) * tick)}</text>
             </g>
           );
         })}
-        <line x1={left} x2={width - right} y1={top + plotHeight} y2={top + plotHeight} stroke="#535b70" />
+        <line x1={left} x2={width - right} y1={zeroY} y2={zeroY} stroke="#535b70" />
         {months.map((month, index) => {
           const x = left + band * index + band / 2;
-          const incomeHeight = (month.income / max) * plotHeight;
-          const expenseHeight = (month.expenses / max) * plotHeight;
+          const incomeHeight = Math.abs(valueY(month.income) - zeroY);
+          const expenseHeight = Math.abs(valueY(month.expenses) - zeroY);
           return (
             <g key={month.monthYear}>
-              <rect x={x - barWidth - 2} y={top + plotHeight - incomeHeight} width={barWidth} height={incomeHeight} fill="#29cc7a" rx="4">
+              <rect x={x - barWidth - 2} y={Math.min(valueY(month.income), zeroY)} width={barWidth} height={incomeHeight} fill="#29cc7a" rx="4">
                 <title>{month.monthLabel} income: {currency(month.income)}</title>
               </rect>
-              <rect x={x + 2} y={top + plotHeight - expenseHeight} width={barWidth} height={expenseHeight} fill="#ff6b2c" rx="4">
+              <rect x={x + 2} y={Math.min(valueY(month.expenses), zeroY)} width={barWidth} height={expenseHeight} fill="#ff6b2c" rx="4">
                 <title>{month.monthLabel} expenses: {currency(month.expenses)}</title>
               </rect>
               <text x={x} y={height - 24} textAnchor="middle" fontSize="12" fill="#b5bbcb">{month.monthLabel}</text>

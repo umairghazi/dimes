@@ -85,7 +85,8 @@ export class TransactionRepository extends BaseRepository {
     if (filters.month) {
       query = query.eq("month_year", filters.month);
     }
-    if (filters.type) query = query.eq("type", filters.type);
+    if (filters.type === "expense") query = query.in("type", ["expense", "expense_refund"]);
+    else if (filters.type) query = query.eq("type", filters.type);
 
     const rows = await this.execute<TransactionRow[]>("list transactions", query);
     return (rows ?? []).map(toTransaction);
@@ -148,6 +149,12 @@ export class TransactionRepository extends BaseRepository {
     );
 
     return toTransaction(row);
+  }
+
+  async findById(userId: string, id: string): Promise<FinanceTransaction | null> {
+    const row = await this.execute<TransactionRow | null>("find transaction", this.table()
+      .select("*, categories(id, name)").eq("user_id", userId).eq("id", id).maybeSingle());
+    return row ? toTransaction(row) : null;
   }
 
   async update(userId: string, id: string, patch: UpdateTransactionData): Promise<FinanceTransaction> {

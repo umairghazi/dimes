@@ -241,7 +241,7 @@ export function Categories() {
                   </TableCell>
                   <TableCell align="center">
                     <Tooltip title="Add category">
-                      <IconButton size="small" color="primary" onClick={() => void createCategory()}>
+                      <IconButton size="small" color="primary" loading={createCategoryMutation.isPending} onClick={() => void createCategory()}>
                         <AddIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -280,7 +280,7 @@ export function Categories() {
                     </TableCell>
                     <TableCell align="center">
                       <Tooltip title="Delete category">
-                        <IconButton size="small" onClick={() => void deleteCategoryMutation.mutateAsync(row.id)}>
+                        <IconButton size="small" loading={savingId === row.id || (deleteCategoryMutation.isPending && deleteCategoryMutation.variables === row.id)} onClick={() => void deleteCategoryMutation.mutateAsync(row.id)}>
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>

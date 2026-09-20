@@ -1,12 +1,12 @@
 import { BaseRepository } from "./BaseRepository";
-import { FinanceCategory, FinanceTransactionType } from "../types/finance.types";
+import { FinanceCategory, FinanceCategoryType } from "../types/finance.types";
 
 interface CategoryRow {
   id: string;
   user_id: string;
   parent_id: string | null;
   name: string;
-  type: FinanceTransactionType;
+  type: FinanceCategoryType;
   is_fixed: boolean;
   sort_order: number;
 }
@@ -14,7 +14,7 @@ interface CategoryRow {
 export interface CreateCategoryData {
   name: string;
   parentId?: string | null;
-  type?: FinanceTransactionType;
+  type?: FinanceCategoryType;
   isFixed?: boolean;
   sortOrder?: number;
 }
@@ -58,7 +58,7 @@ export class CategoryRepository extends BaseRepository {
     super("categories");
   }
 
-  async listByUser(userId: string, type?: FinanceTransactionType): Promise<FinanceCategory[]> {
+  async listByUser(userId: string, type?: FinanceCategoryType): Promise<FinanceCategory[]> {
     let query = this.table()
       .select("id, user_id, parent_id, name, type, is_fixed, sort_order")
       .eq("user_id", userId)

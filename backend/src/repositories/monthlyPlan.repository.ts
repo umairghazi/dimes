@@ -1,5 +1,5 @@
 import { BaseRepository } from "./BaseRepository";
-import { FinanceTransactionType, money, MonthlyPlan } from "../types/finance.types";
+import { FinanceCategoryType, money, MonthlyPlan } from "../types/finance.types";
 
 interface PlanRow {
   id: string;
@@ -7,7 +7,7 @@ interface PlanRow {
   month_year: string;
   category_id: string | null;
   category_name: string;
-  type: FinanceTransactionType;
+  type: FinanceCategoryType;
   planned_amount: string | number;
   currency: string;
   carry_forward: boolean;
@@ -50,7 +50,7 @@ export class MonthlyPlanRepository extends BaseRepository {
     monthYear: string;
     categoryId?: string | null;
     categoryName: string;
-    type: FinanceTransactionType;
+    type: FinanceCategoryType;
     plannedAmount: number;
     currency?: string;
     carryForward?: boolean;

@@ -1,13 +1,13 @@
 import { CategoryRepository, CreateCategoryData, UpdateCategoryData } from "../repositories/category.repository";
 import { AppError } from "../errors/AppError";
-import { FinanceCategory, FinanceTransactionType } from "../types/finance.types";
+import { FinanceCategory, FinanceCategoryType } from "../types/finance.types";
 
 export class CategoryService {
   constructor(
     private readonly categoryRepo = new CategoryRepository(),
   ) {}
 
-  list(userId: string, type?: FinanceTransactionType): Promise<FinanceCategory[]> {
+  list(userId: string, type?: FinanceCategoryType): Promise<FinanceCategory[]> {
     return this.categoryRepo.listByUser(userId, type);
   }
 
@@ -32,7 +32,7 @@ export class CategoryService {
   private async validateParent(
     userId: string,
     parentId: string | null | undefined,
-    type: FinanceTransactionType,
+    type: FinanceCategoryType,
     categoryId?: string,
   ): Promise<void> {
     if (!parentId) return;

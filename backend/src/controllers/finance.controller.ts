@@ -11,7 +11,7 @@ const monthlySummaryService = new MonthlySummaryService();
 
 const monthQuerySchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/).optional(),
-  type: z.enum(["expense", "income"]).optional(),
+  type: z.enum(["expense", "income", "expense_refund"]).optional(),
 });
 const yearQuerySchema = z.object({
   year: z.coerce.number().int().min(2000).max(2100),
@@ -24,7 +24,7 @@ const createTransactionSchema = z.object({
   amount: z.number().positive(),
   currency: z.string().default("CAD"),
   categoryId: z.string().uuid().nullable().optional(),
-  type: z.enum(["expense", "income"]).default("expense"),
+  type: z.enum(["expense", "income", "expense_refund"]).default("expense"),
   merchantName: z.string().nullable().optional(),
   source: z.string().default("manual"),
   isRecurring: z.boolean().default(false),
@@ -38,7 +38,7 @@ const importTransactionRowSchema = z.object({
   monthYear: z.string().regex(/^\d{4}-\d{2}$/).optional(),
   description: z.string().min(1),
   amount: z.number().positive(),
-  type: z.enum(["expense", "income"]),
+  type: z.enum(["expense", "income", "expense_refund"]),
   categoryName: z.string().nullable().optional(),
   parentName: z.string().nullable().optional(),
   currency: z.string().default("CAD"),
@@ -132,7 +132,7 @@ export async function deleteTransaction(req: Request, res: Response, next: NextF
 export async function listCategories(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = requireUser(req);
-    const { type } = monthQuerySchema.pick({ type: true }).parse(req.query);
+    const { type } = z.object({ type: z.enum(["expense", "income"]).optional() }).parse(req.query);
     const data = await categoryService.list(user.id, type);
     res.json(data);
   } catch (err) {

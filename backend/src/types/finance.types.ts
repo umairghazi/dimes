@@ -1,4 +1,9 @@
-export type FinanceTransactionType = "expense" | "income";
+export type FinanceCategoryType = "expense" | "income";
+export type FinanceTransactionType = FinanceCategoryType | "expense_refund";
+
+export function expenseAmount(transaction: { type: FinanceTransactionType; amount: number }): number {
+  return transaction.type === "expense_refund" ? -transaction.amount : transaction.type === "expense" ? transaction.amount : 0;
+}
 
 export interface FinanceTransaction {
   id: string;
@@ -27,7 +32,7 @@ export interface FinanceCategory {
   parentId: string | null;
   parentName: string | null;
   name: string;
-  type: FinanceTransactionType;
+  type: FinanceCategoryType;
   isFixed: boolean;
   sortOrder: number;
   depth: number;
@@ -41,7 +46,7 @@ export interface MonthlyPlan {
   monthYear: string;
   categoryId: string | null;
   categoryName: string;
-  type: FinanceTransactionType;
+  type: FinanceCategoryType;
   plannedAmount: number;
   currency: string;
   carryForward: boolean;

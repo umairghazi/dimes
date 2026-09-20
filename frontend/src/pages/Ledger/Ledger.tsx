@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { financeApi } from "@/api/finance.api";
 import { useMonthStore, isCurrentMonthYear } from "@/store/monthStore";
-import { Expense } from "@/types/expense.types";
+import { Expense, expenseAmount } from "@/types/expense.types";
 import { LedgerTable } from "@/components/ledger/LedgerTable";
 import { formatMonthLabel, currency } from "@/components/finance/financeFormat";
 import { PageHero } from "@/components/finance/PageHero";
@@ -36,7 +36,7 @@ function sortOldestFirst(rows: Expense[]): Expense[] {
 }
 
 function total(rows: Expense[]): number {
-  return rows.reduce((sum, row) => sum + row.amount, 0);
+  return rows.reduce((sum, row) => sum + (row.type === "income" ? row.amount : expenseAmount(row)), 0);
 }
 
 function LedgerTableSkeleton({ title, height = 520 }: { title: string; height?: number }) {
@@ -160,6 +160,7 @@ export function Ledger() {
             <LedgerTable
               title="Expenses"
               kind="expense"
+              isSaving={createMutation.isPending || updateMutation.isPending || deleteMutation.isPending}
               rows={expenseRows}
               categories={categories}
               defaultDate={range.defaultDate}
@@ -176,6 +177,7 @@ export function Ledger() {
             <LedgerTable
               title="Income"
               kind="income"
+              isSaving={createMutation.isPending || updateMutation.isPending || deleteMutation.isPending}
               rows={incomeRows}
               categories={categories}
               defaultDate={range.defaultDate}

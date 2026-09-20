@@ -99,7 +99,7 @@ export function Login() {
         >
           <TextField label="Email address" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required fullWidth autoComplete="email" autoFocus />
           <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required fullWidth autoComplete="current-password" />
-          <Button type="submit" variant="contained" size="large" disabled={loading} fullWidth sx={{ mt: 0.5, py: 1.5, fontSize: "0.9375rem" }}>
+          <Button type="submit" variant="contained" size="large" loading={loading} disabled={loading} fullWidth sx={{ mt: 0.5, py: 1.5, fontSize: "0.9375rem" }}>
             {loading ? "Signing in…" : "Sign in"}
           </Button>
         </Box>

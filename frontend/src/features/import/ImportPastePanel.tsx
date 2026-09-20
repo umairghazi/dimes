@@ -76,6 +76,7 @@ export function ImportPastePanel({
           variant="contained"
           startIcon={<UploadFileOutlinedIcon />}
           disabled={rowCount === 0 || isImporting}
+          loading={isImporting}
           onClick={onImport}
         >
           {isImporting ? "Importing..." : "Import rows"}

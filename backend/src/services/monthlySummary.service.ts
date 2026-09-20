@@ -2,7 +2,7 @@ import { MonthlyBalanceRepository } from "../repositories/monthlyBalance.reposit
 import { MonthlyPlanRepository } from "../repositories/monthlyPlan.repository";
 import { TransactionRepository } from "../repositories/transaction.repository";
 import { CategoryRepository } from "../repositories/category.repository";
-import { FinanceCategory, FinanceTransaction } from "../types/finance.types";
+import { FinanceCategory, FinanceTransaction, expenseAmount } from "../types/finance.types";
 import { MonthlySummary, YearlySummary } from "../types/finance.types";
 
 function monthLabel(monthYear: string): string {
@@ -77,8 +77,7 @@ export class MonthlySummaryService {
         .filter((transaction) => transaction.type === "income")
         .reduce((sum, transaction) => sum + transaction.amount, 0);
       const expenses = monthTransactions
-        .filter((transaction) => transaction.type === "expense")
-        .reduce((sum, transaction) => sum + transaction.amount, 0);
+        .reduce((sum, transaction) => sum + expenseAmount(transaction), 0);
       const net = income - expenses;
       const balance = balancesByMonth.get(monthYear);
       const startingBalance = balance?.startingBalance ?? null;
@@ -119,7 +118,7 @@ export class MonthlySummaryService {
     const rows = new Map<string, YearlySummary["categorySpend"][number]>();
 
     transactions
-      .filter((transaction) => transaction.type === "expense")
+      .filter((transaction) => transaction.type !== "income")
       .forEach((transaction) => {
         const category = transaction.categoryId ? categoriesById.get(transaction.categoryId) : null;
         const path = category?.path.length ? category.path : [{ id: "uncategorized", name: "Uncategorized" }];
@@ -128,7 +127,7 @@ export class MonthlySummaryService {
           const key = part.id;
           const existing = rows.get(key);
           if (existing) {
-            existing.amount += transaction.amount;
+            existing.amount += expenseAmount(transaction);
             existing.count += 1;
             return;
           }
@@ -137,7 +136,7 @@ export class MonthlySummaryService {
             categoryId: part.id === "uncategorized" ? null : part.id,
             categoryName: part.name,
             categoryPath: path.slice(0, index + 1),
-            amount: transaction.amount,
+            amount: expenseAmount(transaction),
             count: 1,
             depth: index,
           });

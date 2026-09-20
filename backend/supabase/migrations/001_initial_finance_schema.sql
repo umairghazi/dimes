@@ -30,7 +30,7 @@ create table if not exists public.transactions (
   amount numeric(12, 2) not null check (amount >= 0),
   currency text not null default 'CAD',
   category_id uuid references public.categories(id) on delete set null,
-  type text not null default 'expense' check (type in ('expense', 'income')),
+  type text not null default 'expense' check (type in ('expense', 'income', 'expense_refund')),
   merchant_name text,
   source text not null default 'manual',
   is_recurring boolean not null default false,

@@ -118,7 +118,7 @@ export function Register() {
             helperText="At least 8 characters"
             autoComplete="new-password"
           />
-          <Button type="submit" variant="contained" size="large" disabled={loading} fullWidth sx={{ mt: 0.5, py: 1.5, fontSize: "0.9375rem" }}>
+          <Button type="submit" variant="contained" size="large" loading={loading} disabled={loading} fullWidth sx={{ mt: 0.5, py: 1.5, fontSize: "0.9375rem" }}>
             {loading ? "Creating account…" : "Get started"}
           </Button>
         </Box>

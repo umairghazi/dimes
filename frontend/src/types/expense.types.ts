@@ -1,4 +1,9 @@
 export type ExpenseCategory = string;
+export type TransactionType = "expense" | "income" | "expense_refund";
+
+export function expenseAmount(row: { type: TransactionType; amount: number }): number {
+  return row.type === "expense_refund" ? -row.amount : row.type === "expense" ? row.amount : 0;
+}
 
 export interface Expense {
   id: string;
@@ -11,7 +16,7 @@ export interface Expense {
   category: ExpenseCategory;   // resolved name (always present in API response)
   categoryId?: string | null;
   categoryPath?: Array<{ id: string; name: string }>;
-  type: "expense" | "income";
+  type: TransactionType;
   subCategory?: string;
   merchantName?: string;
   source: string;
@@ -29,7 +34,7 @@ export interface ExpenseFilters {
   source?: string;
   isRecurring?: boolean;
   search?: string;
-  type?: "expense" | "income";
+  type?: TransactionType;
 }
 
 export interface PaginatedExpenses {
