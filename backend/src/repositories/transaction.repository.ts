@@ -1,5 +1,6 @@
 import { BaseRepository } from "./BaseRepository";
 import { FinanceTransaction, FinanceTransactionType, money, monthFromDate } from "../types/finance.types";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 interface TransactionRow {
   id: string;
@@ -71,8 +72,8 @@ function toTransaction(row: TransactionRow): FinanceTransaction {
 }
 
 export class TransactionRepository extends BaseRepository {
-  constructor() {
-    super("transactions");
+  constructor(db: SupabaseClient) {
+    super("transactions", db);
   }
 
   async listByUser(userId: string, filters: TransactionFilters = {}): Promise<FinanceTransaction[]> {

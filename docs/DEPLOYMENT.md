@@ -14,7 +14,6 @@ NODE_ENV=production
 CLIENT_ORIGIN=https://your-frontend-domain
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 ```
 
 ## Frontend Environment
@@ -29,4 +28,4 @@ VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 
 Run `backend/supabase/migrations/001_initial_finance_schema.sql` against the Supabase project before starting the backend.
 
-Keep `SUPABASE_SERVICE_ROLE_KEY` on the backend only.
+The backend intentionally uses the anon key plus each request's user access token so database RLS remains active.

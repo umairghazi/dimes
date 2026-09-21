@@ -2,7 +2,6 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 process.env.SUPABASE_URL = 'https://example.supabase.co';
 process.env.SUPABASE_ANON_KEY = 'test-key';
-process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
 const { MonthlySummaryService } = require('../dist/services/monthlySummary.service');
 const { TransactionService } = require('../dist/services/transaction.service');
 

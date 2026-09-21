@@ -18,7 +18,7 @@ React/Vite frontend
 - Controllers parse HTTP input and return HTTP responses.
 - Services own business rules and orchestration.
 - Repositories own persistence and extend `backend/src/repositories/BaseRepository.ts`.
-- `BaseRepository` owns the Supabase service-role client, table access, and shared error wrapping.
+- `BaseRepository` receives a request-scoped Supabase client, owns table access, and provides shared error wrapping.
 - `backend/supabase/migrations/001_initial_finance_schema.sql` defines the schema and RLS policies.
 
 Current backend layers:

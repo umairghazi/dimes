@@ -27,3 +27,13 @@ export function signedCurrency(value: number): string {
   return value > 0 ? `+${formatted}` : value < 0 ? `-${formatted}` : formatted;
 }
 
+export function elapsedDaysInMonth(monthYear: string, now = new Date()): number {
+  const [year, month] = monthYear.split("-").map(Number);
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  if (year > currentYear || (year === currentYear && month > currentMonth)) return 0;
+  if (year === currentYear && month === currentMonth) return now.getDate();
+
+  return new Date(year, month, 0).getDate();
+}

@@ -1,5 +1,6 @@
 import { BaseRepository } from "./BaseRepository";
 import { FinanceCategoryType, money, MonthlyPlan } from "../types/finance.types";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 interface PlanRow {
   id: string;
@@ -28,8 +29,8 @@ function toPlan(row: PlanRow): MonthlyPlan {
 }
 
 export class MonthlyPlanRepository extends BaseRepository {
-  constructor() {
-    super("monthly_plans");
+  constructor(db: SupabaseClient) {
+    super("monthly_plans", db);
   }
 
   async listByMonth(userId: string, monthYear: string): Promise<MonthlyPlan[]> {

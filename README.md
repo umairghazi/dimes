@@ -30,7 +30,6 @@ NODE_ENV=development
 CLIENT_ORIGIN=http://localhost:5173
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 ```
 
 `frontend/.env`
@@ -54,7 +53,7 @@ npm run dev
 
 - `/` - monthly summary
 - `/ledger` - spreadsheet-style expense and income ledger
-- `/login` and `/register` - Supabase auth
+- `/login` and `/register` - Supabase auth (disable registration in Supabase for private deployments)
 
 ## API
 

@@ -12,10 +12,10 @@ function monthLabel(monthYear: string): string {
 
 export class MonthlySummaryService {
   constructor(
-    private readonly transactionRepo = new TransactionRepository(),
-    private readonly monthlyPlanRepo = new MonthlyPlanRepository(),
-    private readonly monthlyBalanceRepo = new MonthlyBalanceRepository(),
-    private readonly categoryRepo = new CategoryRepository(),
+    private readonly transactionRepo: TransactionRepository,
+    private readonly monthlyPlanRepo: MonthlyPlanRepository,
+    private readonly monthlyBalanceRepo: MonthlyBalanceRepository,
+    private readonly categoryRepo: CategoryRepository,
   ) {}
 
   async get(userId: string, month: string): Promise<MonthlySummary> {

@@ -1,5 +1,6 @@
 import { BaseRepository } from "./BaseRepository";
 import { money, MonthlyBalance } from "../types/finance.types";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 interface BalanceRow {
   id: string;
@@ -29,8 +30,8 @@ function toBalance(row: BalanceRow): MonthlyBalance {
 }
 
 export class MonthlyBalanceRepository extends BaseRepository {
-  constructor() {
-    super("monthly_balances");
+  constructor(db: SupabaseClient) {
+    super("monthly_balances", db);
   }
 
   async getByMonth(userId: string, monthYear: string): Promise<MonthlyBalance | null> {

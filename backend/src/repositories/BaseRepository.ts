@@ -1,13 +1,11 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { RepositoryError } from "../errors/RepositoryError";
-import { getSupabaseAdminClient } from "../integrations/supabase/supabaseAdmin.client";
 
 export abstract class BaseRepository {
-  protected readonly db: SupabaseClient;
-
-  protected constructor(protected readonly tableName: string) {
-    this.db = getSupabaseAdminClient();
-  }
+  protected constructor(
+    protected readonly tableName: string,
+    protected readonly db: SupabaseClient,
+  ) {}
 
   protected table() {
     return this.db.from(this.tableName);

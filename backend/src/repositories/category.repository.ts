@@ -1,5 +1,6 @@
 import { BaseRepository } from "./BaseRepository";
 import { FinanceCategory, FinanceCategoryType } from "../types/finance.types";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 interface CategoryRow {
   id: string;
@@ -54,8 +55,8 @@ function toCategory(row: CategoryRow, byId: Map<string, CategoryRow>, childCount
 }
 
 export class CategoryRepository extends BaseRepository {
-  constructor() {
-    super("categories");
+  constructor(db: SupabaseClient) {
+    super("categories", db);
   }
 
   async listByUser(userId: string, type?: FinanceCategoryType): Promise<FinanceCategory[]> {

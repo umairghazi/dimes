@@ -4,7 +4,7 @@ import { FinanceCategory, FinanceCategoryType } from "../types/finance.types";
 
 export class CategoryService {
   constructor(
-    private readonly categoryRepo = new CategoryRepository(),
+    private readonly categoryRepo: CategoryRepository,
   ) {}
 
   list(userId: string, type?: FinanceCategoryType): Promise<FinanceCategory[]> {

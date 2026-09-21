@@ -29,8 +29,8 @@ export interface ImportTransactionsResult {
 
 export class TransactionService {
   constructor(
-    private readonly transactionRepo = new TransactionRepository(),
-    private readonly categoryRepo = new CategoryRepository(),
+    private readonly transactionRepo: TransactionRepository,
+    private readonly categoryRepo: CategoryRepository,
   ) {}
 
   list(userId: string, filters: TransactionFilters): Promise<FinanceTransaction[]> {

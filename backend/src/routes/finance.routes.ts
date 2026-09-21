@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/auth.middleware";
+import { createFinanceContext } from "../middleware/financeContext.middleware";
 import {
   createCategory,
   createTransaction,
@@ -21,21 +22,23 @@ import {
 
 const router = Router();
 
-router.get("/transactions", authenticate, listTransactions);
-router.post("/transactions/import", authenticate, importTransactions);
-router.post("/transactions", authenticate, createTransaction);
-router.patch("/transactions/:id", authenticate, updateTransaction);
-router.delete("/transactions/:id", authenticate, deleteTransaction);
-router.get("/categories", authenticate, listCategories);
-router.post("/categories", authenticate, createCategory);
-router.patch("/categories/:id", authenticate, updateCategory);
-router.delete("/categories/:id", authenticate, deleteCategory);
-router.get("/plans", authenticate, listMonthlyPlans);
-router.put("/plans", authenticate, upsertMonthlyPlan);
-router.delete("/plans/:id", authenticate, deleteMonthlyPlan);
-router.get("/balance", authenticate, getMonthlyBalance);
-router.put("/balance", authenticate, upsertMonthlyBalance);
-router.get("/summary", authenticate, getSummary);
-router.get("/yearly-summary", authenticate, getYearlySummary);
+router.use(authenticate, createFinanceContext);
+
+router.get("/transactions", listTransactions);
+router.post("/transactions/import", importTransactions);
+router.post("/transactions", createTransaction);
+router.patch("/transactions/:id", updateTransaction);
+router.delete("/transactions/:id", deleteTransaction);
+router.get("/categories", listCategories);
+router.post("/categories", createCategory);
+router.patch("/categories/:id", updateCategory);
+router.delete("/categories/:id", deleteCategory);
+router.get("/plans", listMonthlyPlans);
+router.put("/plans", upsertMonthlyPlan);
+router.delete("/plans/:id", deleteMonthlyPlan);
+router.get("/balance", getMonthlyBalance);
+router.put("/balance", upsertMonthlyBalance);
+router.get("/summary", getSummary);
+router.get("/yearly-summary", getYearlySummary);
 
 export default router;

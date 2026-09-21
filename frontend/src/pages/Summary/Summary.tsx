@@ -25,7 +25,12 @@ import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import { financeApi, FinanceCategory, MonthlyPlanInput } from "@/api/finance.api";
 import { Expense, expenseAmount } from "@/types/expense.types";
 import { useMonthStore, isCurrentMonthYear } from "@/store/monthStore";
-import { formatMonthLabel, currency, currencyWithCents } from "@/components/finance/financeFormat";
+import {
+  formatMonthLabel,
+  currency,
+  currencyWithCents,
+  elapsedDaysInMonth,
+} from "@/components/finance/financeFormat";
 import { PageHero } from "@/components/finance/PageHero";
 import { MonthSwitcher } from "@/components/finance/MonthSwitcher";
 import { MetricCard, MetricCardSkeleton } from "@/components/finance/MetricCard";
@@ -1059,6 +1064,8 @@ export function Summary() {
   const incomeRows = useMemo(() => buildRows(transactions, plans, "income", allCategories), [transactions, plans, allCategories]);
   const totalSpend = total(transactions, "expense");
   const totalIncome = total(transactions, "income");
+  const elapsedDays = elapsedDaysInMonth(month);
+  const averageDailySpend = elapsedDays > 0 ? totalSpend / elapsedDays : 0;
   const netSavings = totalIncome - totalSpend;
   const startingBalance = balanceQuery.data?.startingBalance ?? 0;
   const calculatedEndingBalance = startingBalance + netSavings;
@@ -1133,17 +1140,28 @@ export function Summary() {
       {balanceMutation.isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to save account balances</Alert>}
 
       <Grid container spacing={2} sx={{ my: 2 }}>
-        <Grid size={{ xs: 12, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
           {balanceQuery.isLoading ? <MetricCardSkeleton /> : <MetricCard label="Starting Balance" value={currency(startingBalance)} />}
         </Grid>
-        <Grid size={{ xs: 12, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
           {balanceQuery.isLoading || transactionsQuery.isLoading ? <MetricCardSkeleton /> : <MetricCard label="Ending Balance" value={currency(endingBalance)} />}
         </Grid>
-        <Grid size={{ xs: 12, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
           {transactionsQuery.isLoading || plansQuery.isLoading ? <MetricCardSkeleton /> : <MetricCard label="Income" value={currency(totalIncome)} helper={`${incomeRows.length} categories`} />}
         </Grid>
-        <Grid size={{ xs: 12, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
           {transactionsQuery.isLoading ? <MetricCardSkeleton /> : <MetricCard label="Expenses" value={currency(totalSpend)} helper={`${transactions.length} rows loaded`} />}
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>
+          {transactionsQuery.isLoading ? (
+            <MetricCardSkeleton />
+          ) : (
+            <MetricCard
+              label="Average per day"
+              value={currencyWithCents(averageDailySpend)}
+              helper={`${elapsedDays} calendar ${elapsedDays === 1 ? "day" : "days"}`}
+            />
+          )}
         </Grid>
       </Grid>
 
