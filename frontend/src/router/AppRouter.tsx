@@ -7,6 +7,7 @@ import { Summary } from "@/pages/Summary/Summary";
 import { Categories } from "@/pages/Categories/Categories";
 import { ImportTransactions } from "@/pages/Import/ImportTransactions";
 import { Year } from "@/pages/Year/Year";
+import { RangeReport } from "@/pages/Range/Range";
 import { Login } from "@/pages/Auth/Login";
 import { Register } from "@/pages/Auth/Register";
 
@@ -28,6 +29,7 @@ export function AppRouter() {
           <Route index element={<Summary />} />
           <Route path="ledger" element={<Ledger />} />
           <Route path="year" element={<Year />} />
+          <Route path="range" element={<RangeReport />} />
           <Route path="import" element={<ImportTransactions />} />
           <Route path="categories" element={<Categories />} />
         </Route>

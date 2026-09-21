@@ -50,6 +50,32 @@ test('refunds reject income categories, including type-only updates', async () =
   await assert.rejects(service.update('user', 'txn', { type: 'expense_refund' }), /types do not match/);
 });
 
+test('custom date ranges aggregate income, net expenses, months, and calendar-day average', async () => {
+  const transactions = [
+    { date: '2026-04-01', monthYear: '2026-04', type: 'expense', amount: 120, categoryId: 'home' },
+    { date: '2026-04-03', monthYear: '2026-04', type: 'expense_refund', amount: 20, categoryId: 'home' },
+    { date: '2026-05-01', monthYear: '2026-05', type: 'income', amount: 500 },
+  ];
+  const service = new MonthlySummaryService(
+    { listByDateRange: async () => transactions },
+    {},
+    {},
+    { listByUser: async () => [{ id: 'home', path: [{ id: 'home', name: 'Home' }] }] },
+  );
+
+  const result = await service.getRange('user', '2026-04-01', '2026-05-01');
+  assert.equal(result.days, 31);
+  assert.equal(result.totals.income, 500);
+  assert.equal(result.totals.expenses, 100);
+  assert.equal(result.totals.net, 400);
+  assert.equal(result.totals.averageDailySpend, 100 / 31);
+  assert.deepEqual(result.months.map(month => [month.monthYear, month.expenses, month.income]), [
+    ['2026-04', 100, 0],
+    ['2026-05', 0, 500],
+  ]);
+  assert.equal(result.categorySpend.find(row => row.categoryId === 'home').amount, 100);
+});
+
 test('Sheets imports convert negative amounts and explicit refunds to positive refund records', () => {
   const ts = require('typescript');
   const fs = require('node:fs');

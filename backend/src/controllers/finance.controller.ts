@@ -8,6 +8,19 @@ const monthQuerySchema = z.object({
 const yearQuerySchema = z.object({
   year: z.coerce.number().int().min(2000).max(2100),
 });
+const dateRangeQuerySchema = z.object({
+  from: z.string().date(),
+  to: z.string().date(),
+}).superRefine(({ from, to }, context) => {
+  const fromTime = Date.parse(`${from}T00:00:00Z`);
+  const toTime = Date.parse(`${to}T00:00:00Z`);
+  if (fromTime > toTime) {
+    context.addIssue({ code: "custom", message: "From date must be on or before to date", path: ["from"] });
+  }
+  if ((toTime - fromTime) / 86_400_000 > 366) {
+    context.addIssue({ code: "custom", message: "Date range cannot exceed 367 days", path: ["to"] });
+  }
+});
 
 const createTransactionSchema = z.object({
   date: z.string().min(1),
@@ -175,6 +188,17 @@ export async function getYearlySummary(req: Request, res: Response, next: NextFu
     const { user, monthlySummaryService } = req.finance;
     const { year } = yearQuerySchema.parse(req.query);
     const data = await monthlySummaryService.getYear(user.id, year);
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getDateRangeSummary(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { user, monthlySummaryService } = req.finance;
+    const { from, to } = dateRangeQuerySchema.parse(req.query);
+    const data = await monthlySummaryService.getRange(user.id, from, to);
     res.json(data);
   } catch (err) {
     next(err);

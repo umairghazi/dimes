@@ -3,6 +3,7 @@ import { Box, Button, Tooltip, Typography } from "@mui/material";
 import { beginActivity } from "@/store/activityStore";
 import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
+import DateRangeOutlinedIcon from "@mui/icons-material/DateRangeOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
@@ -34,6 +35,7 @@ export function AppShell() {
     { label: "Overview", path: "/", icon: AnalyticsOutlinedIcon },
     { label: "Ledger", path: "/ledger", icon: ReceiptLongOutlinedIcon },
     { label: "Year", path: "/year", icon: BarChartOutlinedIcon },
+    { label: "Range", path: "/range", icon: DateRangeOutlinedIcon },
     { label: "Import", path: "/import", icon: UploadFileOutlinedIcon },
     { label: "Categories", path: "/categories", icon: SellOutlinedIcon },
   ];

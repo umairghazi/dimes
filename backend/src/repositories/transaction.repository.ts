@@ -110,6 +110,21 @@ export class TransactionRepository extends BaseRepository {
     return (rows ?? []).map(toTransaction);
   }
 
+  async listByDateRange(userId: string, from: string, to: string): Promise<FinanceTransaction[]> {
+    const rows = await this.execute<TransactionRow[]>(
+      "list transactions by date range",
+      this.table()
+        .select("*, categories(id, name)")
+        .eq("user_id", userId)
+        .gte("date", from)
+        .lte("date", to)
+        .order("date", { ascending: true })
+        .order("created_at", { ascending: true }),
+    );
+
+    return (rows ?? []).map(toTransaction);
+  }
+
   async listByMonths(userId: string, months: string[]): Promise<FinanceTransaction[]> {
     if (months.length === 0) return [];
 

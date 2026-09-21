@@ -116,6 +116,28 @@ export interface YearlySummary {
   };
 }
 
+export interface DateRangeSummary {
+  from: string;
+  to: string;
+  days: number;
+  transactionCount: number;
+  totals: {
+    income: number;
+    expenses: number;
+    net: number;
+    averageDailySpend: number;
+  };
+  months: Array<{
+    monthYear: string;
+    monthLabel: string;
+    income: number;
+    expenses: number;
+    net: number;
+    transactionCount: number;
+  }>;
+  categorySpend: YearlyCategorySummary[];
+}
+
 export const financeApi = {
   transactions: (params: { month?: string; type?: TransactionType }) =>
     apiClient.get<{ data: Expense[]; total: number }>("/finance/transactions", { params }).then((r) => r.data),
@@ -167,4 +189,7 @@ export const financeApi = {
 
   yearlySummary: (year: number) =>
     apiClient.get<YearlySummary>("/finance/yearly-summary", { params: { year } }).then((r) => r.data),
+
+  dateRangeSummary: (from: string, to: string) =>
+    apiClient.get<DateRangeSummary>("/finance/range-summary", { params: { from, to } }).then((r) => r.data),
 };

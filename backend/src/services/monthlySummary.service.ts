@@ -3,7 +3,7 @@ import { MonthlyPlanRepository } from "../repositories/monthlyPlan.repository";
 import { TransactionRepository } from "../repositories/transaction.repository";
 import { CategoryRepository } from "../repositories/category.repository";
 import { FinanceCategory, FinanceTransaction, expenseAmount } from "../types/finance.types";
-import { MonthlySummary, YearlySummary } from "../types/finance.types";
+import { DateRangeSummary, MonthlySummary, YearlySummary } from "../types/finance.types";
 
 function monthLabel(monthYear: string): string {
   const [, month] = monthYear.split("-").map(Number);
@@ -106,12 +106,63 @@ export class MonthlySummaryService {
     return {
       year,
       months,
-      categorySpend: this.buildYearlyCategorySpend(transactions, categoriesById),
+      categorySpend: this.buildCategorySpend(transactions, categoriesById),
       totals,
     };
   }
 
-  private buildYearlyCategorySpend(
+  async getRange(userId: string, from: string, to: string): Promise<DateRangeSummary> {
+    const [transactions, categories] = await Promise.all([
+      this.transactionRepo.listByDateRange(userId, from, to),
+      this.categoryRepo.listByUser(userId, "expense"),
+    ]);
+    const categoriesById = new Map(categories.map((category) => [category.id, category]));
+    const days = Math.floor(
+      (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000,
+    ) + 1;
+    const income = transactions
+      .filter((transaction) => transaction.type === "income")
+      .reduce((sum, transaction) => sum + transaction.amount, 0);
+    const expenses = transactions.reduce((sum, transaction) => sum + expenseAmount(transaction), 0);
+    const monthsById = new Map<string, DateRangeSummary["months"][number]>();
+
+    transactions.forEach((transaction) => {
+      const current = monthsById.get(transaction.monthYear) ?? {
+        monthYear: transaction.monthYear,
+        monthLabel: new Date(`${transaction.monthYear}-01T00:00:00Z`).toLocaleString("en-US", {
+          month: "short",
+          year: "numeric",
+          timeZone: "UTC",
+        }),
+        income: 0,
+        expenses: 0,
+        net: 0,
+        transactionCount: 0,
+      };
+      if (transaction.type === "income") current.income += transaction.amount;
+      else current.expenses += expenseAmount(transaction);
+      current.net = current.income - current.expenses;
+      current.transactionCount += 1;
+      monthsById.set(transaction.monthYear, current);
+    });
+
+    return {
+      from,
+      to,
+      days,
+      transactionCount: transactions.length,
+      totals: {
+        income,
+        expenses,
+        net: income - expenses,
+        averageDailySpend: expenses / days,
+      },
+      months: [...monthsById.values()].sort((a, b) => a.monthYear.localeCompare(b.monthYear)),
+      categorySpend: this.buildCategorySpend(transactions, categoriesById),
+    };
+  }
+
+  private buildCategorySpend(
     transactions: FinanceTransaction[],
     categoriesById: Map<string, FinanceCategory>,
   ): YearlySummary["categorySpend"] {

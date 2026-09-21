@@ -97,6 +97,28 @@ export interface YearlySummary {
   };
 }
 
+export interface DateRangeSummary {
+  from: string;
+  to: string;
+  days: number;
+  transactionCount: number;
+  totals: {
+    income: number;
+    expenses: number;
+    net: number;
+    averageDailySpend: number;
+  };
+  months: Array<{
+    monthYear: string;
+    monthLabel: string;
+    income: number;
+    expenses: number;
+    net: number;
+    transactionCount: number;
+  }>;
+  categorySpend: YearlyCategorySummary[];
+}
+
 export function money(value: string | number | null): number {
   if (value === null) return 0;
   const numberValue = typeof value === "number" ? value : Number(value);
