@@ -53,6 +53,12 @@ function formatRangeDate(value: string): string {
   });
 }
 
+function calendarMonthCount(from: string, to: string): number {
+  const [fromYear, fromMonth] = from.split("-").map(Number);
+  const [toYear, toMonth] = to.split("-").map(Number);
+  return Math.max(1, (toYear - fromYear) * 12 + toMonth - fromMonth + 1);
+}
+
 interface CategoryNode {
   row: YearlyCategorySummary;
   children: CategoryNode[];
@@ -97,6 +103,7 @@ export function RangeReport() {
   });
   const data = rangeQuery.data;
   const rows = useMemo(() => categoryRows(data?.categorySpend ?? []), [data?.categorySpend]);
+  const monthCount = calendarMonthCount(range.from, range.to);
 
   const applyRange = (from: string, to: string) => {
     setDraftFrom(from);
@@ -158,7 +165,7 @@ export function RangeReport() {
         <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>{rangeQuery.isLoading ? <MetricCardSkeleton /> : <MetricCard label="Expenses" value={currency(data?.totals.expenses ?? 0)} tone="bad" />}</Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>{rangeQuery.isLoading ? <MetricCardSkeleton /> : <MetricCard label="Net" value={signedCurrency(data?.totals.net ?? 0)} tone={(data?.totals.net ?? 0) >= 0 ? "good" : "bad"} />}</Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>{rangeQuery.isLoading ? <MetricCardSkeleton /> : <MetricCard label="Average per day" value={currencyWithCents(data?.totals.averageDailySpend ?? 0)} helper={`${data?.days ?? 0} calendar days`} />}</Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>{rangeQuery.isLoading ? <MetricCardSkeleton /> : <MetricCard label="Transactions" value={(data?.transactionCount ?? 0).toLocaleString()} helper={`${data?.months.length ?? 0} months`} />}</Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 2.4 }}>{rangeQuery.isLoading ? <MetricCardSkeleton /> : <MetricCard label="Transactions" value={(data?.transactionCount ?? 0).toLocaleString()} helper={`${data?.months.length ?? 0} active months`} />}</Grid>
       </Grid>
 
       <Grid container spacing={2}>
@@ -178,14 +185,14 @@ export function RangeReport() {
         </Grid>
 
         <Grid size={{ xs: 12, lg: 7 }}>
-          <WidgetCard title="Spend by category" meta={<Typography variant="caption" color="text.secondary">{rows.length} categories</Typography>}>
+          <WidgetCard title="Spend by category" meta={<Typography variant="caption" color="text.secondary">{rows.length} categories · {monthCount} months</Typography>}>
             <TableContainer sx={{ maxHeight: 520 }}>
-              <Table stickyHeader size="small">
-                <TableHead><TableRow><TableCell>Category</TableCell><TableCell align="right">Amount</TableCell><TableCell align="right">Txns</TableCell><TableCell align="right">%</TableCell></TableRow></TableHead>
+              <Table stickyHeader size="small" sx={{ minWidth: 700 }}>
+                <TableHead><TableRow><TableCell>Category</TableCell><TableCell align="right">Amount</TableCell><TableCell align="right">Avg / month</TableCell><TableCell align="right">Txns</TableCell><TableCell align="right">%</TableCell></TableRow></TableHead>
                 <TableBody>
-                  {rangeQuery.isLoading ? Array.from({ length: 7 }, (_, index) => <TableRow key={index}><TableCell colSpan={4}><Skeleton height={28} /></TableCell></TableRow>) :
-                    rows.length === 0 ? <TableRow><TableCell colSpan={4}><Typography color="text.secondary" sx={{ py: 3, textAlign: "center" }}>No expenses in this range.</Typography></TableCell></TableRow> :
-                      rows.map((row) => <TableRow key={row.categoryId ?? "uncategorized"} hover><TableCell sx={{ pl: 1.5 + row.depth * 2.25, fontWeight: row.depth === 0 ? 850 : 650 }}>{row.categoryName}</TableCell><TableCell align="right" sx={{ color: "primary.main", fontWeight: 800 }}>{currency(row.amount)}</TableCell><TableCell align="right">{row.count}</TableCell><TableCell align="right">{(data?.totals.expenses ?? 0) > 0 ? `${((row.amount / (data?.totals.expenses ?? 1)) * 100).toFixed(1)}%` : "0%"}</TableCell></TableRow>)}
+                  {rangeQuery.isLoading ? Array.from({ length: 7 }, (_, index) => <TableRow key={index}><TableCell colSpan={5}><Skeleton height={28} /></TableCell></TableRow>) :
+                    rows.length === 0 ? <TableRow><TableCell colSpan={5}><Typography color="text.secondary" sx={{ py: 3, textAlign: "center" }}>No expenses in this range.</Typography></TableCell></TableRow> :
+                      rows.map((row) => <TableRow key={row.categoryId ?? "uncategorized"} hover><TableCell sx={{ pl: 1.5 + row.depth * 2.25, fontWeight: row.depth === 0 ? 850 : 650 }}>{row.categoryName}</TableCell><TableCell align="right" sx={{ color: "primary.main", fontWeight: 800 }}>{currency(row.amount)}</TableCell><TableCell align="right" sx={{ fontWeight: 700 }}>{currencyWithCents(row.amount / monthCount)}</TableCell><TableCell align="right">{row.count}</TableCell><TableCell align="right">{(data?.totals.expenses ?? 0) > 0 ? `${((row.amount / (data?.totals.expenses ?? 1)) * 100).toFixed(1)}%` : "0%"}</TableCell></TableRow>)}
                 </TableBody>
               </Table>
             </TableContainer>

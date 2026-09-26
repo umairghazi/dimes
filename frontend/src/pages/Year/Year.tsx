@@ -21,10 +21,17 @@ import { useNavigate } from "react-router-dom";
 import { financeApi, YearlyCategorySummary, YearlySummaryMonth } from "@/api/finance.api";
 import { useMonthStore } from "@/store/monthStore";
 import { MetricCard } from "@/components/finance/MetricCard";
-import { currency, signedCurrency } from "@/components/finance/financeFormat";
+import { currency, currencyWithCents, signedCurrency } from "@/components/finance/financeFormat";
 
 function currentYear(): number {
   return new Date().getFullYear();
+}
+
+function monthsInYearPeriod(year: number): number {
+  const now = new Date();
+  if (year < now.getFullYear()) return 12;
+  if (year === now.getFullYear()) return now.getMonth() + 1;
+  return 1;
 }
 
 function nullableCurrency(value: number | null): string {
@@ -364,10 +371,12 @@ function toCategoryTreeRows(rows: YearlyCategorySummary[]): YearlyCategorySummar
 function CategorySpendTable({
   rows,
   totalExpenses,
+  monthCount,
   isLoading,
 }: {
   rows: YearlyCategorySummary[];
   totalExpenses: number;
+  monthCount: number;
   isLoading: boolean;
 }) {
   const treeRows = useMemo(() => toCategoryTreeRows(rows), [rows]);
@@ -376,14 +385,15 @@ function CategorySpendTable({
     <Paper variant="outlined" sx={{ borderRadius: 1, overflow: "hidden", mb: 2, borderColor: "rgba(255,255,255,0.08)", bgcolor: "rgba(32,35,45,0.92)" }}>
       <Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Typography variant="h5" sx={{ fontWeight: 900, color: "text.primary" }}>Yearly spend by category</Typography>
-        <Typography variant="caption" color="text.secondary">{treeRows.length} categories</Typography>
+        <Typography variant="caption" color="text.secondary">{treeRows.length} categories · {monthCount} months</Typography>
       </Box>
       <TableContainer sx={{ maxHeight: 520 }}>
-        <Table stickyHeader size="small" sx={{ minWidth: 720 }}>
+        <Table stickyHeader size="small" sx={{ minWidth: 840 }}>
           <TableHead>
             <TableRow>
               <TableCell>Category</TableCell>
               <TableCell align="right" sx={{ width: 140 }}>Amount</TableCell>
+              <TableCell align="right" sx={{ width: 140 }}>Avg / month</TableCell>
               <TableCell align="right" sx={{ width: 100 }}>Txns</TableCell>
               <TableCell align="right" sx={{ width: 100 }}>%</TableCell>
             </TableRow>
@@ -392,12 +402,12 @@ function CategorySpendTable({
             {isLoading ? (
               Array.from({ length: 6 }, (_, index) => (
                 <TableRow key={index}>
-                  <TableCell colSpan={4}><Skeleton height={28} /></TableCell>
+                  <TableCell colSpan={5}><Skeleton height={28} /></TableCell>
                 </TableRow>
               ))
             ) : treeRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4}>
+                <TableCell colSpan={5}>
                   <Typography color="text.secondary" sx={{ py: 3, textAlign: "center" }}>
                     No expenses imported for this year.
                   </Typography>
@@ -410,6 +420,7 @@ function CategorySpendTable({
                     {row.categoryName}
                   </TableCell>
                   <TableCell align="right" sx={{ color: "primary.main", fontWeight: 800 }}>{currency(row.amount)}</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 700 }}>{currencyWithCents(row.amount / monthCount)}</TableCell>
                   <TableCell align="right">{row.count}</TableCell>
                   <TableCell align="right">{totalExpenses > 0 ? `${((row.amount / totalExpenses) * 100).toFixed(1)}%` : "0%"}</TableCell>
                 </TableRow>
@@ -513,6 +524,7 @@ export function Year() {
       <CategorySpendTable
         rows={categorySpend}
         totalExpenses={data?.totals.expenses ?? 0}
+        monthCount={monthsInYearPeriod(year)}
         isLoading={yearlyQuery.isLoading}
       />
 
